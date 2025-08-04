@@ -6,8 +6,6 @@ import { InfoCircleOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { Button, Flex, Popover, Image, Modal } from 'antd';
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Spin } from 'antd';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
 import Markdown from 'react-markdown';
 import reactStringReplace from 'react-string-replace';
 import SyntaxHighlighter from 'react-syntax-highlighter';
@@ -55,7 +53,6 @@ const MarkdownContent = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [currentVideoInfo, setCurrentVideoInfo] = useState<any>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const playerRef = useRef<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoadingVideo, setIsLoadingVideo] = useState(false);
 
@@ -86,35 +83,18 @@ const MarkdownContent = ({
     setDocumentIds(Array.isArray(docAggs) ? docAggs.map((x) => x.doc_id) : []);
   }, [reference, setDocumentIds]);
 
-  // 时间字符串转秒，如 0:0:4:17 => 4.017
+  // 时间字符串转秒
   const timeStrToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
     const parts = timeStr.split(':').map(Number);
-    console.log('时间转换:', timeStr, 'parts:', parts);
-    
-    // 处理"时:分:秒:毫秒"格式
     if (parts.length === 4) {
       const [hours, minutes, seconds, milliseconds] = parts;
-      const totalSeconds = hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
-      console.log('4段格式转换结果:', totalSeconds);
-      return totalSeconds;
+      return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
     }
-    // 处理"时:分:秒"格式
     if (parts.length === 3) {
       const [hours, minutes, seconds] = parts;
-      const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-      console.log('3段格式转换结果:', totalSeconds);
-      return totalSeconds;
+      return hours * 3600 + minutes * 60 + seconds;
     }
-    // 处理"分:秒"格式
-    if (parts.length === 2) {
-      const [minutes, seconds] = parts;
-      const totalSeconds = minutes * 60 + seconds;
-      console.log('2段格式转换结果:', totalSeconds);
-      return totalSeconds;
-    }
-
-    console.log('无法解析时间格式:', timeStr);
     return 0;
   };
 
@@ -122,268 +102,43 @@ const MarkdownContent = ({
 
   // 处理视频播放
   const handlePlaySection = () => {
-    if (playerRef.current && currentVideoInfo) {
+    if (videoRef.current && currentVideoInfo) {
       const startSec = timeStrToSeconds(currentVideoInfo.start_time);
       const endSec = timeStrToSeconds(currentVideoInfo.end_time);
-      
-      console.log(`Video.js 播放片段:`, startSec, '到', endSec);
-      
-      // 确保播放器已准备就绪
-      if (playerRef.current.readyState() >= 1) {
-        // 使用 Video.js API 设置时间和播放
-        console.log('设置播放时间:', startSec);
-        playerRef.current.currentTime(startSec);
-        
-        // 延迟一点时间确保时间设置生效
-        setTimeout(() => {
-          console.log('当前播放时间:', playerRef.current.currentTime());
-          playerRef.current.play().then(() => {
-            console.log('Video.js 开始播放');
-          }).catch((e: any) => {
-            console.error('Video.js 播放失败:', e);
-            setIsPlaying(false);
-          });
-        }, 200);
-      } else {
-        console.log('播放器未准备就绪，等待元数据加载...');
-        // 等待元数据加载完成
-        playerRef.current.one('loadedmetadata', () => {
-          console.log('设置播放时间:', startSec);
-          playerRef.current.currentTime(startSec);
-          
-          // 再等待数据加载完成
-          playerRef.current.one('loadeddata', () => {
-            console.log('数据加载完成，再次设置时间:', startSec);
-            playerRef.current.currentTime(startSec);
-            
-            setTimeout(() => {
-              console.log('当前播放时间:', playerRef.current.currentTime());
-              playerRef.current.play().then(() => {
-                console.log('Video.js 开始播放');
-              }).catch((e: any) => {
-                console.error('Video.js 播放失败:', e);
-                setIsPlaying(false);
-              });
-            }, 200);
-          });
-        });
-      }
-    }
-  };
+      videoRef.current.currentTime = startSec;
+      videoRef.current.play().catch(e => console.error('播放失败:', e));
+      setIsPlaying(true);
 
-  // 初始化 Video.js 播放器
-  useEffect(() => {
-    console.log(`modalVisible: ${modalVisible}, currentVideoInfo: ${currentVideoInfo}`);
-    if (!modalVisible || !currentVideoInfo) return;
-
-    // 使用 requestAnimationFrame 确保 DOM 元素已经渲染
-    const initPlayer = () => {
-      if (!videoRef.current) {
-        console.log('videoRef.current 仍然为 null，重试...');
-        // 如果还没有渲染，继续等待
-        requestAnimationFrame(initPlayer);
-        return;
-      }
-
-      console.log('videoRef.current 已找到，开始初始化 Video.js');
-
-      // 销毁之前的播放器
-      if (playerRef.current) {
-        playerRef.current.dispose();
-        playerRef.current = null;
-      }
-
-      // 销毁之前的播放器
-      if (playerRef.current) {
-        try {
-          playerRef.current.dispose();
-        } catch (error) {
-          console.warn('销毁播放器时出错:', error);
-        }
-        playerRef.current = null;
-      }
-      
-      // 清理视频元素
-      if (videoRef.current) {
-        try {
-          videoRef.current.removeAttribute('src');
-          videoRef.current.load();
-        } catch (error) {
-          console.warn('清理视频元素时出错:', error);
-        }
-      }
-
-      // 创建新的 Video.js 播放器
-      const player = videojs(videoRef.current, {
-        controls: true,
-        fluid: false,
-        responsive: false,
-        preload: 'auto',
-        playbackRates: [0.5, 1, 1.25, 1.5, 2],
-        controlBar: {
-          children: [
-            'playToggle',
-            'volumePanel',
-            'currentTimeDisplay',
-            'timeDivider',
-            'durationDisplay',
-            'progressControl',
-            'remainingTimeDisplay',
-            'playbackRateMenuButton',
-            'fullscreenToggle'
-          ]
-        },
-        sources: [{
-          src: currentVideoInfo.videoUrl,
-          type: 'video/mp4'
-        }]
-      });
-
-      console.log('MarkdownContent Video.js 播放器创建成功:', player);
-
-      playerRef.current = player;
-
-      // 设置初始时间
-      const start = timeStrToSeconds(currentVideoInfo.start_time);
-      const end = timeStrToSeconds(currentVideoInfo.end_time);
-
-              player.ready(() => {
-          console.log('MarkdownContent Video.js 播放器准备就绪');
-  
-          
-          // 等待元数据加载完成后再设置时间
-          player.on('loadedmetadata', () => {
-            console.log('视频元数据加载完成，设置初始时间:', start);
-            player.currentTime(start);
-          });
-          
-          // 监听数据加载完成事件
-          player.on('loadeddata', () => {
-            console.log('视频数据加载完成，确保设置初始时间:', start);
-            player.currentTime(start);
-          });
-          
-          // 监听可以播放事件
-          player.on('canplay', () => {
-            console.log('视频可以播放，当前时间:', player.currentTime());
-
-            // 只有在时间差距较大时才重新设置
-            if (Math.abs(player.currentTime() - start) > 1) {
-              console.log('时间差距较大，重新设置初始时间:', start);
-              player.currentTime(start);
-            }
-          });
-          
-          // 监听进度事件
-          player.on('progress', () => {
-            console.log('视频加载进度，当前时间:', player.currentTime());
-          });
-          
-          // 监听等待事件
-          player.on('waiting', () => {
-            console.log('视频等待数据加载...');
-          });
-          
-                  // 监听时间更新
-        player.on('timeupdate', () => {
-          if (player && typeof player.currentTime === 'function' && player.currentTime() >= end) {
-            console.log('播放到结束时间，重新开始:', end);
-            player.pause();
-            player.currentTime(start);
-            setIsPlaying(false); // 重置播放状态
-          }
-        });
-        
-        // 监听播放开始事件
-        player.on('play', () => {
-          console.log('播放开始，当前时间:', player.currentTime());
-          setIsPlaying(true); // 设置播放状态
-        });
-        
-        // 监听播放暂停事件
-        player.on('pause', () => {
-          console.log('播放暂停');
-          setIsPlaying(false); // 重置播放状态
-        });
-        
-        // 监听播放结束事件
-        player.on('ended', () => {
-          console.log('播放结束');
-          setIsPlaying(false); // 重置播放状态
-        });
-
-        // 确保控制栏可见
-        setTimeout(() => {
-          const videoElement = player.el() as HTMLElement;
-          if (videoElement) {
-            // 添加自定义样式
-            videoElement.style.position = 'relative';
-            videoElement.style.width = '100%';
-            videoElement.style.height = '100%';
-            
-            const controlBar = videoElement.querySelector('.vjs-control-bar');
-            const progressBar = videoElement.querySelector('.vjs-progress-control');
-            const playButton = videoElement.querySelector('.vjs-play-control');
-            
-            if (controlBar) {
-              (controlBar as HTMLElement).style.display = 'flex';
-              (controlBar as HTMLElement).style.visibility = 'visible';
-              (controlBar as HTMLElement).style.opacity = '1';
-              (controlBar as HTMLElement).style.position = 'absolute';
-              (controlBar as HTMLElement).style.bottom = '0';
-              (controlBar as HTMLElement).style.left = '0';
-              (controlBar as HTMLElement).style.right = '0';
-              (controlBar as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.7)';
-            }
-            if (progressBar) {
-              (progressBar as HTMLElement).style.display = 'block';
-              (progressBar as HTMLElement).style.visibility = 'visible';
-            }
-            if (playButton) {
-              (playButton as HTMLElement).style.display = 'block';
-              (playButton as HTMLElement).style.visibility = 'visible';
-            }
-          }
-        }, 100);
-        
-
-      });
-
-      // 清理函数
-      return () => {
-        if (playerRef.current) {
-          try {
-            playerRef.current.dispose();
-          } catch (error) {
-            console.warn('清理播放器时出错:', error);
-          }
-          playerRef.current = null;
+      const handleTimeUpdate = () => {
+        if (videoRef.current && videoRef.current.currentTime >= endSec) {
+          videoRef.current.pause();
+          videoRef.current.currentTime = startSec;
+          setIsPlaying(false);
         }
       };
-    };
 
-    // 开始初始化
-    requestAnimationFrame(initPlayer);
-
-    // 清理函数
-    return () => {
-      if (playerRef.current) {
-        playerRef.current.dispose();
-        playerRef.current = null;
-      }
-    };
-  }, [modalVisible, currentVideoInfo]);
+      videoRef.current.addEventListener('timeupdate', handleTimeUpdate);
+      return () => {
+        videoRef.current?.removeEventListener('timeupdate', handleTimeUpdate);
+      };
+    }
+  };
 
   // 弹窗关闭时重置视频状态
   useEffect(() => {
     if (modalVisible) {
       setIsPlaying(false);
+      if (videoRef.current && currentVideoInfo) {
+        const startSec = timeStrToSeconds(currentVideoInfo.start_time);
+        videoRef.current.currentTime = startSec;
+        videoRef.current.pause();
+      }
     } else {
       setIsPlaying(false);
-      // 销毁播放器
-      if (playerRef.current) {
-        playerRef.current.dispose();
-        playerRef.current = null;
+      if (videoRef.current && currentVideoInfo) {
+        videoRef.current.pause();
+        const startSec = timeStrToSeconds(currentVideoInfo.start_time);
+        videoRef.current.currentTime = startSec;
       }
     }
   }, [modalVisible, currentVideoInfo]);
@@ -397,17 +152,24 @@ const MarkdownContent = ({
           'Authorization': `Bearer ragflow-${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const blob = await response.blob();
       return URL.createObjectURL(blob);
     } catch (error) {
       console.error('获取图片失败:', error);
       return url; // 失败时返回原始 URL
     }
+  };
+
+ 
+  const getUrlWithToken = (url: string) => {
+    const token = getAuthorization();
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}token=Bearer ragflow-${token}`;
   };
 
 
@@ -550,17 +312,17 @@ const MarkdownContent = ({
       } else if (match[2]) {
         // 图片
         const imgId = match[2];
-      parts.push(
+        parts.push(
           <div key={key++}>
-        <Image
-          src={`${api_rag_host}/file/download/${imgId}`}
+            <Image
+              src={`${api_rag_host}/file/download/${imgId}`}
               alt='图片'
-          style={{ maxWidth: 120, maxHeight: 120, margin: '0 4px', verticalAlign: 'middle' }}
-          preview={true}
-        />
+              style={{ maxWidth: 120, maxHeight: 120, margin: '0 4px', verticalAlign: 'middle' }}
+              preview={true}
+            />
             <br />
           </div>
-      );
+        );
       }
       lastIndex = match.index + match[0].length;
     }
@@ -585,12 +347,12 @@ const MarkdownContent = ({
               handleVideoClick(chunk.id, chunk.content, chunk)
               return;
             } else {
-            return;
+              return;
             }
 
           }
 
-           window.open(documentUrl, '_blank');
+          window.open(documentUrl, '_blank');
         } else {
 
           clickDocumentButton?.(documentId, chunk);
@@ -766,11 +528,11 @@ const MarkdownContent = ({
               onClick={
                 documentId
                   ? handleDocumentButtonClick(
-                      documentId,
-                      chunkItem,
-                      fileExtension === 'pdf',
-                      documentUrl,
-                    )
+                    documentId,
+                    chunkItem,
+                    fileExtension === 'pdf',
+                    documentUrl,
+                  )
                   : () => { console.log(`documentIdfalse`, documentId); }
               }
             />
@@ -783,7 +545,7 @@ const MarkdownContent = ({
               {isVideo ? (
                 <PlayCircleOutlined className={styles.referenceIcon} />
               ) : (
-              <InfoCircleOutlined className={styles.referenceIcon} />
+                <InfoCircleOutlined className={styles.referenceIcon} />
               )}
             </Popover>
           );
@@ -892,7 +654,7 @@ const MarkdownContent = ({
  
     'video-button': ({ 'chunk-id': chunkId, children }: any) => {
       console.log(`video-button chunkId`, chunkId);
-  return (
+      return (
         <Button
           type="primary"
           size="small"
@@ -905,24 +667,24 @@ const MarkdownContent = ({
     },
 
 
-          code(props: any) {
+    code(props: any) {
       const { children, className, ...rest } = props;
-            const match = /language-(\w+)/.exec(className || '');
-            return match ? (
-              <SyntaxHighlighter
-                {...rest}
-                PreTag="div"
-                language={match[1]}
-                wrapLongLines
-              >
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
-            ) : (
-              <code {...rest} className={classNames(className, 'text-wrap')}>
-                {children}
-              </code>
-            );
-          },
+      const match = /language-(\w+)/.exec(className || '');
+      return match ? (
+        <SyntaxHighlighter
+          {...rest}
+          PreTag="div"
+          language={match[1]}
+          wrapLongLines
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      ) : (
+        <code {...rest} className={classNames(className, 'text-wrap')}>
+          {children}
+        </code>
+      );
+    },
   }), [renderContentWithImagesAndVideos, thinkOpen, renderReference]);
 
   return (
@@ -932,20 +694,13 @@ const MarkdownContent = ({
         remarkPlugins={[remarkGfm, remarkMath]}
         className={styles.markdownContentWrapper}
         components={markdownComponents as any}
-    >
-      {contentWithCursor}
-    </Markdown>
+      >
+        {contentWithCursor}
+      </Markdown>
       {/* 视频弹窗 */}
       <Modal
         open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          // 销毁播放器
-          if (playerRef.current) {
-            playerRef.current.dispose();
-            playerRef.current = null;
-          }
-        }}
+        onCancel={() => setModalVisible(false)}
         footer={null}
         width={600}
         title={`查看文件:${currentVideoInfo?.document_name}`}
@@ -962,26 +717,13 @@ const MarkdownContent = ({
           </div>
         ) : currentVideoInfo ? (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              borderRadius: 8, 
-              overflow: 'hidden',
-              backgroundColor: '#000',
-              height: '400px',
-              width: '100%',
-              position: 'relative'
-            }}>
-
-              <video
-                ref={videoRef}
-                className="video-js vjs-default-skin vjs-big-play-centered"
-                data-setup="{}"
-                style={{ 
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
+            <video
+              ref={videoRef}
+              src={currentVideoInfo.videoUrl}
+              controls
+              width="100%"
+              style={{ borderRadius: 8, background: '#000', maxHeight: '70vh' }}
+            />
 
             {/* 渲染内容时去除所有 '[{chunk_id:...}]' 结构的文本 */}
             <div style={{ flex: 1, marginTop: 16, fontSize: 16, textAlign: 'left' }}>
@@ -996,15 +738,7 @@ const MarkdownContent = ({
             <div style={{ marginTop: 16 }}>
               <button
                 type="button"
-                style={{ 
-                  padding: '8px 16px', 
-                  fontSize: 16, 
-                  borderRadius: 4, 
-                  background: '#306EFD', 
-                  color: '#fff', 
-                  border: 'none', 
-                  cursor: isPlaying ? 'not-allowed' : 'pointer' 
-                }}
+                style={{ padding: '8px 16px', fontSize: 16, borderRadius: 4, background: '#306EFD', color: '#fff', border: 'none', cursor: isPlaying ? 'not-allowed' : 'pointer' }}
                 onClick={handlePlaySection}
                 disabled={isPlaying}
               >
