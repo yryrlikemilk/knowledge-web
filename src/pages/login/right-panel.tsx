@@ -9,15 +9,15 @@ const LoginRightPanel = () => {
   return (
     <section className={styles.rightPanel}>
       {/* <SvgIcon name="login-star" width={80}></SvgIcon> */}
-      <Flex vertical gap={40}>
+      <Flex vertical >
         <Title
           level={1}
-          className={classNames(styles.white, styles.loginTitle)}
+          className={classNames( styles.loginTitle)}
         >
-          知识库平台
+          赛迪知源
         </Title>
-        <Text className={classNames(styles.pink, styles.loginDescription)}>
-          创建知识库和人工智能来增强您的业务
+        <Text className={classNames( styles.loginDescription)}>
+        创建企业级多模态知识助手--重新定义知识获取方式
         </Text>
         {/* <Flex align="center" gap={16}>
            <Avatars></Avatars>

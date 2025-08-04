@@ -2,23 +2,51 @@
 
 .loginPage {
   display: flex;
+  overflow: auto;
+  min-width: 1100px;
   background-color: rgba(255, 255, 255, .1);
-
+  background-image: url("@/assets/imgs/loginBg.png");
+  background-position: center;
+  background-size: cover;
   .loginLeft {
     display: flex;
-    align-items: center;
     // width: 610px;
-    width: 40%;
+    flex-direction: column;
+    width: 37%;
     height: 100vh;
-    background-color: rgba(255, 255, 255, .1);
+    // background-color: rgba(255, 255, 255, .1);
   }
-
+  .leftContainerMain {
+    position: relative;
+    flex: 1;
+  }
   .leftContainer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     width: 60%;
-    padding: 5px, 0, 5px, 0;
-    margin: 0 auto;
+    max-width: 400px;
+    height: 480px;
+    margin: auto;;
   }
-
+  .loginLeftTitle {
+    color: #333;
+    font-family: Alibaba PuHuiTi 3.0;
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 36px;
+    letter-spacing: 0;
+  }
+  .loginLeftDesc {
+    color: #333;
+    font-family: Alibaba PuHuiTi 3.0;
+    font-size: 18px;
+    font-weight: normal;
+    line-height: 26px;
+    letter-spacing: 0;
+  }
   .thirdPartyLoginButton {
     margin-top: 10px;
     border-top: 1px solid rgba(0, 0, 0, .06);
@@ -62,7 +90,7 @@
       bottom: 0;
       left: 0;
       z-index: -1;
-      background-color: rgba(24, 73, 169, .6);
+      // background-color: rgba(24, 73, 169, .6);
       background-position: center;
       // background-image: url('@/assets/svg/login-background.svg');
       background-size: cover;
@@ -76,18 +104,23 @@
     }
     .rightPanel {
       max-width: 670px;
+      padding-top: 380px;
+      text-align: center;
       .loginTitle {
-        font-size: 68px;
-        font-style: normal;
-        font-weight: 600;
-        line-height: 90px;
-        letter-spacing: -1.44px;
+        color: #306efd;
+        font-family: Alibaba PuHuiTi 3.0;
+        font-size: 64px;
+        font-weight: 800;
+        line-height: normal;
+        letter-spacing: 0;
       }
       .loginDescription {
-        font-size: 20px;
-        font-style: normal;
+        color: #333;
+        font-family: Alibaba PuHuiTi 3.0;
+        font-size: 24px;
         font-weight: 500;
-        line-height: 30px;
+        line-height: normal;
+        letter-spacing: 0;
       }
       .loginRateNumber {
         font-size: 16px;
@@ -106,11 +139,11 @@
 
   .loginTitle {
     height: 80px;
-    margin-bottom: 69px;
+    margin-bottom: 40px;
     //styleName: Heading/1;
-    font-size: 38px;
-    font-weight: 600;
-    line-height: 46px;
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 36px;
     letter-spacing: 0;
 
     // text-align: center;
