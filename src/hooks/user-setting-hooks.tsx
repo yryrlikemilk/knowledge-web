@@ -34,14 +34,22 @@ export const useFetchUserInfo = (): ResponseGetType<IUserInfo> => {
     gcTime: 0,
     queryFn: async () => {
       const { data } = await userService.user_info();
+
+
+      // 修改返回的数据
+      const modifiedData = data?.data ?? {};
+      if (modifiedData) {
+        modifiedData.color_schema = "Bright";
+        modifiedData.language = '简体中文';
+      }
       if (data.code === 0) {
         i18n.changeLanguage(
           LanguageTranslationMap[
-            data.data.language as keyof typeof LanguageTranslationMap
+          modifiedData.language as keyof typeof LanguageTranslationMap
           ],
         );
       }
-      return data?.data ?? {};
+      return modifiedData;
     },
   });
 
@@ -122,6 +130,7 @@ export const useSaveSetting = () => {
     mutationFn: async (
       userInfo: { new_password: string } | Partial<IUserInfo>,
     ) => {
+      console.log(`userInfo`, userInfo);
       const { data } = await userService.setting(userInfo);
       if (data.code === 0) {
         message.success(t('message.modified'));

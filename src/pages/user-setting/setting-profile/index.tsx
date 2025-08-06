@@ -129,11 +129,12 @@ const UserSettingProfile = () => {
           <Form.Item<FieldType>
             label={t('colorSchema')}
             name="color_schema"
+
             rules={[{ required: true, message: t('colorSchemaMessage') }]}
           >
-            <Select placeholder={t('colorSchemaPlaceholder')}>
+            <Select disabled={true} placeholder={t('colorSchemaPlaceholder')}>
               <Option value="Bright">{t('bright')}</Option>
-              <Option value="Dark">{t('dark')}</Option>
+              {/* <Option value="Dark">{t('dark')}</Option> */}
             </Select>
           </Form.Item>
           <Divider />
@@ -150,7 +151,9 @@ const UserSettingProfile = () => {
             <Select
               placeholder={t('languagePlaceholder', { keyPrefix: 'common' })}
               onChange={changeLanguage}
+              disabled={true}
             >
+              <Option value="Bright">{t('bright')}</Option>
               {LanguageList.map((x) => (
                 <Option value={x} key={x}>
                   {LanguageMap[x as keyof typeof LanguageMap]}

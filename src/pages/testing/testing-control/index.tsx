@@ -89,7 +89,7 @@ const TestingControl = ({
       </div>
       <Flex justify='center' align='center' >
         <div className={styles.testingControlTip}>
-          <div>  <svg xmlns="http://www.w3.org/2000/svg"  fill="none" version="1.1" style={{ width: 20, height: 20,marginRight:8, }} viewBox="0 0 20 20">
+          <div>  <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" style={{ width: 20, height: 20, marginRight: 8, }} viewBox="0 0 20 20">
             <defs>
               <clipPath id="master_svg0_2_7215">
                 <rect x="0" y="0" width="20" height="20" rx="0" style={{ width: 20, height: 20, }} />
@@ -213,6 +213,8 @@ const TestingControl = ({
                 style={{ width: '100%' }}
               />
             </Form.Item>
+            <Form.Item label='高级筛选' colon={false}></Form.Item>
+
             <Rerank></Rerank>
             <UseKnowledgeGraphItem filedName={['use_kg']}></UseKnowledgeGraphItem>
             <Form.Item<FieldType>
@@ -299,7 +301,7 @@ const TestingControl = ({
                 )}
               </Form.List>
             </Form.Item>
-            <Form.Item<FieldType>
+            {/* <Form.Item<FieldType>
               label={'topk设置'}
               name={'top_k'}
               tooltip={'设置返回切片数最大值，不设置默认全部返回'}
@@ -314,7 +316,7 @@ const TestingControl = ({
                 precision={1}
                 style={{ width: '100%' }}
               />
-            </Form.Item>
+            </Form.Item> */}
 
             <Button
               type="primary"

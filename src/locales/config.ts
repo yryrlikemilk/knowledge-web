@@ -3,16 +3,16 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
 import { LanguageAbbreviation } from '@/constants/common';
-import translation_de from './de';
-import translation_en from './en';
-import translation_es from './es';
-import translation_id from './id';
-import translation_ja from './ja';
-import translation_pt_br from './pt-br';
+import translation_de from './zh';
+import translation_en from './zh';
+import translation_es from './zh';
+import translation_id from './zh';
+import translation_ja from './zh';
+import translation_pt_br from './zh';
 import { createTranslationTable, flattenObject } from './until';
-import translation_vi from './vi';
+import translation_vi from './zh';
 import translation_zh from './zh';
-import translation_zh_traditional from './zh-traditional';
+import translation_zh_traditional from './zh';
 
 const resources = {
   [LanguageAbbreviation.En]: translation_en,

@@ -8,6 +8,7 @@ import {
 import i18n from '@/locales/config';
 import kbService, {
   deleteKnowledgeGraph,
+  getCount,
   getKnowledgeGraph,
   listDataset,
   listTag,
@@ -15,7 +16,6 @@ import kbService, {
   renameTag,
   // retrieval_test,
   retrieval_test,
-  getCount,
 } from '@/services/knowledge-service';
 import {
   useInfiniteQuery,
@@ -271,10 +271,18 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
         rerank_id: values.rerank_id,
         similarity_threshold: values.similarity_threshold,
         chunk_deduplication_coefficient: 0,
-        retrieval_setting: {
-          score_threshold: 0,
-          ...(values.top_k ? { top_k: parseInt(values.top_k, 10) } : {}),
-        },
+        ...(values.top_k
+          ? {
+              retrieval_setting: {
+                top_k: parseInt(values.top_k, 10),
+              },
+            }
+          : {}),
+        // retrieval_setting: {
+        //   score_threshold: 0,
+        //   // top_k:10,
+        //   // ...(values.top_k ? { top_k: parseInt(values.top_k, 10) } : {}),
+        // },
         vector_similarity_weight: values.vector_similarity_weight,
         metadata_condition: {
           conditions: (
@@ -359,11 +367,18 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
         rerank_id: values.rerank_id,
         similarity_threshold: values.similarity_threshold,
         chunk_deduplication_coefficient: 0,
-        retrieval_setting: {
-          score_threshold: 0,
-          top_k: 9,
-          ...(values.top_k ? { top_k: parseInt(values.top_k, 10) } : {}),
-        },
+        ...(values.top_k
+          ? {
+              retrieval_setting: {
+                top_k: parseInt(values.top_k, 10),
+              },
+            }
+          : {}),
+        // retrieval_setting: {
+        //   score_threshold: 0,
+        //  top_k: (values.top_k ? parseInt(values.top_k, 10) ),
+        //   // ...(values.top_k ? { top_k: parseInt(values.top_k, 10) } : {}),
+        // },
         vector_similarity_weight: values.vector_similarity_weight,
         metadata_condition: {
           conditions: (
@@ -618,7 +633,11 @@ export const useRemoveKnowledgeGraph = () => {
 };
 
 export const useFetchKnowledgeCount = () => {
-  const { data, isFetching: loading, refetch } = useQuery({
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['fetchKnowledgeCount'],
     queryFn: async () => {
       const { data } = await getCount();
