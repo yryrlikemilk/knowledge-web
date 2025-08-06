@@ -3,16 +3,18 @@
 .loginPage {
   display: flex;
   overflow: auto;
-  min-width: 1100px;
+  min-width: 1180px;
   background-color: rgba(255, 255, 255, .1);
   background-image: url("@/assets/imgs/loginBg.png");
   background-position: center;
   background-size: cover;
   .loginLeft {
     display: flex;
-    // width: 610px;
+
+// width: 610px;
     flex-direction: column;
-    width: 37%;
+    width: 37vw;
+    min-width: 400px;
     height: 100vh;
     // background-color: rgba(255, 255, 255, .1);
   }
@@ -29,11 +31,11 @@
     width: 60%;
     max-width: 400px;
     height: 480px;
-    margin: auto;;
+    margin: auto;
   }
   .loginLeftTitle {
     color: #333;
-    font-family: Alibaba PuHuiTi 3.0;
+    font-family: Alibaba PuHuiTi 3;
     font-size: 28px;
     font-weight: 500;
     line-height: 36px;
@@ -41,7 +43,7 @@
   }
   .loginLeftDesc {
     color: #333;
-    font-family: Alibaba PuHuiTi 3.0;
+    font-family: Alibaba PuHuiTi 3;
     font-size: 18px;
     font-weight: normal;
     line-height: 26px;
@@ -90,9 +92,11 @@
       bottom: 0;
       left: 0;
       z-index: -1;
-      // background-color: rgba(24, 73, 169, .6);
+
+// background-color: rgba(24, 73, 169, .6);
       background-position: center;
-      // background-image: url('@/assets/svg/login-background.svg');
+
+// background-image: url('@/assets/svg/login-background.svg');
       background-size: cover;
       filter: blur(3px);
 
@@ -108,7 +112,7 @@
       text-align: center;
       .loginTitle {
         color: #306efd;
-        font-family: Alibaba PuHuiTi 3.0;
+        font-family: Alibaba PuHuiTi 3;
         font-size: 64px;
         font-weight: 800;
         line-height: normal;
@@ -116,7 +120,7 @@
       }
       .loginDescription {
         color: #333;
-        font-family: Alibaba PuHuiTi 3.0;
+        font-family: Alibaba PuHuiTi 3;
         font-size: 24px;
         font-weight: 500;
         line-height: normal;
@@ -140,12 +144,12 @@
   .loginTitle {
     height: 80px;
     margin-bottom: 40px;
-    //styleName: Heading/1;
+
+//styleName: Heading/1;
     font-size: 28px;
     font-weight: 500;
     line-height: 36px;
     letter-spacing: 0;
-
     // text-align: center;
     span {
       font-size: 16px;
@@ -155,8 +159,9 @@
 
   @media screen and (max-width: 957px) {
     .loginLeft {
-      width: 100%;
-      height: 100%;
+      width: 37vw;
+      min-width: 400px;
+      height: 100vh;
     }
 
     .modal {
