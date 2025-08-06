@@ -29,6 +29,8 @@ const FolderCreateModal = ({ visible, hideModal, loading, onOk }: IProps) => {
       onCancel={hideModal}
       okButtonProps={{ loading }}
       confirmLoading={loading}
+      cancelText="取消"
+      okText="确认"
     >
       <Form
         name="basic"

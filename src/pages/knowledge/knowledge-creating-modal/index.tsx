@@ -39,6 +39,8 @@ const KnowledgeCreatingModal = ({
       onOk={handleOk}
       onCancel={hideModal}
       okButtonProps={{ loading }}
+      cancelText="取消"
+      okText="确认"
     >
       <Form
         name="Create"

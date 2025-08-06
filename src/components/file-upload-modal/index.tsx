@@ -66,7 +66,7 @@ const FileUpload = ({
           <InboxOutlined />
         </p>
         <p className="ant-upload-text">{t('uploadTitle')}</p>
-        <p className="ant-upload-hint">{t('uploadDescription')+uploadLimitTip}</p>
+        <p className="ant-upload-hint">{t('uploadDescription') + uploadLimitTip}</p>
         {false && <p className={styles.uploadLimit}>{t('uploadLimit')}</p>}
       </Dragger>
     </>
@@ -138,7 +138,7 @@ const FileUploadModal = ({
           setFileList={setFileList ? setFileList : setCurrentFileList}
           uploadProgress={uploadProgress}
           accept={'.docx,.xlsx,.xls,.ppt,.pdf,.txt,.jpeg,.jpg,.png,.tif,.gif,.csv,.json,.eml,.html,.mp3,.mp4'}
-          uploadLimitTip={ '仅支持DOCX、XLSX、XLS、PPT、PDF、TXT、JPEG、JPG、PNG、TIF、GIF、CSV、JSON、EML、HTML、MP3、MP4文件格式'}
+          uploadLimitTip={'仅支持DOCX、XLSX、XLS、PPT、PDF、TXT、JPEG、JPG、PNG、TIF、GIF、CSV、JSON、EML、HTML、MP3、MP4文件格式'}
         ></FileUpload>
       ),
     },
@@ -172,6 +172,8 @@ const FileUploadModal = ({
         confirmLoading={loading}
         className={styles.myModal}
         afterClose={afterClose}
+        cancelText="取消"
+        okText="确认"
       >
         <Flex gap={'large'} vertical>
           {/* <Segmented
