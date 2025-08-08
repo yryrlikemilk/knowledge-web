@@ -213,7 +213,7 @@ const TestingControl = ({
                 style={{ width: '100%' }}
               />
             </Form.Item>
-            <Form.Item label='高级筛选' colon={false}></Form.Item>
+            {/* <Form.Item label='高级筛选' colon={false}></Form.Item> */}
 
             <Rerank></Rerank>
             <UseKnowledgeGraphItem filedName={['use_kg']}></UseKnowledgeGraphItem>

@@ -1,7 +1,6 @@
 let api_rag_host = `/api`;
 let api_host = `/v1`;
-export { api_host };
-export { api_rag_host }
+export { api_host, api_rag_host };
 export default {
   // user
   login: `${api_rag_host}/user/login`,
@@ -56,7 +55,7 @@ export default {
   create_chunk: `${api_host}/chunk/create`,
   set_chunk: `${api_host}/chunk/set`,
   get_chunk: `${api_host}/chunk/get`,
-  switch_chunk: `${api_host}/chunk/switch`,
+  switch_chunk: `${api_rag_host}/chunk/switch`,
   rm_chunk: `${api_host}/chunk/rm`,
   // retrieval_test: `${api_host}/chunk/retrieval_test`,
   retrieval_test: `${api_rag_host}/query/retrieval`,
@@ -68,7 +67,8 @@ export default {
   document_change_status: `${api_rag_host}/file/updateDocStatus`,
   document_update_status: `${api_rag_host}/file/updateDocStatus`,
   document_rm: `${api_host}/document/rm`,
-  documentRm: (dataset_id: string) =>`${api_rag_host}/file/deleteDoc/${dataset_id}`,
+  documentRm: (dataset_id: string) =>
+    `${api_rag_host}/file/deleteDoc/${dataset_id}`,
   document_delete: `${api_host}/api/document`,
   document_rename: `${api_host}/document/rename`,
   document_create: `${api_host}/document/create`,
@@ -151,8 +151,8 @@ export default {
   // tools
   speechToText: `${api_rag_host}/tools/speechToText`,
   ocrRecognition: `${api_rag_host}/tools/ocrRecognition`,
-  textSimilarity: `${api_rag_host}/tools/textSimilarity`, 
-  sensitiveWord: `${api_rag_host}/tools/sensitiveWord`, 
+  textSimilarity: `${api_rag_host}/tools/textSimilarity`,
+  sensitiveWord: `${api_rag_host}/tools/sensitiveWord`,
   keywordExtraction: `${api_rag_host}/tools/keywordExtraction`,
   clusteringAnalysis: `${api_rag_host}/tools/clusteringAnalysis`,
   imgUnderstand: `${api_rag_host}/tools/imgUnderstand`,

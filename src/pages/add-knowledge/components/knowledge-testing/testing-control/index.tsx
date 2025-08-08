@@ -84,6 +84,18 @@ const TestingControl = ({
           labelAlign="left"
         >
           <div className={styles.formContent}>
+            <Form.Item<FieldType>
+              label={t('testText')}
+              name={'question'}
+              rules={[{ required: true, message: t('testTextPlaceholder') }]}
+
+            >
+              <Input.TextArea
+                placeholder={t('testTextPlaceholder')}
+                allowClear
+                style={{ height: 34, resize: 'vertical' }}
+              ></Input.TextArea>
+            </Form.Item>
             <Form.Item
               label={t('similarityThreshold')}
               name={'similarity_threshold'}
@@ -145,18 +157,7 @@ const TestingControl = ({
             <Rerank></Rerank>
             <UseKnowledgeGraphItem filedName={['use_kg']}></UseKnowledgeGraphItem>
 
-            <Form.Item<FieldType>
-              label={t('testText')}
-              name={'question'}
-              rules={[{ required: true, message: t('testTextPlaceholder') }]}
 
-            >
-              <Input.TextArea
-                placeholder={t('testTextPlaceholder')}
-                allowClear
-                style={{ height: 34, resize: 'vertical' }}
-              ></Input.TextArea>
-            </Form.Item>
 
 
 
