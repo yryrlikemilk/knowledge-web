@@ -61,7 +61,11 @@ const errorHandler = (error: {
       const errorText =
         RetcodeMessage[response.status as ResultCode] || response.statusText;
       const { status, url } = response;
-      notification.error({
+      // notification.error({
+      //   message: `${i18n.t('message.requestError')} ${status}: ${url}`,
+      //   description: errorText,
+      // });
+      console.error({
         message: `${i18n.t('message.requestError')} ${status}: ${url}`,
         description: errorText,
       });
@@ -143,8 +147,9 @@ request.interceptors.response.use(async (response: Response, options) => {
     authorizationUtil.removeAll();
     redirectToLogin();
   } else if (data?.code !== 0) {
+    console.log(data)
     notification.error({
-      message: `${i18n.t('message.hint')} : ${data?.code}`,
+      message: `${i18n.t('message.hint')} : ${data?.code?data?.code:data?.status?data?.status:''}`,
       description: data?.message,
       duration: 3,
     });
