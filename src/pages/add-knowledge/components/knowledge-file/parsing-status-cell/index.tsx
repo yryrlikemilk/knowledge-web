@@ -37,7 +37,7 @@ const PopoverContent = ({ record }: IProps) => {
 
   const replaceText = (text: string) => {
     // Remove duplicate \n
-    const nextText = text.replace(/(\n)\1+/g, '$1');
+    const nextText = text?.replace(/(\n)\1+/g, '$1');
 
     const replacedText = reactStringReplace(
       nextText,
@@ -63,12 +63,12 @@ const PopoverContent = ({ record }: IProps) => {
     {
       key: 'process_duation',
       label: t('processDuration'),
-      children: `${record.process_duation.toFixed(2)} s`,
+      children: `${record.process_duation?record.process_duation?.toFixed(2):'0'} s`,
     },
     {
       key: 'progress_msg',
       label: t('progressMsg'),
-      children: replaceText(record.progress_msg.trim()),
+      children: replaceText(record.progress_msg?.trim()),
     },
   ];
 
