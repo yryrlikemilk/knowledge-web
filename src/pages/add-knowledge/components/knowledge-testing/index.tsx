@@ -20,7 +20,7 @@ const KnowledgeTesting = () => {
   const handleTesting = async (documentIds: string[] = []) => {
     try {
       const values = await form.validateFields();
-      
+
       // 将元数据转换为JSON格式
       const metaData: { [key: string]: string } = {};
       values.metaList?.forEach((item: { key: string; value: string }) => {
@@ -28,13 +28,20 @@ const KnowledgeTesting = () => {
           metaData[item.key] = item.value;
         }
       });
-      
+      // 将百分比值转换为0-1之间的小数
+
+      if (values.similarity_threshold !== undefined) {
+        values.similarity_threshold= values.similarity_threshold / 100 ;
+      }
+      if (values.vector_similarity_weight !== undefined) {
+        values.vector_similarity_weight=values.vector_similarity_weight / 100;
+      }
       // 将metaData转换为JSON字符串
       const metaJsonString = JSON.stringify(metaData);
-      
+
       // 更新form中的meta字段
       form.setFieldsValue({ meta: metaJsonString });
-      
+
       // 输出所有表单数据
       console.log('Form Data:', {
         ...values,
@@ -46,16 +53,16 @@ const KnowledgeTesting = () => {
           ...values,
           meta: metaJsonString,
           doc_ids: Array.isArray(documentIds) ? documentIds : [],
-          vector_similarity_weight:  values.vector_similarity_weight,
+          vector_similarity_weight: values.vector_similarity_weight,
         }),
         testChunkAll({
           ...values,
           meta: metaJsonString,
           doc_ids: [],
-          vector_similarity_weight:  values.vector_similarity_weight,
+          vector_similarity_weight: values.vector_similarity_weight,
         })
       ]);
-      
+
       setIsModalOpen(true);
     } catch (error) {
       console.error('Testing failed:', error);
@@ -78,12 +85,17 @@ const KnowledgeTesting = () => {
           />
         </div>
         <Modal
-          title="测试结果"
+          title="测试详情"
           open={isModalOpen}
           onCancel={handleModalClose}
           width="80%"
           footer={null}
           destroyOnHidden
+          styles={{
+            header: {
+              textAlign: 'center'
+            }
+          }}
         >
           <TestingResult
             handleTesting={handleTesting}

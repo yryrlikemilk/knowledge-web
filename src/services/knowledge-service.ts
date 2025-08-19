@@ -178,6 +178,9 @@ const kbService = registerServer<keyof typeof methods>(methods, request);
 export const retrieval_test = (body?: IFetchKnowledgeListRequestParams) => {
   return request.post(api.retrieval_test, { data: body });
 };
+export const batch_retrieval_test = (body?: IFetchKnowledgeListRequestParams) => {
+  return request.post(api.batch_retrieval_test, { data: body });
+};
 
 // retrieval_test: {
 //   url: retrieval_test,

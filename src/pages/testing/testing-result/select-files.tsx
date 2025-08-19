@@ -1,17 +1,15 @@
 import NewDocumentLink from '@/components/new-document-link';
 import { useTranslate } from '@/hooks/common-hooks';
-import { useAllTestingResult } from '@/hooks/knowledge-hooks';
 import { ITestingDocument } from '@/interfaces/database/knowledge';
-import { EyeOutlined } from '@ant-design/icons';
 import { Button, Table, TableProps, Tooltip } from 'antd';
 import { ReactComponent as Eyes } from '@/assets/svg/eyes.svg';
 interface IProps {
   handleTesting: (ids: string[]) => void;
   setSelectedDocumentIds: (ids: string[]) => void;
+  documents?: ITestingDocument[];
 }
 
-const SelectFiles = ({ setSelectedDocumentIds, handleTesting }: IProps) => {
-  const { documents } = useAllTestingResult();
+const SelectFiles = ({ setSelectedDocumentIds, handleTesting, documents }: IProps) => {
   const { t } = useTranslate('fileManager');
 
   const columns: TableProps<ITestingDocument>['columns'] = [

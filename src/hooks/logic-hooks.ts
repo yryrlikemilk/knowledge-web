@@ -186,7 +186,7 @@ export const useSendMessageWithSse = (
         const response = await fetch(url, {
           method: 'POST',
           headers: {
-            [Authorization]: getAuthorization(),
+             [Authorization]: 'Bearer ragflow-'+getAuthorization(),
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(body),

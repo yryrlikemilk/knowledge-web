@@ -14,8 +14,7 @@ import kbService, {
   listTag,
   removeTag,
   renameTag,
-  // retrieval_test,
-  retrieval_test,
+    batch_retrieval_test,
 } from '@/services/knowledge-service';
 import {
   useInfiniteQuery,
@@ -252,17 +251,12 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
     isPending: loading,
     mutateAsync,
   } = useMutation({
-    mutationKey: ['testChunk'], // This method is invalid
+    mutationKey: ['testChunk'],
     gcTime: 0,
-
     mutationFn: async (values: any) => {
       console.log(`values`, values, knowledgeBaseId);
       console.log(knowledgeBaseId);
-      const data = await retrieval_test({
-        //       const { data } = await kbService.retrieval_test({
-        //         ...values,
-        // kb_id: values.kb_id ?values.kb_id: knowledgeBaseId,
-
+      const data = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
         query: values.question,
         keyword: false,
@@ -278,11 +272,6 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
               },
             }
           : {}),
-        // retrieval_setting: {
-        //   score_threshold: 0,
-        //   // top_k:10,
-        //   // ...(values.top_k ? { top_k: parseInt(values.top_k, 10) } : {}),
-        // },
         vector_similarity_weight:1- values.vector_similarity_weight,
         metadata_condition: {
           conditions: (
@@ -298,31 +287,38 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
       });
       if (data.code === 0) {
         const res = data.data;
-        // 转换 records 为 chunks
-        const chunks = res.records.map((item: any) => ({
-          chunk_id: item.id,
-          content_ltks: item.content,
-          doc_id: item.metadata.document_id,
-          docnm_kwd: item.metadata.document_name,
-          doc_type_kwd: item.doc_type_kwd,
-          image_id: item.metadata.image_id,
-          important_kwd: item.metadata.important_keywords,
-          kb_id: item.metadata.dataset_id,
-          positions: item.metadata.positions,
-          similarity: item.score,
-          ...item,
-          // 你可以根据需要添加其他字段
+        // 处理所有问题的结果
+        const allResults = res.map((item: any, index: number) => ({
+          query: item.query || `问题${index + 1}`,
+          chunks: item.difyResultDto.records.map((record: any) => ({
+            chunk_id: record.id,
+            content_ltks: record.content,
+            doc_id: record.metadata.document_id,
+            docnm_kwd: record.metadata.document_name,
+            doc_type_kwd: record.doc_type_kwd,
+            image_id: record.metadata.image_id,
+            important_kwd: record.metadata.important_keywords,
+            kb_id: record.metadata.dataset_id,
+            positions: record.metadata.positions,
+            similarity: record.score,
+            ...record,
+          })),
+          documents: item.difyResultDto.doc_aggs,
+          total: item.difyResultDto.records.length,
         }));
-        console.log(`chunks`, chunks, res);
+        
+        console.log(`allResults`, allResults, res);
         return {
           ...res,
-          chunks,
-          documents: res.doc_aggs,
-          total: chunks.length,
+          allResults,
+          chunks: allResults[0]?.chunks || [],
+          documents: allResults[0]?.documents || [],
+          total: allResults[0]?.total || 0,
         };
       }
       return (
         data?.data ?? {
+          allResults: [],
           chunks: [],
           documents: [],
           total: 0,
@@ -332,7 +328,7 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
   });
 
   return {
-    data: data ?? { chunks: [], documents: [], total: 0 },
+    data: data ?? { allResults: [], chunks: [], documents: [], total: 0 },
     loading,
     testChunk: mutateAsync,
   };
@@ -349,16 +345,11 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
     isPending: loading,
     mutateAsync,
   } = useMutation({
-    mutationKey: ['testChunkAll'], // This method is invalid
+    mutationKey: ['testChunkAll'],
     gcTime: 0,
     mutationFn: async (values: any) => {
       console.log(`values`, values, knowledgeBaseId);
-      const { data } = await retrieval_test({
-        //  const { data } = await kbService.retrieval_test({
-        //         ...values,
-        // kb_id: values.kb_id ?values.kb_id: knowledgeBaseId,
-        // doc_ids: [],
-
+      const { data } = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
         query: values.question,
         keyword: false,
@@ -374,12 +365,7 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
               },
             }
           : {}),
-        // retrieval_setting: {
-        //   score_threshold: 0,
-        //  top_k: (values.top_k ? parseInt(values.top_k, 10) ),
-        //   // ...(values.top_k ? { top_k: parseInt(values.top_k, 10) } : {}),
-        // },
-        vector_similarity_weight: 1-values.vector_similarity_weight,
+        vector_similarity_weight: 1- values.vector_similarity_weight,
         metadata_condition: {
           conditions: (
             values.metaList as Array<{ key: string; value: string }>
@@ -394,31 +380,38 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
       });
       if (data.code === 0) {
         const res = data.data;
-        // 转换 records 为 chunks
-        const chunks = res.records.map((item: any) => ({
-          chunk_id: item.id,
-          content_ltks: item.content,
-          doc_id: item.metadata.document_id,
-          docnm_kwd: item.metadata.document_name,
-          doc_type_kwd: item.doc_type_kwd,
-          image_id: item.metadata.image_id,
-          important_kwd: item.metadata.important_keywords,
-          kb_id: item.metadata.dataset_id,
-          positions: item.metadata.positions,
-          similarity: item.score,
-          ...item,
-          // 你可以根据需要添加其他字段
+        // 处理所有问题的结果
+        const allResults = res.map((item: any, index: number) => ({
+          query: item.query || `问题${index + 1}`,
+          chunks: item.difyResultDto.records.map((record: any) => ({
+            chunk_id: record.id,
+            content_ltks: record.content,
+            doc_id: record.metadata.document_id,
+            docnm_kwd: record.metadata.document_name,
+            doc_type_kwd: record.doc_type_kwd,
+            image_id: record.metadata.image_id,
+            important_kwd: record.metadata.important_keywords,
+            kb_id: record.metadata.dataset_id,
+            positions: record.metadata.positions,
+            similarity: record.score,
+            ...record,
+          })),
+          documents: item.difyResultDto.doc_aggs,
+          total: item.difyResultDto.records.length,
         }));
-        console.log(`chunks`, chunks, res);
+        
+        console.log(`allResults`, allResults, res);
         return {
           ...res,
-          chunks,
-          documents: res.doc_aggs,
-          total: chunks.length,
+          allResults,
+          chunks: allResults[0]?.chunks || [],
+          documents: allResults[0]?.documents || [],
+          total: allResults[0]?.total || 0,
         };
       }
       return (
         data?.data ?? {
+          allResults: [],
           chunks: [],
           documents: [],
           total: 0,
@@ -428,7 +421,7 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
   });
 
   return {
-    data: data ?? { chunks: [], documents: [], total: 0 },
+    data: data ?? { allResults: [], chunks: [], documents: [], total: 0 },
     loading,
     testChunkAll: mutateAsync,
   };

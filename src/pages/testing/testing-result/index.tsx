@@ -62,12 +62,29 @@ const TestingResult = ({
   selectedDocumentIds,
   setSelectedDocumentIds,
 }: IProps) => {
-  // const { documents,} = useSelectTestingResult();
-  const { documents: documentsAll, total, chunks } = useAllTestingResult();
+  const { allResults } = useAllTestingResult();
   const { t } = useTranslate('knowledgeDetails');
   const { pagination, setPagination } = useGetPaginationWithRouter();
   const isSuccess = useSelectIsTestingSuccess();
-  // const isAllSuccess = useAllTestingSuccess();
+
+  // 新增：当前选中的问题索引
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  // 获取当前问题的数据
+  const currentQuestionData = allResults?.[currentQuestionIndex] || {
+    chunks: [],
+    documents: [],
+    total: 0,
+    query: ''
+  };
+
+  const currentChunks = currentQuestionData.chunks || [];
+  const currentDocuments = currentQuestionData.documents || [];
+  const currentTotal = currentQuestionData.total || 0;
+  
+  // 获取当前问题对应的文档总数
+  const currentDocumentsCount = currentDocuments?.length || 0;
+
   const onChange: PaginationProps['onChange'] = (pageNumber, pageSize) => {
     pagination.onChange?.(pageNumber, pageSize);
     handleTesting(selectedDocumentIds);
@@ -96,8 +113,8 @@ const TestingResult = ({
 
   // 弹窗打开后收集 chunks 的 id，调用 fetchVideoChunks
   useEffect(() => {
-    if (isSuccess && chunks && chunks.length > 0) {
-      const chunkIds = chunks.map((x) => x.id).filter(Boolean);
+    if (isSuccess && currentChunks && currentChunks.length > 0) {
+      const chunkIds = currentChunks.map((x) => x.id).filter(Boolean);
       if (chunkIds.length > 0) {
         (async () => {
           try {
@@ -112,7 +129,7 @@ const TestingResult = ({
         setVideoChunkInfo([]);
       }
     }
-  }, [isSuccess, chunks]);
+  }, [isSuccess, currentChunks, currentQuestionIndex]);
 
   // 时间字符串转秒，如 0:0:4:17 => 4.017
   const timeStrToSeconds = (timeStr: string): number => {
@@ -236,7 +253,7 @@ const TestingResult = ({
       let progressInterval: NodeJS.Timeout | null = null;
 
       // 创建新的 Video.js 播放器
-      let player;
+      let player: any;
       try {
         player = videojs(videoRef.current, {
           controls: true,
@@ -594,127 +611,217 @@ const TestingResult = ({
 
   return (
     <section className={styles.testingResultWrapper}>
-      <Collapse
-        expandIcon={() => (
-          <SelectedFilesCollapseIcon></SelectedFilesCollapseIcon>
-        )}
-        className={styles.selectFilesCollapse}
-        items={[
-          {
-            key: '1',
-            label: (
-              <Flex
-                justify={'space-between'}
-                align="center"
-                className={styles.selectFilesTitle}
+
+      {/* 新增：问题列表和结果显示的布局 */}
+      {isSuccess && allResults && allResults.length > 0 ? (
+        <div style={{ display: 'flex', gap: '20px', height:'100%'}}>
+          {/* 左边：问题列表 */}
+          <div style={{
+            width: '200px',
+            borderRight: '1px solid #e8e8e8',
+            paddingRight: '16px',
+            maxHeight: '70vh',
+            overflowY: 'auto'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 'bold',
+               position: 'sticky', top: 0, backgroundColor: "#fff", overflow: 'hidden', zIndex: 99
+             }}>
+              测试文本 ({allResults.length})
+            </h3>
+            {allResults.map((result: any, index: number) => (
+              <div
+                key={index}
+                style={{
+                  padding: '12px',
+                  marginBottom: '8px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  backgroundColor: currentQuestionIndex === index ? '#e6f7ff' : '#fff',
+                  border: currentQuestionIndex === index ? '1px solid #1890ff' : '1px solid #d9d9d9',
+                  transition: 'all 0.2s'
+                }}
+                onClick={() => setCurrentQuestionIndex(index)}
               >
-                <Space>
-                  <span>
-                    {selectedDocumentIds?.length ?? 0}/
-                    {documentsAll?.length ?? 0}
-                  </span>
-                  {t('filesSelected')}
-                </Space>
-              </Flex>
-            ),
-            children: (
-              <div>
-                <SelectFiles
-                  setSelectedDocumentIds={setSelectedDocumentIds}
-                  handleTesting={onTesting}
-                ></SelectFiles>
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: currentQuestionIndex === index ? 'bold' : 'normal',
+                  marginBottom: '4px',
+                  color: currentQuestionIndex === index ? '#1890ff' : '#333'
+                }}>
+                  {result.query || `问题${index + 1}`}
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  color: '#666',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span>结果数: {result.total}</span>
+                  <span>文档数: {result.documents?.length || 0}</span>
+                </div>
               </div>
-            ),
-          },
-        ]}
-      />
-      <div className={styles.resultContent}>
-        <Flex
-          gap={'large'}
-          vertical
-          flex={1}
-        >
-          {isSuccess && chunks?.length > 0 ? (
-            chunks?.map((x) => {
-              const videoInfo = Array.isArray(videoChunkInfo) ? videoChunkInfo.find((v) => v.id === x.id) : null;
-              return (
-                <Card key={String(x.chunk_id)} title={<ChunkTitle item={x} />}>
-                  <div className="flex justify-center">
-                    {showImage(x.doc_type_kwd) && (
-                      <Image
-                        id={x.image_id}
-                        className={'object-contain max-h-[30vh] w-full text-center'}
-                        src={`/api/file/downloadImage?imageId=${x.image_id}`}
-                      ></Image>
-                    )}
-                  </div>
-                  <div className="pt-4" style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexDirection: 'column' }}>
-                    {/* 渲染内容时去除所有 '[{chunk_id:...}]' 结构的文本 */}
-                    <div style={{ flex: 1 }}>
-                      {x.content_ltks
-                        ? renderContentWithImages(x.content_ltks.replace(/\[\{chunk_id:[^}]+\}\]/g, ''))
-                        : ''}
-                    </div>
-                    {/* 渲染视频封面，点击弹窗播放指定区间 */}
-                    {videoInfo && videoInfo.doc_id && (
-                      <div
-                        style={{
-                          position: 'relative',
-                          cursor: 'pointer',
-                          width: 200,
-                          height: 100,
-                          borderRadius: 8,
-                          overflow: 'hidden'
-                        }}
-                        onClick={() => {
-                          // const { data } = await getMinioDownloadUrl(videoInfo.doc_id)
-                          // const videoUrl = data.data.replace('http://localhost:9000', 'http://119.84.128.68:6581/minio');
-                          setCurrentVideoInfo({
-                            ...videoInfo,
-                            videoUrl: `/api/file/download/${videoInfo.doc_id}`,
-                            content_ltks: x.content_ltks,
-                            document_name: x.title
-                          });
-                          setModalVisible(true);
-                        }}
-                      >
-                        <img
-                          src={`/api/file/download/${videoInfo.cover_id}`}
-                          alt="视频封面"
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            borderRadius: 8
-                          }}
-                        />
-                        <div style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#fff',
-                          fontSize: 24,
-                          background: 'rgba(0,0,0,0.3)',
-                          borderRadius: 8
-                        }}>
-                          ▶
-                        </div>
+            ))}
+          </div>
+
+          {/* 右边：结果显示 */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <h3 style={{
+                margin: '0 0 16px 0', fontSize: '16px',
+                fontWeight: 'bold', position: 'sticky', top: 0, backgroundColor: "#fff", overflow: 'hidden', zIndex: 99
+              }}>
+                测试结果
+              </h3>
+              <Collapse
+                expandIcon={() => (
+                  <SelectedFilesCollapseIcon></SelectedFilesCollapseIcon>
+                )}
+                className={styles.selectFilesCollapse}
+                items={[
+                  {
+                    key: '1',
+                    label: (
+                                              <Flex
+                          justify={'space-between'}
+                          align="center"
+                          className={styles.selectFilesTitle}
+                        >
+                          <Space>
+                            <span>
+                              {selectedDocumentIds?.length ?? 0}/
+                              {currentDocumentsCount}
+                            </span>
+                            {t('filesSelected')}
+                          </Space>
+                        </Flex>
+                    ),
+                    children: (
+                      <div>
+                        <SelectFiles
+                          setSelectedDocumentIds={setSelectedDocumentIds}
+                          handleTesting={onTesting}
+                          documents={currentDocuments}
+                        ></SelectFiles>
                       </div>
-                    )}
-                  </div>
-                </Card>
-              );
-            })
-          ) : isSuccess && chunks?.length === 0 ? (
-            <Empty></Empty>
-          ) : null}
-        </Flex>
-      </div>
+                    ),
+                  },
+                ]}
+              />
+              <div className={styles.resultContent}>
+                <Flex
+                  gap={'large'}
+                  vertical
+                  flex={1}
+                >
+                  {/* 当前问题标题 */}
+                  {/* <div style={{
+                  padding: '16px',
+                  backgroundColor: '#f0f8ff',
+                  borderRadius: '8px',
+                  border: '1px solid #d6e4ff'
+                }}>
+                  <h3 style={{ margin: 0, color: '#1890ff' }}>
+                    当前问题: {currentQuestionData.query || `问题${currentQuestionIndex + 1}`}
+                  </h3>
+                  <p style={{ margin: '8px 0 0 0', color: '#666' }}>
+                    找到 {currentTotal} 个相关结果，{currentDocuments.length} 个相关文档
+                  </p>
+                </div> */}
+
+                  {/* 结果显示 */}
+                  {currentChunks?.length > 0 ? (
+                    currentChunks?.map((x) => {
+                      const videoInfo = Array.isArray(videoChunkInfo) ? videoChunkInfo.find((v) => v.id === x.id) : null;
+                      return (
+                        <Card key={String(x.chunk_id)} title={<ChunkTitle item={x} />}>
+                          <div className="flex justify-center">
+                            {showImage(x.doc_type_kwd) && (
+                              <Image
+                                id={x.image_id}
+                                className={'object-contain max-h-[30vh] w-full text-center'}
+                                src={`/api/file/downloadImage?imageId=${x.image_id}`}
+                              ></Image>
+                            )}
+                          </div>
+                          <div className="pt-4" style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexDirection: 'column' }}>
+                            <div style={{ flex: 1 }}>
+                              {x.content_ltks
+                                ? renderContentWithImages(x.content_ltks.replace(/\[\{chunk_id:[^}]+\}\]/g, ''))
+                                : ''}
+                            </div>
+                            {videoInfo && videoInfo.doc_id && (
+                              <div
+                                style={{
+                                  position: 'relative',
+                                  cursor: 'pointer',
+                                  width: 200,
+                                  height: 100,
+                                  borderRadius: 8,
+                                  overflow: 'hidden'
+                                }}
+                                onClick={() => {
+                                  setCurrentVideoInfo({
+                                    ...videoInfo,
+                                    videoUrl: `/api/file/download/${videoInfo.doc_id}`,
+                                    content_ltks: x.content_ltks,
+                                    document_name: x.title
+                                  });
+                                  setModalVisible(true);
+                                }}
+                              >
+                                <img
+                                  src={`/api/file/download/${videoInfo.cover_id}`}
+                                  alt="视频封面"
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    borderRadius: 8
+                                  }}
+                                />
+                                <div style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#fff',
+                                  fontSize: 24,
+                                  background: 'rgba(0,0,0,0.3)',
+                                  borderRadius: 8
+                                }}>
+                                  ▶
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      );
+                    })
+                  ) : (
+                    <Empty description="该问题暂无相关结果"></Empty>
+                  )}
+                </Flex>
+              </div>
+            </div>
+
+            <div className={styles.paginationWrapper}>
+              <Pagination
+                {...pagination}
+                size={'small'}
+                total={currentTotal}
+                onChange={onChange}
+              />
+            </div>
+          </div>
+        </div>
+      ) : isSuccess && (!allResults || allResults.length === 0) ? (
+        <Empty description="暂无测试结果"></Empty>
+      ) : null}
       {/* 视频弹窗 */}
       <Modal
         open={modalVisible}
@@ -816,14 +923,7 @@ const TestingResult = ({
           </div>
         )}
       </Modal>
-      <div className={styles.paginationWrapper}>
-        <Pagination
-          {...pagination}
-          size={'small'}
-          total={total}
-          onChange={onChange}
-        />
-      </div>
+
     </section>
   );
 };

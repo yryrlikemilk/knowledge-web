@@ -8,10 +8,10 @@ import { Button, Table, TableProps, Tooltip } from 'antd';
 interface IProps {
   handleTesting: (ids: string[]) => void;
   setSelectedDocumentIds: (ids: string[]) => void;
+  documents?: ITestingDocument[];
 }
 
-const SelectFiles = ({ setSelectedDocumentIds, handleTesting }: IProps) => {
-  const { documents } = useAllTestingResult();
+const SelectFiles = ({ setSelectedDocumentIds, handleTesting, documents }: IProps) => {
   const { t } = useTranslate('fileManager');
 
   const columns: TableProps<ITestingDocument>['columns'] = [
