@@ -283,7 +283,7 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
         //   // top_k:10,
         //   // ...(values.top_k ? { top_k: parseInt(values.top_k, 10) } : {}),
         // },
-        vector_similarity_weight: values.vector_similarity_weight,
+        vector_similarity_weight:1- values.vector_similarity_weight,
         metadata_condition: {
           conditions: (
             values.metaList as Array<{ key: string; value: string }>
@@ -379,7 +379,7 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
         //  top_k: (values.top_k ? parseInt(values.top_k, 10) ),
         //   // ...(values.top_k ? { top_k: parseInt(values.top_k, 10) } : {}),
         // },
-        vector_similarity_weight: values.vector_similarity_weight,
+        vector_similarity_weight: 1-values.vector_similarity_weight,
         metadata_condition: {
           conditions: (
             values.metaList as Array<{ key: string; value: string }>
