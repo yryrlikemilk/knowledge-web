@@ -1,6 +1,6 @@
 import { ResponseGetType, ResponseType } from '@/interfaces/database/base';
 import { IChunk, IKnowledgeFile } from '@/interfaces/database/knowledge';
-import kbService from '@/services/knowledge-service';
+import kbService, { rm_chunk } from '@/services/knowledge-service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from 'ahooks';
 import { PaginationProps, message } from 'antd';
@@ -144,8 +144,9 @@ export const useDeleteChunk = () => {
     mutateAsync,
   } = useMutation({
     mutationKey: ['deleteChunk'],
-    mutationFn: async (params: { chunkIds: string[]; doc_id: string }) => {
-      const { data } = await kbService.rm_chunk(params);
+    mutationFn: async (params: { chunkIds: string[]; doc_id: string; knowledgeId: string }) => {
+      
+      const { data } = await rm_chunk(params.knowledgeId, params.doc_id, { chunk_ids: params.chunkIds } as any);
       if (data.code === 0) {
         setPaginationParams(1);
         queryClient.invalidateQueries({ queryKey: ['fetchChunkList'] });

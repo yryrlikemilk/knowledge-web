@@ -27,7 +27,6 @@ const {
   set_chunk,
   get_chunk,
   switch_chunk,
-  rm_chunk,
   document_rename,
   document_run,
   document_upload,
@@ -139,10 +138,6 @@ const methods = {
     url: switch_chunk,
     method: 'post',
   },
-  rm_chunk: {
-    url: rm_chunk,
-    method: 'post',
-  },
 
   knowledge_graph: {
     url: knowledge_graph,
@@ -201,7 +196,11 @@ export const documentRm = (
   knowledgeId: string,
   body?: IFetchKnowledgeListRequestParams
 ) => post(api.documentRm(knowledgeId), {data:body});
-
+export const rm_chunk = (
+  knowledgeId: string,
+  document_id:string,
+  body?: IFetchKnowledgeListRequestParams
+) => post(api.rm_chunk(knowledgeId,document_id), {data:body});
 export function getKnowledgeGraph(knowledgeId: string) {
   return request.get(api.getKnowledgeGraph(knowledgeId));
 }

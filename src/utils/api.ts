@@ -56,7 +56,7 @@ export default {
   set_chunk: `${api_host}/chunk/set`,
   get_chunk: `${api_host}/chunk/get`,
   switch_chunk: `${api_rag_host}/chunk/switch`,
-  rm_chunk: `${api_host}/chunk/rm`,
+  rm_chunk: (knowledgeId: string,document_id:string) =>`${api_rag_host}/chunk/delete/${knowledgeId}/${document_id}`,
   // retrieval_test: `${api_host}/chunk/retrieval_test`,
   retrieval_test: `${api_rag_host}/query/retrieval`,
   batch_retrieval_test:`${api_rag_host}/query/batchRetrieval`,

@@ -64,17 +64,17 @@ export const useDeleteChunkByIds = (): {
 } => {
   const { deleteChunk } = useDeleteChunk();
   const showDeleteConfirm = useShowDeleteConfirm();
-
+  const { knowledgeId } = useGetKnowledgeSearchParams();
   const removeChunk = useCallback(
-    (chunkIds: string[], documentId: string) => () => {
-      return deleteChunk({ chunkIds, doc_id: documentId });
+    (chunkIds: string[], documentId: string) => {
+      return deleteChunk({ chunkIds, doc_id: documentId, knowledgeId: knowledgeId });
     },
-    [deleteChunk],
+    [deleteChunk, knowledgeId],
   );
 
   const onRemoveChunk = useCallback(
     (chunkIds: string[], documentId: string): Promise<number> => {
-      return showDeleteConfirm({ onOk: removeChunk(chunkIds, documentId) });
+      return showDeleteConfirm({ onOk: () => removeChunk(chunkIds, documentId) });
     },
     [removeChunk, showDeleteConfirm],
   );
