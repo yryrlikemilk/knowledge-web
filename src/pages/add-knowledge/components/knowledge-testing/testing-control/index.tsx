@@ -38,7 +38,7 @@ const TestingControl = ({
       return;
     }
     setQuestionInputError(null);
-    const newQuestionList = [...questionList, value];
+    const newQuestionList = [value, ...questionList];
     setQuestionList(newQuestionList);
     // 同步到 form 的 question 字段
     form.setFieldsValue({ question: newQuestionList });
@@ -60,7 +60,7 @@ const TestingControl = ({
           return;
         } else {
           setQuestionInputError(null);
-          const newQuestionList = [...questionList, questionInput.trim()];
+          const newQuestionList = [questionInput.trim(), ...questionList]; 
           setQuestionList(newQuestionList);
           form.setFieldsValue({ question: newQuestionList });
           setQuestionInput('');
@@ -148,15 +148,15 @@ const TestingControl = ({
                 <Button type="primary" icon={<PlusOutlined />} onClick={handleAddQuestion} />
               </div>
               {questionList.length > 0 && (
-                  <div style={{maxHeight:200,overflow:'auto'}}>
-                    {questionList.map((q, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', margin: '4px 0', background: '#f6f8fa', borderRadius: 4, padding: '4px 8px' }}>
-                        <span style={{ flex: 1,maxWidth:540,overflow:'auto' }}>{q}</span>
-                        <DeleteOutlined style={{ color: '#ff4d4f', cursor: 'pointer' }} onClick={() => handleDeleteQuestion(idx)} />
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div >
+                  {questionList.map((q, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', margin: '4px 0', background: '#f6f8fa', borderRadius: 4, padding: '4px 8px' }}>
+                      <span style={{ flex: 1 }}>{q}</span>
+                      <DeleteOutlined style={{ color: '#ff4d4f', cursor: 'pointer' }} onClick={() => handleDeleteQuestion(idx)} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </Form.Item>
             <Form.Item
               label={t('similarityThreshold')}

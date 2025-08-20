@@ -82,7 +82,7 @@ const TestingControl = ({
       return;
     }
     setQuestionInputError(null);
-    const newQuestionList = [...questionList, value];
+    const newQuestionList = [value, ...questionList]; 
     setQuestionList(newQuestionList);
     // 同步到 form 的 question 字段
     form.setFieldsValue({ question: newQuestionList });
@@ -103,7 +103,7 @@ const TestingControl = ({
           return;
         } else {
           setQuestionInputError(null);
-          const newQuestionList = [...questionList, questionInput.trim()];
+          const newQuestionList = [questionInput.trim(), ...questionList];
           setQuestionList(newQuestionList);
           form.setFieldsValue({ question: newQuestionList });
           setQuestionInput('');
@@ -163,10 +163,10 @@ const TestingControl = ({
               <Input />
             </Form.Item>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Form.Item style={{ flex: 1 }} label={t('testText')} required
-                rules={[
-                  { required: true, message: '请输入问题' }]}
-                validateStatus={questionInputError ? 'error' : ''} help={questionInputError}>
+              <Form.Item style={{ flex: 1 }} label={t('testText')} required 
+               rules={[
+                { required: true, message: '请输入问题' }]}
+              validateStatus={questionInputError ? 'error' : ''} help={questionInputError}>
                 <Input
                   value={questionInput}
                   onChange={e => {
@@ -179,7 +179,7 @@ const TestingControl = ({
                   onPressEnter={handleAddQuestion}
                 />
 
-                {questionList.length > 0 && (
+                 {questionList.length > 0 && (
                   <div style={{ maxHeight: 200, overflow: 'auto' }}>
                     {questionList.map((q, idx) => (
                       <div key={idx} style={{ display: 'flex', alignItems: 'center', margin: '4px 0', background: '#f6f8fa', borderRadius: 4, padding: '4px 8px' }}>
@@ -202,7 +202,7 @@ const TestingControl = ({
               tooltip={t('similarityThresholdTip')}
               initialValue={20}
               rules={[
-                { required: true, message: '请输入相似度阈值' },
+                { required: true, message: '请输入相似度阈值'},
                 {
                   validator: (_, value) => {
                     console.log(`objectvalue`, value, typeof (value))
@@ -237,7 +237,7 @@ const TestingControl = ({
               initialValue={70}
               tooltip={t('vectorSimilarityWeightTip')}
               rules={[
-                { required: true, message: '请输入关键字相似度权重' },
+                { required: true, message: '请输入关键字相似度权重'},
                 {
                   validator: (_, value) => {
                     const numValue = Number(value);
@@ -270,7 +270,7 @@ const TestingControl = ({
               name={'test_kb_ids'}
               tooltip={'请根据不同的Embedding模型选择知识库，不支持跨模型选择知识库。'}
               rules={[{ required: true, message: "请选择一个或多个知识库" }]}
-              style={{ width: 'calc(100% - 38px)' }}
+              style={{width:'calc(100% - 38px)'}}
             >
               <TreeSelect
                 treeData={treeData}
@@ -350,7 +350,7 @@ const TestingControl = ({
             </Form.Item>
 
             {isAdvancedFilterVisible && (
-              <div style={{ width: 'calc(100% - 38px)' }}>
+              <div  style={{width:'calc(100% - 38px)'}}>
                 <Rerank ></Rerank>
                 <UseKnowledgeGraphItem filedName={['use_kg']}></UseKnowledgeGraphItem>
 
