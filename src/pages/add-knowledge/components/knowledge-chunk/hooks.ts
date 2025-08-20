@@ -92,23 +92,27 @@ export const useUpdateChunk = () => {
     showModal,
   } = useSetModalState();
   const { createChunk, loading } = useCreateChunk();
-  const { documentId } = useGetKnowledgeSearchParams();
+  const { documentId, knowledgeId } = useGetKnowledgeSearchParams();
 
   const onChunkUpdatingOk = useCallback(
+   
     async (params: IChunk) => {
+      console.log('documentIdparams',documentId,chunkId,params)
       const code = await createChunk({
-        ...params,
+        // ...params,
        important_keywords:params.important_kwd,
        questions:params.question_kwd,
+       content:params.content_with_weight,
          document_id: documentId,
         chunk_id: chunkId,
+        dataset_id: knowledgeId, 
       });
 
       if (code === 0) {
         hideChunkUpdatingModal();
       }
     },
-    [createChunk, hideChunkUpdatingModal, chunkId, documentId],
+    [createChunk, hideChunkUpdatingModal, chunkId, documentId, knowledgeId],
   );
 
   const handleShowChunkUpdatingModal = useCallback(
