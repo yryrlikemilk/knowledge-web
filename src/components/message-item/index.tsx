@@ -71,9 +71,9 @@ const MessageItem = ({
   const [pdfDocumentName, setPdfDocumentName] = useState('');
 
   const referenceDocumentList = useMemo(() => {
+    console.log(`reference?.doc_aggsreference?.doc_aggs`,reference?.doc_aggs)
     return reference?.doc_aggs ?? [];
   }, [reference?.doc_aggs]);
-
   const handleUserDocumentClick = useCallback(
     (id: string) => () => {
       setClickedDocumentId(id);
@@ -96,6 +96,7 @@ const MessageItem = ({
   }, [regenerateMessage, item]);
 
   useEffect(() => {
+   
     const ids = item?.doc_ids ?? [];
     if (ids.length) {
       setDocumentIds(ids);
@@ -183,6 +184,7 @@ const MessageItem = ({
                 bordered
                 dataSource={referenceDocumentList}
                 renderItem={(item) => {
+                  console.log(`itemitemitemitem`,item)
                   return (
                     <List.Item>
                       <Flex gap={'small'} align="center">
@@ -193,12 +195,12 @@ const MessageItem = ({
 
                         <NewDocumentLink
                           documentId={item.doc_id}
-                          documentName={item.doc_name}
+                          documentName={item.doc_name ? item.doc_name.replace('_modified', '') : ''}
                           prefix="document"
                           link={item.url}
                           clickDocumentButton={(documentId, chunk) => handlePdfClick(documentId, chunk, item.doc_name)}
                         >
-                          {item.doc_name}
+                          {item.doc_name ? item.doc_name.replace('_modified', '') : ''}
                         </NewDocumentLink>
                       </Flex>
                     </List.Item>
@@ -225,11 +227,12 @@ const MessageItem = ({
                         {isImage(fileExtension) ? (
                           <NewDocumentLink
                             documentId={item.id}
-                            documentName={item.name}
+                            documentName= {item.name ? item.name.replace('_modified', '') : ''}
                             prefix="document"
                             clickDocumentButton={(documentId, chunk) => handlePdfClick(documentId, chunk, item.name)}
                           >
-                            {item.name}
+                            {item.name ? item.name.replace('_modified', '') : ''}
+                           
                           </NewDocumentLink>
                         ) : (
                           <Button
@@ -240,7 +243,7 @@ const MessageItem = ({
                               style={{ maxWidth: '40vw' }}
                               ellipsis={{ tooltip: item.name }}
                             >
-                              {item.name}
+                               {item.name ? item.name.replace('_modified', '') : ''}
                             </Text>
                           </Button>
                         )}
@@ -266,7 +269,8 @@ const MessageItem = ({
         hideModal={() => setPdfVisible(false)}
         documentId={pdfDocumentId}
         chunk={pdfChunk}
-        documentName={pdfDocumentName}
+        documentName={pdfDocumentName ? pdfDocumentName.replace('_modified', '') : ''}
+        
       />
     </div>
   );

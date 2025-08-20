@@ -743,6 +743,7 @@ const TestingResult = ({
                       return (
                         <Card key={String(x.chunk_id)} title={<ChunkTitle item={x} />}>
                           <div className="flex justify-center">
+                            <div className="w-full">关键词:<span>{x.metadata.important_keywords}</span></div>
                             {showImage(x.doc_type_kwd) && (
                               <Image
                                 id={x.image_id}

@@ -98,7 +98,9 @@ export const useUpdateChunk = () => {
     async (params: IChunk) => {
       const code = await createChunk({
         ...params,
-        doc_id: documentId,
+       important_keywords:params.important_kwd,
+       questions:params.question_kwd,
+         document_id: documentId,
         chunk_id: chunkId,
       });
 

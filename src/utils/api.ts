@@ -52,7 +52,7 @@ export default {
 
   // chunk
   chunk_list: `${api_rag_host}/chunk/list`,
-  create_chunk: `${api_host}/chunk/create`,
+  create_chunk: `${api_rag_host}/chunk/add`,
   set_chunk: `${api_host}/chunk/set`,
   get_chunk: `${api_host}/chunk/get`,
   switch_chunk: `${api_rag_host}/chunk/switch`,
