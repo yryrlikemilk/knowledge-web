@@ -18,19 +18,24 @@ type FieldType = Pick<
   'content_with_weight' | 'tag_kwd' | 'question_kwd' | 'important_kwd'
 >;
 
-interface kFProps {
+interface IProps {
   doc_id: string;
   chunkId: string | undefined;
   parserId: string;
+  visible: boolean;
+  hideModal: () => void;
+  onOk: (values: any) => void;
+  loading: boolean;
 }
 
-const ChunkCreatingModal: React.FC<IModalProps<any> & kFProps> = ({
+const ChunkCreatingModal: React.FC<IProps> = ({
   doc_id,
   chunkId,
   hideModal,
   onOk,
   loading,
   parserId,
+  visible,
 }) => {
   const [form] = Form.useForm();
   const [checked, setChecked] = useState(false);
@@ -80,7 +85,7 @@ const ChunkCreatingModal: React.FC<IModalProps<any> & kFProps> = ({
   return (
     <Modal
       title={`${chunkId ? t('common.edit') : t('common.create')} ${t('chunk.chunk')}`}
-      open={true}
+      open={visible}
       onOk={handleOk}
       onCancel={hideModal}
       okButtonProps={{ loading }}

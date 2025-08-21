@@ -53,7 +53,7 @@ export default {
   // chunk
   chunk_list: `${api_rag_host}/chunk/list`,
   create_chunk: `${api_rag_host}/chunk/add`,
-  set_chunk: `${api_host}/chunk/set`,
+  set_chunk: `${api_rag_host}/chunk/update`,
   get_chunk: `${api_host}/chunk/get`,
   switch_chunk: `${api_rag_host}/chunk/switch`,
   rm_chunk: (knowledgeId: string,document_id:string) =>`${api_rag_host}/chunk/delete/${knowledgeId}/${document_id}`,

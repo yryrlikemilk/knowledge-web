@@ -78,7 +78,7 @@ const ChunkCard = ({
   };
 
   const handleContentDoubleClick = () => {
-    // editChunk(item.chunk_id);
+    editChunk(item.chunk_id);
   };
 
   const handleContentClick = () => {
