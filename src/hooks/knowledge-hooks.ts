@@ -254,13 +254,11 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
     mutationKey: ['testChunk'],
     gcTime: 0,
     mutationFn: async (values: any) => {
-      console.log(`values`, values, knowledgeBaseId);
-      console.log(knowledgeBaseId);
-      const data = await batch_retrieval_test({
+      const { data }  = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
         query: values.question,
         keyword: false,
-        document_ids: [],
+        document_ids: values.doc_ids,
         highlight: false,
         rerank_id: values.rerank_id,
         similarity_threshold: values.similarity_threshold,
@@ -285,9 +283,11 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
         page,
         page_size: pageSize,
       });
+      console.log('data312312',data)
       if (data.code === 0) {
         const res = data.data;
         // 处理所有问题的结果
+        console.log('resres',res)
         const allResults = res.map((item: any, index: number) => ({
           query: item.query || `问题${index + 1}`,
           chunks: item.difyResultDto.records.map((record: any) => ({
@@ -306,8 +306,8 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
           documents: item.difyResultDto.doc_aggs,
           total: item.difyResultDto.records.length,
         }));
-        
-        console.log(`allResults`, allResults, res);
+        console.log('allResultsallResults',allResults)
+        console.log(`allResults11111111111111`, allResults, res);
         return {
           ...res,
           allResults,
@@ -348,13 +348,14 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
     mutationKey: ['testChunkAll'],
     gcTime: 0,
     mutationFn: async (values: any) => {
-      console.log(`values`, values, knowledgeBaseId);
+      console.log(`values222`, values, knowledgeBaseId);
       const { data } = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
         query: values.question,
         keyword: false,
-        document_ids: [],
+        document_ids: values.doc_ids,
         highlight: false,
+        joinRule:'or',
         rerank_id: values.rerank_id,
         similarity_threshold: values.similarity_threshold,
         chunk_deduplication_coefficient: 0,
@@ -400,7 +401,7 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
           total: item.difyResultDto.records.length,
         }));
         
-        console.log(`allResults`, allResults, res);
+        console.log(`allResults2222`, allResults, res);
         return {
           ...res,
           allResults,

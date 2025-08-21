@@ -17,7 +17,9 @@ import SelectFiles from './select-files';
 
 import {
   useAllTestingResult,
+  useAllTestingSuccess,
   useSelectIsTestingSuccess,
+  useSelectTestingResult,
 } from '@/hooks/knowledge-hooks';
 import { useGetPaginationWithRouter } from '@/hooks/logic-hooks';
 import { showImage } from '@/utils/chat';
@@ -68,7 +70,7 @@ const TestingResult = ({
   const { allResults } = useAllTestingResult();
   const { t } = useTranslate('knowledgeDetails');
   const { pagination, setPagination } = useGetPaginationWithRouter();
-  const isSuccess = useSelectIsTestingSuccess();
+  const isSuccess = useAllTestingSuccess();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   // 获取当前问题的数据
@@ -510,7 +512,8 @@ const TestingResult = ({
         playerRef.current = null;
       }
     }
-  }, [modalVisible, currentVideoInfo]);
+    setSelectedDocumentIds([]);
+  }, [modalVisible, currentVideoInfo,setSelectedDocumentIds]);
 
 
 
@@ -647,7 +650,10 @@ const TestingResult = ({
                   border: currentQuestionIndex === index ? '1px solid #1890ff' : '1px solid #d9d9d9',
                   transition: 'all 0.2s'
                 }}
-                onClick={() => setCurrentQuestionIndex(index)}
+                 onClick={() => {
+                  setCurrentQuestionIndex(index);
+                  setSelectedDocumentIds([]);
+                }}
               >
                 <div style={{
                   fontSize: '14px',
@@ -709,6 +715,7 @@ const TestingResult = ({
                           setSelectedDocumentIds={setSelectedDocumentIds}
                           handleTesting={onTesting}
                           documents={currentDocuments}
+                          selectedDocumentIds={selectedDocumentIds}
                         ></SelectFiles>
                       </div>
                     ),
@@ -742,7 +749,7 @@ const TestingResult = ({
                       const videoInfo = Array.isArray(videoChunkInfo) ? videoChunkInfo.find((v) => v.id === x.id) : null;
                       return (
                         <Card key={String(x.chunk_id)} title={<ChunkTitle item={x} />}>
-                          <div className="flex justify-center flex-col">
+                           <div className="flex justify-center flex-col">
                             <div className="w-full">关键词:<span>{x.metadata.important_keywords}</span></div>
                             {showImage(x.doc_type_kwd) && (
                               <Image

@@ -1,7 +1,4 @@
-import {
-  useTestChunkAllRetrieval,
-  useTestChunkRetrieval,
-} from '@/hooks/knowledge-hooks';
+import { useTestChunkAllRetrieval } from '@/hooks/knowledge-hooks';
 import { App, Form, Modal } from 'antd';
 import TestingControl from './testing-control';
 import TestingResult from './testing-result';
@@ -11,7 +8,6 @@ import styles from './index.less';
 
 const KnowledgeTesting = () => {
   const [form] = Form.useForm();
-  const { testChunk } = useTestChunkRetrieval();
   const { testChunkAll } = useTestChunkAllRetrieval();
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,27 +46,17 @@ const KnowledgeTesting = () => {
         meta: metaJsonString,
         kb_id
       });
-
-      await Promise.all([
-        testChunk({
-          ...values,
-          meta: metaJsonString,
-          doc_ids: Array.isArray(documentIds) ? documentIds : [],
-          vector_similarity_weight: values.vector_similarity_weight,
-          kb_id,
-          test_kb_ids: kb_id,
-        }),
-        testChunkAll({
-          ...values,
-          meta: metaJsonString,
-          doc_ids: [],
-          vector_similarity_weight: values.vector_similarity_weight,
-          kb_id,
-          test_kb_ids: kb_id,
-        })
-      ]);
-
+      const document_ids = Array.isArray(documentIds) ? documentIds : [];
+      await testChunkAll({
+        ...values,
+        meta: metaJsonString,
+        doc_ids: document_ids,
+        vector_similarity_weight: values.vector_similarity_weight,
+        kb_id,
+        test_kb_ids: kb_id,
+      });
       setIsModalOpen(true);
+      
     } catch (error) {
       console.error('Testing failed:', error);
       message.error('测试失败，请重试');
@@ -79,6 +65,7 @@ const KnowledgeTesting = () => {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
+    setSelectedDocumentIds([]);
   };
 
   return (

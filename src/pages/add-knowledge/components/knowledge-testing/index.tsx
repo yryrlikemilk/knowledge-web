@@ -31,10 +31,10 @@ const KnowledgeTesting = () => {
       // 将百分比值转换为0-1之间的小数
 
       if (values.similarity_threshold !== undefined) {
-        values.similarity_threshold= values.similarity_threshold / 100 ;
+        values.similarity_threshold = values.similarity_threshold / 100;
       }
       if (values.vector_similarity_weight !== undefined) {
-        values.vector_similarity_weight=values.vector_similarity_weight / 100;
+        values.vector_similarity_weight = values.vector_similarity_weight / 100;
       }
       // 将metaData转换为JSON字符串
       const metaJsonString = JSON.stringify(metaData);
@@ -47,21 +47,14 @@ const KnowledgeTesting = () => {
         ...values,
         meta: metaJsonString
       });
-
-      await Promise.all([
-        testChunk({
+      const document_ids = Array.isArray(documentIds) ? documentIds : [];
+      await testChunkAll({
           ...values,
           meta: metaJsonString,
-          doc_ids: Array.isArray(documentIds) ? documentIds : [],
-          vector_similarity_weight: values.vector_similarity_weight,
-        }),
-        testChunkAll({
-          ...values,
-          meta: metaJsonString,
-          doc_ids: [],
+          doc_ids: document_ids,
           vector_similarity_weight: values.vector_similarity_weight,
         })
-      ]);
+
 
       setIsModalOpen(true);
     } catch (error) {

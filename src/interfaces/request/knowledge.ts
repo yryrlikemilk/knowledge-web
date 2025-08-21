@@ -22,6 +22,7 @@ export interface IFetchKnowledgeListRequestParams {
   query?: string;
   keyword?: boolean;
   document_ids?: string[];
+  joinRule?: string;
   similarity_threshold?: number;
   vector_similarity_weight?: number;
   rerank_id?: string;

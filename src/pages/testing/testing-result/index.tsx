@@ -17,7 +17,7 @@ import SelectFiles from './select-files';
 import { formatTimeDisplay } from '@/utils/document-util';
 import {
   useAllTestingResult,
-  useSelectIsTestingSuccess,
+  useAllTestingSuccess,
 } from '@/hooks/knowledge-hooks';
 import { useGetPaginationWithRouter } from '@/hooks/logic-hooks';
 import { showImage } from '@/utils/chat';
@@ -65,7 +65,7 @@ const TestingResult = ({
   const { allResults } = useAllTestingResult();
   const { t } = useTranslate('knowledgeDetails');
   const { pagination, setPagination } = useGetPaginationWithRouter();
-  const isSuccess = useSelectIsTestingSuccess();
+  const isSuccess = useAllTestingSuccess();
 
   // 新增：当前选中的问题索引
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -504,8 +504,9 @@ const TestingResult = ({
         playerRef.current.dispose();
         playerRef.current = null;
       }
+      setSelectedDocumentIds([]);
     }
-  }, [modalVisible, currentVideoInfo]);
+  }, [modalVisible, currentVideoInfo, setSelectedDocumentIds]);
 
   const handlePlaySection = () => {
     console.log('handlePlaySection 被调用');
@@ -640,7 +641,10 @@ const TestingResult = ({
                   border: currentQuestionIndex === index ? '1px solid #1890ff' : '1px solid #d9d9d9',
                   transition: 'all 0.2s'
                 }}
-                onClick={() => setCurrentQuestionIndex(index)}
+                onClick={() => {
+                  setCurrentQuestionIndex(index);
+                  setSelectedDocumentIds([]);
+                }}
               >
                 <div style={{
                   fontSize: '14px',
@@ -702,6 +706,7 @@ const TestingResult = ({
                           setSelectedDocumentIds={setSelectedDocumentIds}
                           handleTesting={onTesting}
                           documents={currentDocuments}
+                          selectedDocumentIds={selectedDocumentIds}
                         ></SelectFiles>
                       </div>
                     ),
@@ -735,7 +740,7 @@ const TestingResult = ({
                       const videoInfo = Array.isArray(videoChunkInfo) ? videoChunkInfo.find((v) => v.id === x.id) : null;
                       return (
                         <Card key={String(x.chunk_id)} title={<ChunkTitle item={x} />}>
-                          <div className="flex items-center flex-col ">
+                         <div className="flex items-center flex-col ">
                             <div className="w-full">关键词:<span>{x.metadata.important_keywords}</span></div>
                             {showImage(x.doc_type_kwd) && (
                               <Image
