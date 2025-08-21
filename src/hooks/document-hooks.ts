@@ -73,6 +73,12 @@ export const useFetchNextDocumentList = () => {
     endDate: '',
   });
   const { pagination, setPagination } = useGetPaginationWithRouter();
+  const [isShowProgress, setIsShowProgress] = useState<boolean>(false); 
+  const [docNames, setDocNames] = useState<{
+    docName: string;
+    status: string;
+    percent: number;
+  }[]>([]);
   const { id } = useParams();
 
   const queryResult = useQuery({
@@ -114,7 +120,7 @@ export const useFetchNextDocumentList = () => {
       const res = await getTaskList(kbId);
       let taskList: any[] = [];
       if (res?.data?.code === 0 && Array.isArray(res.data.data)) {
-        taskList = res.data.data;
+        taskList = res.data.data.filter((t: any) => t.status !== 'SUCCESS');
       }
       return { docs, total, taskList };
     },
@@ -128,13 +134,29 @@ export const useFetchNextDocumentList = () => {
     const docIds = new Set((data.docs || []).map((d: any) => d.id));
     const needTipTasks = (data.taskList || []).filter((t: any) => !docIds.has(t.dto?.documentId));
     if (needTipTasks.length > 0) {
-      const msg = needTipTasks.map((t: any) => {
+      setIsShowProgress(true);
+      const msg = needTipTasks
+      .filter((t: any) => t.status !== 'SUCCESS')
+      .map((t: any) => {
         const docName = t.dto?.documentName || '';
         const status = t.status || '';
-        const msg = t.message || '';
-        return `文件 ${docName}：${status}${msg ? ' - ' + msg : ''}`;
-      }).join('\n');
-      message.info(msg, 5);
+        const percent = t.progress * 100 || 0;
+        return {
+          docName,
+          status,
+          percent,
+        };
+      });
+      setDocNames(msg);
+      // const msg = needTipTasks.map((t: any) => {
+      //   const docName = t.dto?.documentName || '';
+      //   const status = t.status || '';
+      //   const msg = t.message || '';
+      //   return `文件 ${docName}：${status}${msg ? ' - ' + msg : ''}`;
+      // }).join('\n');
+      // message.info(msg, 5);
+    } else {
+      setIsShowProgress(false);
     }
   }, [queryResult.data]);
 
@@ -167,6 +189,8 @@ export const useFetchNextDocumentList = () => {
     pagination: { ...pagination, total: queryResult.data?.total || 0 },
     handleSearch,
     handleReset,
+    isShowProgress,
+    docNames,
     setPagination,
     taskList: queryResult.data?.taskList || [],
   };

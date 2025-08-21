@@ -8,7 +8,7 @@ import {
 import { useSetSelectedRecord } from '@/hooks/logic-hooks';
 import { useSelectParserList } from '@/hooks/user-setting-hooks';
 import { getExtension } from '@/utils/document-util';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, DownOutlined } from '@ant-design/icons';
 import {
   Button,
   Dropdown,
@@ -19,6 +19,7 @@ import {
   Table,
   Tooltip,
   Typography,
+  Progress,
   Modal,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -54,7 +55,7 @@ import { useGetKnowledgeSearchParams } from '@/hooks/route-hook';
 const { Text } = Typography;
 
 const KnowledgeFile = () => {
-  const { documents, pagination, handleSearch, handleReset, loading, taskList } = useFetchNextDocumentList();
+  const { documents, pagination, handleSearch, handleReset, loading, taskList, isShowProgress, docNames } = useFetchNextDocumentList();
   const [filteredDocuments, setFilteredDocuments] = useState<IDocumentInfo[]>([]);
   const parserList = useSelectParserList();
   const { setDocumentStatus } = useSetNextDocumentStatus();
@@ -282,7 +283,46 @@ const KnowledgeFile = () => {
     ...x,
     className: `${styles.column}`,
   }));
+  const handleFileName = (originalName: string) => {
+    const startLen = 4;
+    const endLen = 8;
 
+    if (originalName.length > startLen + endLen) {
+      const shortName = 
+        originalName.slice(0, startLen) + 
+        "..." + 
+        originalName.slice(-endLen); 
+        return shortName;
+    } else {
+      return originalName;
+    }
+  }
+  const statusEnum: Record<string, string> = {
+    'RUNNING': '处理中',
+    'FAILED': '失败',
+    'PENDING': '待处理',
+  }
+  const fileItems: MenuProps['items'] = docNames.map((x, index) => ({
+    key: index,
+    label: (
+      <div className={styles.fileItems}>
+          <Space style={{color: x.status === 'FAILED' ? 'red' : '#1890ff'}}>
+            <svg viewBox="0 0 1024 1024"  version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                <path d="M736.005 696.494H174.18c-17.673 0-32-14.327-32-32V255.582c0-17.673 14.327-32 32-32h157.213c7.96 0 15.635 2.967 21.525 8.321l47.547 43.222h335.54c17.673 0 32 14.327 32 32v357.369c0 17.673-14.327 32-32 32z m-529.825-64h497.825V339.125H388.094a32.002 32.002 0 0 1-21.525-8.321l-47.547-43.222H206.18v344.912z" fill={x.status === 'FAILED' ? 'red' : '#1890ff'}>
+                </path>
+                <path d="M853.18 821.092H317.509c-17.673 0-32-14.327-32-32s14.327-32 32-32H821.18V414.206c0-17.673 14.327-32 32-32s32 14.327 32 32v374.886c0 17.673-14.327 32-32 32z" fill={x.status === 'FAILED' ? 'red' : '#1890ff'}>
+                </path>
+              </svg>
+              <Tooltip title={x.docName}>
+                {handleFileName(x.docName)}
+              </Tooltip>
+              {statusEnum[x.status]}
+            </Space>
+            <Progress size="small" showInfo={false} percent={x.status === 'FAILED' ? 100 : x.percent} status={x.status === 'FAILED' ? 'exception' : 'active'} />
+        </div>
+      ),
+    })
+  );
   const actionItems: MenuProps['items'] = useMemo(() => {
     return [
       {
@@ -362,7 +402,29 @@ const KnowledgeFile = () => {
           </Button>
         </Dropdown>
       </div>
-
+      
+      { isShowProgress && (
+        <div>
+        <Dropdown menu={{ items: fileItems }} trigger={['hover']} overlayClassName={styles.fileDropDown}>
+          <div className={styles.fileInfo}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" style={{ width: 20, height: 20, marginRight: 8, display:'inline-block' }} viewBox="0 0 20 20">
+              <defs>
+                <clipPath id="master_svg0_2_7215">
+                  <rect x="0" y="0" width="20" height="20" rx="0" style={{ width: 20, height: 20, }} />
+                </clipPath>
+              </defs>
+              <g clipPath="url(#master_svg0_2_7215)">
+                <g>
+                  <path d="M10,1.25C14.8307,1.25,18.75,5.16387,18.75,10C18.75,14.8361,14.8361,18.75,10,18.75C5.16387,18.75,1.25,14.8361,1.25,10C1.25,5.16387,5.16934,1.25,10,1.25ZM11.09238,13.2826L8.90762,13.2826L8.90762,15.4674L11.09238,15.4674L11.09238,13.2826ZM11.09238,4.53262L8.90762,4.53262L8.90762,11.09238L11.09238,11.09238L11.09238,4.53262Z" fill="#F9CA06" fillOpacity="1" style={{ width: 20, height: 20, }} />
+                </g>
+              </g>
+            </svg>
+            <span style={{ marginRight: 8 }}>{taskList.length}个文件正在处理</span>
+            <DownOutlined />
+          </div>
+        </Dropdown>
+        </div>
+      )}
       <DocumentToolbar
         selectedRowKeys={rowSelection.selectedRowKeys as string[]}
         showWebCrawlModal={showWebCrawlUploadModal}
