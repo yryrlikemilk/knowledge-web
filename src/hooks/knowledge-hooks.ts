@@ -282,6 +282,7 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
         },
         page,
         page_size: pageSize,
+        idOfQuery: values.idOfQuery !== undefined ? values.idOfQuery : 0, 
       });
       console.log('data312312',data)
       if (data.code === 0) {
@@ -355,7 +356,7 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
         keyword: false,
         document_ids: values.doc_ids,
         highlight: false,
-        joinRule:'or',
+        //joinRule:'or',
         rerank_id: values.rerank_id,
         similarity_threshold: values.similarity_threshold,
         chunk_deduplication_coefficient: 0,
@@ -378,6 +379,7 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
         },
         page,
         page_size: pageSize,
+        idOfQuery: values.idOfQuery !== undefined ? values.idOfQuery : 0, // 添加 idOfQuery 参数
       });
       if (data.code === 0) {
         const res = data.data;
@@ -486,6 +488,43 @@ export const useAllTestingResult = (): ITestingResult => {
     documents: [],
     total: 0,
   }) as ITestingResult;
+};
+
+// Expose richer loading/status helpers for testChunkAll to drive spinners in UI
+export const useAllTestingStatus = () => {
+  const statusList = useMutationState({
+    filters: { mutationKey: ['testChunkAll'] },
+    select: (mutation) => mutation.state.status as
+      | 'idle'
+      | 'pending'
+      | 'error'
+      | 'success',
+  });
+  const latest = statusList.at(-1);
+  return latest ?? 'idle';
+};
+
+export const useAllTestingPending = () => {
+  const status = useAllTestingStatus();
+  return status === 'pending';
+};
+
+export const useAllTestingError = () => {
+  const errorList = useMutationState({
+    filters: { mutationKey: ['testChunkAll'] },
+    select: (mutation) => (mutation.state as any)?.error as unknown,
+  });
+  return errorList.at(-1) ?? null;
+};
+
+export const useAllTestingResultWithStatus = () => {
+  const result = useAllTestingResult();
+  const status = useAllTestingStatus();
+  const isLoading = status === 'pending';
+  const isSuccess = status === 'success';
+  const isError = status === 'error';
+  const error = useAllTestingError();
+  return { result, status, isLoading, isSuccess, isError, error };
 };
 //#endregion
 
@@ -641,4 +680,8 @@ export const useFetchKnowledgeCount = () => {
     initialData: { kbCount: 0, docCount: 0, embdCount: 0 },
   });
   return { ...data, loading, refetch };
+};
+
+export const useAllTestingLoading = () => {
+  return useIsMutating({ mutationKey: ['testChunkAll'] }) > 0;
 };

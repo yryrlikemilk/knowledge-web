@@ -17,7 +17,7 @@ const KnowledgeTesting = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { message } = App.useApp();
 
-  const handleTesting = async (documentIds: string[] = []) => {
+  const handleTesting = async (documentIds: string[] = [], idOfQuery?: number) => {
     try {
       const values = await form.validateFields();
 
@@ -48,11 +48,13 @@ const KnowledgeTesting = () => {
         meta: metaJsonString
       });
       const document_ids = Array.isArray(documentIds) ? documentIds : [];
+      setIsModalOpen(true);
       await testChunkAll({
           ...values,
           meta: metaJsonString,
           doc_ids: document_ids,
           vector_similarity_weight: values.vector_similarity_weight,
+          idOfQuery: idOfQuery !== undefined ? idOfQuery : 0, 
         })
 
 

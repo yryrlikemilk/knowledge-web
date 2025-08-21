@@ -16,11 +16,11 @@ const SelectFiles = ({ setSelectedDocumentIds, handleTesting, documents , select
   const { t } = useTranslate('fileManager');
 
   // 当 selectedDocumentIds 重置为空数组时，确保 UI 也重置
-  // useEffect(() => {
-  //   if (selectedDocumentIds.length === 0) {
-  //     // 可以在这里添加额外的重置逻辑如果需要的话
-  //   }
-  // }, [selectedDocumentIds]);
+  useEffect(() => {
+    if (selectedDocumentIds.length === 0) {
+      // 可以在这里添加额外的重置逻辑如果需要的话
+    }
+  }, [selectedDocumentIds]);
 
   const columns: TableProps<ITestingDocument>['columns'] = [
     {
@@ -58,14 +58,14 @@ const SelectFiles = ({ setSelectedDocumentIds, handleTesting, documents , select
 
   const rowSelection = {
     selectedRowKeys: selectedDocumentIds,
-    preserveSelectedRowKeys: true,
+    preserveSelectedRowKeys: false, 
     onChange: (selectedRowKeys: React.Key[]) => {
       const ids = selectedRowKeys as string[];
       setSelectedDocumentIds(ids);
-      handleTesting(ids);
+        handleTesting(ids);
     },
     getCheckboxProps: (record: ITestingDocument) => ({
-      disabled: record.doc_name === 'Disabled User', // Column configuration not to be checked
+      disabled: record.doc_name === 'Disabled User',
       name: record.doc_name,
     }),
   };

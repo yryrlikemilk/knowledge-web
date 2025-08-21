@@ -49,7 +49,7 @@ const SelectFiles = ({ setSelectedDocumentIds, handleTesting, documents, selecte
 
   const rowSelection = {
     selectedRowKeys: selectedDocumentIds,
-    preserveSelectedRowKeys: true,
+    preserveSelectedRowKeys: false,
     onChange: (selectedRowKeys: React.Key[]) => {
       const ids = selectedRowKeys as string[];
       setSelectedDocumentIds(ids);

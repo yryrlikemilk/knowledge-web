@@ -11,6 +11,7 @@ import {
   PaginationProps,
   Space,
   Modal,
+  Spin,
 } from 'antd';
 import camelCase from 'lodash/camelCase';
 import SelectFiles from './select-files';
@@ -18,6 +19,7 @@ import { formatTimeDisplay } from '@/utils/document-util';
 import {
   useAllTestingResult,
   useAllTestingSuccess,
+  useAllTestingLoading,
 } from '@/hooks/knowledge-hooks';
 import { useGetPaginationWithRouter } from '@/hooks/logic-hooks';
 import { showImage } from '@/utils/chat';
@@ -52,7 +54,7 @@ const ChunkTitle = ({ item }: { item: ITestingChunk }) => {
 };
 
 interface IProps {
-  handleTesting: (documentIds?: string[]) => Promise<any>;
+  handleTesting: (documentIds?: string[], idOfQuery?: number) => Promise<any>;
   selectedDocumentIds: string[];
   setSelectedDocumentIds: (ids: string[]) => void;
 }
@@ -66,6 +68,7 @@ const TestingResult = ({
   const { t } = useTranslate('knowledgeDetails');
   const { pagination, setPagination } = useGetPaginationWithRouter();
   const isSuccess = useAllTestingSuccess();
+  const isLoadingAll = useAllTestingLoading();
 
   // 新增：当前选中的问题索引
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -87,15 +90,19 @@ const TestingResult = ({
 
   const onChange: PaginationProps['onChange'] = (pageNumber, pageSize) => {
     pagination.onChange?.(pageNumber, pageSize);
-    handleTesting(selectedDocumentIds);
+    // 分页改变时调用接口，传递当前选中的文档ID和问题索引
+    handleTesting(selectedDocumentIds, currentQuestionIndex);
   };
+
   const onTesting = useCallback(
     (ids: string[]) => {
       setPagination({ page: 1 });
-      handleTesting(ids);
+      // 传递当前问题索引作为 idOfQuery
+      handleTesting(ids, currentQuestionIndex);
     },
-    [setPagination, handleTesting],
+    [setPagination, handleTesting, currentQuestionIndex],
   );
+
   const [videoChunkInfo, setVideoChunkInfo] = useState<any[]>([]);
   // 新增：弹窗控制和当前视频信息
   const [modalVisible, setModalVisible] = useState(false);
@@ -612,6 +619,22 @@ const TestingResult = ({
 
   return (
     <section className={styles.testingResultWrapper}>
+      <div style={{ position: 'relative',height:'100%' }}>
+        {isLoadingAll && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(255,255,255,0.6)',
+              zIndex: 1000,
+            }}
+          >
+            <Spin tip="加载中..." size="large" />
+          </div>
+        )}
 
       {/* 新增：问题列表和结果显示的布局 */}
       {isSuccess && allResults && allResults.length > 0 ? (
@@ -644,6 +667,8 @@ const TestingResult = ({
                 onClick={() => {
                   setCurrentQuestionIndex(index);
                   setSelectedDocumentIds([]);
+                  // 切换问题后调用接口获取新数据
+                  handleTesting([], index);
                 }}
               >
                 <div style={{
@@ -741,7 +766,7 @@ const TestingResult = ({
                       return (
                         <Card key={String(x.chunk_id)} title={<ChunkTitle item={x} />}>
                          <div className="flex items-center flex-col ">
-                            <div className="w-full">关键词:<span>{x.metadata.important_keywords}</span></div>
+                            <div className="w-full">关键词:<span>{Array.isArray(x.important_kwd) ? x.important_kwd.join('、') : x.important_kwd || ''}</span></div>
                             {showImage(x.doc_type_kwd) && (
                               <Image
                                 id={x.image_id}
@@ -883,7 +908,7 @@ const TestingResult = ({
                     fontWeight: 'bold',
                     textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
                     zIndex: 11
-                  }} >视频加载中...</div>
+                  }} >{isDownloading ? `视频下载中... ${loadingProgress.toFixed(0)}%` : '视频加载中...'}</div>
                 </div>
               ) : null}
               {/* 加载完成后显示视频 */}
@@ -930,6 +955,7 @@ const TestingResult = ({
         )}
       </Modal>
 
+      </div>
     </section>
   );
 };

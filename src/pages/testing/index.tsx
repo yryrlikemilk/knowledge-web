@@ -13,7 +13,7 @@ const KnowledgeTesting = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { message } = App.useApp();
 
-  const handleTesting = async (documentIds: string[] = []) => {
+  const handleTesting = async (documentIds: string[] = [], idOfQuery?: number) => {
     try {
       const values = form.getFieldsValue();
 
@@ -44,9 +44,13 @@ const KnowledgeTesting = () => {
       console.log('Form Data:', {
         ...values,
         meta: metaJsonString,
-        kb_id
+        kb_id,
+        idOfQuery
       });
       const document_ids = Array.isArray(documentIds) ? documentIds : [];
+      // 打开弹窗尽早显示 loading 覆盖层
+      setIsModalOpen(true);
+
       await testChunkAll({
         ...values,
         meta: metaJsonString,
@@ -54,8 +58,9 @@ const KnowledgeTesting = () => {
         vector_similarity_weight: values.vector_similarity_weight,
         kb_id,
         test_kb_ids: kb_id,
+        idOfQuery: idOfQuery !== undefined ? idOfQuery : 0, // 传递问题索引
       });
-      setIsModalOpen(true);
+      // 结果返回后弹窗已打开，loading 会由状态钩子控制
       
     } catch (error) {
       console.error('Testing failed:', error);
