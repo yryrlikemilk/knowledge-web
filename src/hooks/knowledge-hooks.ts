@@ -305,7 +305,7 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
             ...record,
           })),
           documents: item.difyResultDto.doc_aggs,
-          total: item.difyResultDto.records.length,
+          total: item.difyResultDto.total,
         }));
         console.log('allResultsallResults',allResults)
         console.log(`allResults11111111111111`, allResults, res);
@@ -400,7 +400,7 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
             ...record,
           })),
           documents: item.difyResultDto.doc_aggs,
-          total: item.difyResultDto.records.length,
+          total: item.difyResultDto.total,
         }));
         
         console.log(`allResults2222`, allResults, res);
