@@ -30,6 +30,7 @@ import { api_rag_host } from '@/utils/api';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import useTestingStore from '../store';
+import DOMPurify from 'dompurify';
 const similarityList: Array<{ field: keyof ITestingChunk; label: string }> = [
   { field: 'similarity', label: 'Hybrid Similarity' },
   { field: 'term_similarity', label: 'Term Similarity' },
@@ -645,6 +646,53 @@ const TestingResult = ({
     return parts;
   }
 
+  // 工具函数：混合高亮 HTML 与 Antd Image 组件，支持图片预览
+  function renderHighlightedContentWithImages(content: string) {
+    if (!content) return null;
+    const cleaned = content.replace(/\[\{chunk_id:[^}]+\}\]/g, '');
+    const parts: Array<JSX.Element> = [];
+    let lastIndex = 0;
+    const regex = /\[IMG::([a-zA-Z0-9]+)\]/g;
+    let match: RegExpExecArray | null;
+    let key = 0;
+    while ((match = regex.exec(cleaned)) !== null) {
+      if (match.index > lastIndex) {
+        const textHtml = cleaned.slice(lastIndex, match.index);
+        parts.push(
+          <span
+            key={`t-${key++}`}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(textHtml) }}
+          />
+        );
+      }
+      const imgId = match[1];
+      parts.push(
+        <>
+         <br key={`br-${key++}`} />
+          <Image
+            key={`i-${key++}`}
+            src={`${api_rag_host}/file/download/${imgId}`}
+            alt='图片'
+            style={{ maxWidth: 120, maxHeight: 120, margin: '0 4px', verticalAlign: 'middle' }}
+            preview={true}
+          />
+          <br key={`br-${key++}`} />
+        </>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < cleaned.length) {
+      const textHtml = cleaned.slice(lastIndex);
+      parts.push(
+        <span
+          key={`t-${key++}`}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(textHtml) }}
+        />
+      );
+    }
+    return parts;
+  }
+
   return (
     <section className={styles.testingResultWrapper}>
       <div style={{ position: 'relative', height: '100%' }}>
@@ -821,9 +869,12 @@ const TestingResult = ({
                             </div>
                             <div className="pt-4" style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexDirection: 'column' }}>
                               <div style={{ flex: 1 }}>
-                                {x.content_ltks
-                                  ? renderContentWithImages(x.content_ltks.replace(/\[\{chunk_id:[^}]+\}\]/g, ''))
-                                  : ''}
+                                {/* 高亮片段，参考 search 的 highlightContent 展示，并支持图片预览 */}
+                                {x.content_ltks && (
+                                  <div className={styles.highlightContent}>
+                                    {renderHighlightedContentWithImages(x.content_ltks)}
+                                  </div>
+                                )}
                               </div>
                               {videoInfo && videoInfo.doc_id && (
                                 <div
