@@ -254,9 +254,12 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
     mutationKey: ['testChunk'],
     gcTime: 0,
     mutationFn: async (values: any) => {
+      const questions = Array.isArray(values.question)
+        ? values.question
+        : [values.question];
       const { data }  = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
-        query: values.question,
+        query: questions,
         keyword: false,
         document_ids: values.doc_ids,
         highlight: false,
@@ -270,7 +273,9 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
               },
             }
           : {}),
-        vector_similarity_weight:1- values.vector_similarity_weight,
+        ...(values.vector_similarity_weight !== null && values.vector_similarity_weight !== undefined
+          ? { vector_similarity_weight: 1 - values.vector_similarity_weight }
+          : {}),
         metadata_condition: {
           conditions: (
             values.metaList as Array<{ key: string; value: string }>
@@ -302,10 +307,14 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
             kb_id: record.metadata.dataset_id,
             positions: record.metadata.positions,
             similarity: record.score,
+            // 保持向后兼容，为search页面提供所需字段
+            highlight: record.highlight || record.content,
+            content_with_weight: record.content_with_weight || record.content,
+            img_id: record.metadata.image_id,
             ...record,
           })),
           documents: item.difyResultDto.doc_aggs,
-          total: item.difyResultDto.total,
+          total: item.difyResultDto.records.length,
         }));
         console.log('allResultsallResults',allResults)
         console.log(`allResults11111111111111`, allResults, res);
@@ -350,9 +359,12 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
     gcTime: 0,
     mutationFn: async (values: any) => {
       console.log(`values222`, values, knowledgeBaseId);
+      const questions = Array.isArray(values.question)
+        ? values.question
+        : [values.question];
       const { data } = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
-        query: values.question,
+        query: questions,
         keyword: false,
         document_ids: values.doc_ids,
         highlight: false,
@@ -367,7 +379,9 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
               },
             }
           : {}),
-        vector_similarity_weight: 1- values.vector_similarity_weight,
+        ...(values.vector_similarity_weight !== null && values.vector_similarity_weight !== undefined
+          ? { vector_similarity_weight: 1 - values.vector_similarity_weight }
+          : {}),
         metadata_condition: {
           conditions: (
             values.metaList as Array<{ key: string; value: string }>
@@ -397,10 +411,14 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
             kb_id: record.metadata.dataset_id,
             positions: record.metadata.positions,
             similarity: record.score,
+            // 保持向后兼容，为search页面提供所需字段
+            highlight: record.highlight || record.content,
+            content_with_weight: record.content_with_weight || record.content,
+            img_id: record.metadata.image_id,
             ...record,
           })),
           documents: item.difyResultDto.doc_aggs,
-          total: item.difyResultDto.total,
+          total: item.difyResultDto.records.length,
         }));
         
         console.log(`allResults2222`, allResults, res);
