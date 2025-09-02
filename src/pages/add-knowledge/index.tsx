@@ -8,13 +8,14 @@ import { Breadcrumb } from 'antd';
 import { ItemType } from 'antd/es/breadcrumb/Breadcrumb';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Outlet } from 'umi';
+import { Link, Outlet, useLocation } from 'umi';
 import Siderbar from './components/knowledge-sidebar';
 import { KnowledgeDatasetRouteKey, KnowledgeRouteKey } from './constant';
 import styles from './index.less';
 
 const KnowledgeAdding = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
+  const location = useLocation();
 
   const { t } = useTranslation();
   const activeKey: KnowledgeRouteKey =
@@ -34,12 +35,32 @@ const KnowledgeAdding = () => {
           </a>
         ),
       },
-      {
-        title: datasetActiveKey ? (
-          <Link
+    ];
 
-            to={`/knowledge/${KnowledgeRouteKey.Dataset}?id=${knowledgeBaseId}`}
-          >
+    // 检查是否是深度评估页面
+    const isDeepSearch = location.pathname.includes('/knowledge/testing/deep-search');
+    const isQuickTest = location.pathname.includes('/knowledge/testing/quick-test');
+
+    if (isDeepSearch) {
+      items.push({
+        title: (
+            <span style={{ color: '#306EFD' }}>
+              {t(`knowledgeDetails.${KnowledgeRouteKey.DepthEvaluation}`)}
+            </span>
+        ),
+      });
+    } else if (isQuickTest) {
+      items.push({
+        title: (
+            <span style={{ color: '#306EFD' }}>
+              {t(`knowledgeDetails.${KnowledgeRouteKey.QuickTest}`)}
+            </span>
+        ),
+      });
+    } else {
+      items.push({
+        title: datasetActiveKey ? (
+          <Link to={`/knowledge/${KnowledgeRouteKey.Dataset}?id=${knowledgeBaseId}`}>
             <span style={{ color: '#306EFD' }}>
               {t(`knowledgeDetails.${activeKey}`)}
             </span>
@@ -49,17 +70,17 @@ const KnowledgeAdding = () => {
             {t(`knowledgeDetails.${activeKey}`)}
           </span>
         ),
-      },
-    ];
-
-    if (datasetActiveKey) {
-      items.push({
-        title: t(`knowledgeDetails.${datasetActiveKey}`),
       });
+
+      if (datasetActiveKey) {
+        items.push({
+          title: t(`knowledgeDetails.${datasetActiveKey}`),
+        });
+      }
     }
 
     return items;
-  }, [activeKey, datasetActiveKey, gotoList, knowledgeBaseId, t]);
+  }, [activeKey, datasetActiveKey, gotoList, knowledgeBaseId, t, location.pathname]);
 
   return (
     <>

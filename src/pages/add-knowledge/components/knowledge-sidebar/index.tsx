@@ -16,15 +16,17 @@ import { Avatar, Menu, MenuProps, Space } from 'antd';
 import classNames from 'classnames';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'umi';
+import { useNavigate, useLocation } from 'umi';
 import { KnowledgeRouteKey } from '../../constant';
 import { isEmpty } from 'lodash';
-import { GitGraph } from 'lucide-react';
+import { GitGraph, Search, Zap } from 'lucide-react';
 import styles from './index.less';
 import { cn, } from '@/lib/utils';
 import { ReactComponent as TitleIcon } from '@/assets/svg/knowledge-title.svg';
+
 const KnowledgeSidebar = () => {
   let navigate = useNavigate();
+  const location = useLocation();
   const activeKey = useSecondPathName();
   const { knowledgeId } = useGetKnowledgeSearchParams();
 
@@ -34,7 +36,31 @@ const KnowledgeSidebar = () => {
   const { data: knowledgeDetails } = useFetchKnowledgeBaseConfiguration();
 
   const handleSelect: MenuProps['onSelect'] = (e) => {
-    navigate(`/knowledge/${e.key}?id=${knowledgeId}`);
+    const { key, keyPath } = e;
+    
+    // 如果是子菜单项，构建完整路径
+    if (keyPath.length > 1) {
+      const parentKey = keyPath[keyPath.length - 1];
+      const childKey = key;
+      
+      if (parentKey === KnowledgeRouteKey.Testing) {
+        if (childKey === 'quick-test') {
+          navigate(`/knowledge/testing/quick-test?id=${knowledgeId}`);
+        } else if (childKey === 'deep-search') {
+          navigate(`/knowledge/testing/deep-search?id=${knowledgeId}`);
+        }
+      } else {
+        navigate(`/knowledge/${key}?id=${knowledgeId}`);
+      }
+    } else {
+      // 如果点击的是父菜单项
+      if (key === KnowledgeRouteKey.Testing) {
+        // 点击"检索测试"父目录时，跳转到第一个子菜单项"快速测试"
+        navigate(`/knowledge/testing/quick-test?id=${knowledgeId}`);
+      } else {
+        navigate(`/knowledge/${key}?id=${knowledgeId}`);
+      }
+    }
   };
 
   const { data } = useFetchKnowledgeGraph();
@@ -69,11 +95,23 @@ const KnowledgeSidebar = () => {
         KnowledgeRouteKey.Dataset,
         <DatasetIcon />,
       ),
-      getItem(
-        KnowledgeRouteKey.Testing,
-        KnowledgeRouteKey.Testing,
-        <TestingIcon />,
-      ),
+      {
+        key: KnowledgeRouteKey.Testing,
+        icon: <TestingIcon />,
+        label: t(`knowledgeDetails.${KnowledgeRouteKey.Testing}`),
+        children: [
+          {
+            key: 'quick-test',
+            icon: <Zap size={16} />,
+            label: '快速测试',
+          },
+          {
+            key: 'deep-search',
+            icon: <Search size={16} />,
+            label: '深度评估',
+          },
+        ],
+      },
       getItem(
         KnowledgeRouteKey.Configuration,
         KnowledgeRouteKey.Configuration,
@@ -98,7 +136,18 @@ const KnowledgeSidebar = () => {
     }
 
     return list;
-  }, [data, getItem]);
+  }, [data, getItem, t]);
+
+  // 计算当前选中的菜单项
+  const getSelectedKeys = () => {
+    const pathname = location.pathname;
+    if (pathname.includes('/knowledge/testing/quick-test')) {
+      return [KnowledgeRouteKey.Testing, 'quick-test'];
+    } else if (pathname.includes('/knowledge/testing/deep-search')) {
+      return [KnowledgeRouteKey.Testing, 'deep-search'];
+    }
+    return [activeKey];
+  };
 
   useEffect(() => {
     if (windowWidth.width > 957) {
@@ -141,13 +190,13 @@ const KnowledgeSidebar = () => {
 
       <div className={styles.menuWrapper}>
         <Menu
-          selectedKeys={[activeKey]}
-          // mode="inline"
+          selectedKeys={getSelectedKeys()}
+          mode="inline"
           className={classNames(styles.menu, {
             [styles.defaultWidth]: windowWidth.width > 957,
             [styles.minWidth]: windowWidth.width <= 957,
           })}
-          // inlineCollapsed={collapsed}
+          inlineCollapsed={collapsed}
           items={items}
           onSelect={handleSelect}
         />

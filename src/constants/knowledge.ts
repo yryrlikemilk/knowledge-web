@@ -1,6 +1,8 @@
 export enum KnowledgeRouteKey {
   Dataset = 'dataset',
   Testing = 'testing',
+  QuickTest = 'quickTest',
+  DepthEvaluation = 'depthEvaluation',
   Configuration = 'configuration',
   KnowledgeGraph = 'knowledgeGraph',
 }

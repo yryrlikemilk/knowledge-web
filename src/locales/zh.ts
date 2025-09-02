@@ -88,8 +88,10 @@ export default {
     knowledgeDetails: {
       dataset: '数据集',
       testing: '检索测试',
+      quickTest:'快速测试',
       configuration: '设置',
       knowledgeGraph: '知识图谱',
+      depthEvaluation:'深度评估',
       files: '文件',
       fileName: '文件名称',
       pleaseInputFileName:"请输入文件名称",

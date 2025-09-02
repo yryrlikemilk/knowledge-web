@@ -1,6 +1,5 @@
 import {
   useTestChunkAllRetrieval,
-  useTestChunkRetrieval,
 } from '@/hooks/knowledge-hooks';
 import { App, Form, Modal } from 'antd';
 import TestingControl from './testing-control';
@@ -11,7 +10,6 @@ import styles from './index.less';
 
 const KnowledgeTesting = () => {
   const [form] = Form.useForm();
-  const { testChunk } = useTestChunkRetrieval();
   const { testChunkAll } = useTestChunkAllRetrieval();
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const { message } = App.useApp();
@@ -68,6 +66,7 @@ const KnowledgeTesting = () => {
     setModalVisible(false);
     setSelectedDocumentIds([]);
   };
+
 
   return (
     <App>
