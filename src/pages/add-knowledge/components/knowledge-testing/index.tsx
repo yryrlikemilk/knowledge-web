@@ -2,8 +2,8 @@ import {
   useTestChunkAllRetrieval,
 } from '@/hooks/knowledge-hooks';
 import { App, Form, Modal } from 'antd';
-import TestingControl from './testing-control';
-import TestingResult from './testing-result';
+import TestingControl from './quick-test/testing-control';
+import TestingResult from './quick-test/testing-result';
 import useTestingStore from './store';
 import { useState } from 'react';
 import styles from './index.less';

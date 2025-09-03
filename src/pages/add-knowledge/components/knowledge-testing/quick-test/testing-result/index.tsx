@@ -32,7 +32,7 @@ import { api_rag_host } from '@/utils/api';
 import { formatTimeDisplay } from '@/utils/document-util';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
-import useTestingStore from '../store';
+import useTestingStore from '../../store';
 import DOMPurify from 'dompurify';
 const similarityList: Array<{ field: keyof ITestingChunk; label: string }> = [
   { field: 'similarity', label: 'Hybrid Similarity' },
