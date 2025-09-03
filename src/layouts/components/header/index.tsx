@@ -30,7 +30,7 @@ const RagHeader = () => {
       { path: '/chat', name: '智能聊天', icon: MessageOutlined },
       { path: '/knowledge', name: t('knowledgeBase'), icon: KnowledgeBaseIcon },
       
-      { path: '/search', name: t('search'), icon: SearchOutlined },
+      // { path: '/search', name: t('search'), icon: SearchOutlined },
       // { path: '/flow', name: t('flow'), icon: GraphIcon },
       { path: '/file', name: t('fileManager'), icon: FileIcon },
       { path: '/trial', name: t('trial'), icon: TrialIcon },

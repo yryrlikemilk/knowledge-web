@@ -842,7 +842,6 @@ const TestingResult = ({
                       return (
                         <Card key={String(x.chunk_id)} title={<ChunkTitle item={x} />}>
                           <div className="flex justify-center flex-col">
-                            <div className="w-full">关键词:<span>{Array.isArray(x.important_kwd) ? x.important_kwd.join('、') : x.important_kwd || ''}</span></div>
                             {showImage(x.doc_type_kwd) && (
                               <Image
                                 id={x.image_id}
