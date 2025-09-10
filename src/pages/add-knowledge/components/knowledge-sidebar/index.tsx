@@ -32,6 +32,7 @@ const KnowledgeSidebar = () => {
 
   const [windowWidth, setWindowWidth] = useState(getWidth());
   const [collapsed, setCollapsed] = useState(false);
+  const [openKeys, setOpenKeys] = useState<string[]>([KnowledgeRouteKey.Testing]);
   const { t } = useTranslation();
   const { data: knowledgeDetails } = useFetchKnowledgeBaseConfiguration();
 
@@ -149,6 +150,11 @@ const KnowledgeSidebar = () => {
     return [activeKey];
   };
 
+  // 子菜单展开/
+  const handleOpenChange: MenuProps['onOpenChange'] = (keys) => {
+    setOpenKeys(keys as string[]);
+  };
+
   useEffect(() => {
     if (windowWidth.width > 957) {
       setCollapsed(false);
@@ -190,6 +196,7 @@ const KnowledgeSidebar = () => {
 
       <div className={styles.menuWrapper}>
         <Menu
+          openKeys={openKeys}
           selectedKeys={getSelectedKeys()}
           mode="inline"
           className={classNames(styles.menu, {
@@ -199,6 +206,7 @@ const KnowledgeSidebar = () => {
           inlineCollapsed={collapsed}
           items={items}
           onSelect={handleSelect}
+          onOpenChange={handleOpenChange}
         />
       </div>
     </div>
