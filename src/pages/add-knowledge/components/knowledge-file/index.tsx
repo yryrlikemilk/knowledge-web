@@ -114,6 +114,11 @@ const KnowledgeFile = () => {
   // 本地loading状态用于SetMetaModal
   const [metaLoading, setMetaLoading] = useState(false);
 
+  // 处理切片方法点击
+  const handleParserClick = (record: IDocumentInfo) => {
+    setRecord(record);
+    showChangeParserModal();
+  };
 
   // SetMetaModal确定按钮处理
   const handleSetMetaModalOk = async (meta: string) => {
@@ -176,8 +181,19 @@ const KnowledgeFile = () => {
       title: t('chunkMethod'),
       dataIndex: 'parser_id',
       key: 'parser_id',
-      render: (text) => {
-        return parserList.find((x) => x.value === text)?.label;
+      render: (text, record) => {
+        const parserLabel = parserList.find((x) => x.value === text)?.label;
+        return (
+          <a
+            style={{ cursor: 'pointer', color: '#1890ff' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleParserClick(record);
+            }}
+          >
+            {parserLabel}
+          </a>
+        );
       },
     },
 

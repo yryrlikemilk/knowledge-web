@@ -304,17 +304,20 @@ export const useSetNextDocumentParser = () => {
       documentId: string;
       parserConfig: IChangeParserConfigRequestBody;
     }) => {
-      const { data } = await kbService.document_change_parser({
+      const res  = await kbService.document_change_parser({
         parser_id: parserId,
         doc_id: documentId,
         parser_config: parserConfig,
       });
-      if (data.code === 0) {
+      console.log(`123123qeq4`,res)
+      if (res.data?.code === 0) {
         queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'] });
 
         message.success(i18n.t('message.modified'));
+      }else{
+        message.error(res.statusText + res.status)
       }
-      return data.code;
+      return res.data?.code;
     },
   });
 

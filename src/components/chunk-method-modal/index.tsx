@@ -7,7 +7,6 @@ import {
 } from '@ant-design/icons';
 import {
   Button,
-  Divider,
   Form,
   InputNumber,
   Modal,
@@ -79,6 +78,7 @@ const ChunkMethodModal: React.FC<IProps> = ({
     documentExtension,
     form,
   );
+  console.log(`parserList222222222222`,parserList);
   const { t } = useTranslate('knowledgeDetails');
   const { data: knowledgeDetails } = useFetchKnowledgeBaseConfiguration();
 
@@ -92,7 +92,14 @@ const ChunkMethodModal: React.FC<IProps> = ({
       ...values.parser_config,
       pages: values.pages?.map((x: any) => [x.from, x.to]) ?? [],
     };
-    onOk(selectedTag, parser_config);
+    // 确认提示：修改切片方法后需重新解析
+    Modal.confirm({
+      title: '确认修改切片方法',
+      content: '修改切片方法后需重新解析，是否继续？',
+      okText: '继续',
+      cancelText: '取消',
+      onOk: () => onOk(selectedTag, parser_config),
+    });
   };
 
   const isPdf = documentExtension === 'pdf';
