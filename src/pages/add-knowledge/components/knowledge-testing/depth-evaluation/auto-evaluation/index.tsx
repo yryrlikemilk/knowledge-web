@@ -4,6 +4,7 @@ import { FileText, Settings, BarChart3, Eye } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import CreateEvaluationModal from './create-evaluation-modal';
 import { useNavigate, useLocation } from 'umi';
+import { useFetchPageList } from '@/hooks/knowledge-hooks';
 
 const { Title, Paragraph } = Typography;
 
@@ -19,11 +20,16 @@ interface EvaluationTask {
     updateTime: string;
 }
 
-const AutoEvaluation = () => {
+interface AutoEvaluationProps {
+    onSwitchToQuestions?: () => void;
+}
+
+const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [currentStep] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
+    const { pageList } = useFetchPageList();
     const [taskList, setTaskList] = useState<EvaluationTask[]>([
         {
             id: '1',
@@ -220,77 +226,78 @@ const AutoEvaluation = () => {
             justifyContent: 'center',
             alignItems: 'center'
         }}>
-            <div style={{
-                textAlign: 'center',
-                maxWidth: '600px',
-                width: '100%'
-            }}>
-                <div style={{ marginBottom: '40px' }}>
-                    <Title level={4}>你还没有创建过深度评估任务</Title>
-                    <Paragraph type="secondary">
-                        点击创建，选择评估问题集，大模型自动打分，并生成评估报告
-                    </Paragraph>
-                </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                    {/* {currentStep === 0 ? ( */}
-                    <Button type="primary" size="large" onClick={handleCreateTask}>
-                        创建评估任务
-                    </Button>
-                    {/* ) : (
-                        <Space>
-                            <Button onClick={handlePrev} disabled={currentStep === 0}>
-                                上一步
-                            </Button>
-                            <Button type="primary" onClick={handleNext} disabled={currentStep === steps.length - 1}>
-                                下一步
-                            </Button>
-                        </Space>
+            {/* 评估任务列表 - 根据pageList数据长度显示 */}
+            {pageList.records.length > 0 ? (
+                <div style={{ marginTop: '40px', width: '100%' }}>
+                    <Button type="primary" style={{ marginBottom: '20px' }}>新增评估任务</Button>
+                    <Table
+                        columns={columns}
+                        dataSource={taskList}
+                        rowKey="id"
+                        pagination={{
+                            pageSize: 10,
+                            showSizeChanger: true,
+                            showQuickJumper: true,
+                            showTotal: (total) => `共 ${total} 条`,
+                        }}
+                        scroll={{ x: 1200 }}
+                        size="middle"
+                    />
+                </div>
+            ) : (
+                <div>
+                    <div style={{
+                        textAlign: 'center',
+                        maxWidth: '600px',
+                        width: '100%'
+                    }}>
+                        <div style={{ marginBottom: '40px' }}>
+                            <Title level={4}>你还没有创建过深度评估任务</Title>
+            <Paragraph type="secondary">
+            点击创建，选择评估问题集，大模型自动打分，并生成评估报告
+            </Paragraph>
+                        </div>
+
+                        <div style={{ marginBottom: '20px' }}>
+                            {/* {currentStep === 0 ? ( */}
+                            <Button type="primary" size="large" onClick={handleCreateTask}>
+                    创建评估任务
+                </Button>
+                            {/* ) : (
+
                     )} */}
-                </div>
+                        </div>
 
-                {/* {currentStep > 0 && (
+                        {/* {currentStep > 0 && (
                     <Button type="link" onClick={handleStart}>
                         重新开始
                     </Button>
                 )} */}
+                    </div>
+                    {/* 步骤条 */}
+                    <div style={{
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'center'
+                    }}>
+                        <Steps
+                            current={currentStep}
+                            items={steps}
+                            size="default"
+                            style={{ maxWidth: '800px' }}
+                        />
             </div>
-            {/* 评估任务列表 */}
-            <div  style={{ marginTop: '40px', width: '100%' }}>
-                <Button  type="primary" style={{ marginBottom: '20px' }}>新增评估任务</Button>
-                <Table
-                    columns={columns}
-                    dataSource={taskList}
-                    rowKey="id"
-                    pagination={{
-                        pageSize: 10,
-                        showSizeChanger: true,
-                        showQuickJumper: true,
-                        showTotal: (total) => `共 ${total} 条`,
-                    }}
-                    scroll={{ x: 1200 }}
-                    size="middle"
-                />
-            </div>
-            {/* 步骤条 */}
-            <div style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center'
-            }}>
-                <Steps
-                    current={currentStep}
-                    items={steps}
-                    size="default"
-                    style={{ maxWidth: '800px' }}
-                />
-            </div>
+                </div>
+            )}
+
 
             {/* 创建评估任务弹窗 */}
             <CreateEvaluationModal
                 visible={modalVisible}
                 onCancel={handleModalCancel}
                 onOk={handleModalOk}
+                onSwitchToQuestions={onSwitchToQuestions}
             />
 
 

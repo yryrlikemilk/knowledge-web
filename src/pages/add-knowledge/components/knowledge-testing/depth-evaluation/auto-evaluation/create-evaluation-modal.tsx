@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Button, Space, Table, Tag, InputNumber, message } from 'antd';
+import { Modal, Form, Input, Button, Space, Table, Tag, InputNumber, message, Typography } from 'antd';
 import { CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import Rerank from '@/components/rerank';
+import { useFetchRetrievalQuestionPageList, useSaveRetrievalTask } from '@/hooks/knowledge-hooks';
+
+const { Title, Paragraph } = Typography;
 
 interface CreateEvaluationModalProps {
     visible: boolean;
@@ -12,34 +15,43 @@ interface CreateEvaluationModalProps {
         selectedQuestions: QuestionItem[];
         formData: any;
     }) => void;
+    onSwitchToQuestions?: () => void;
 }
 
 interface QuestionItem {
-    id: number;
-    question: string;
-    source: 'manual' | 'ai';
+    id: string;
+    question_text: string;
+    auto_generate: boolean;
+    category_sub: string;
+    chunk_id: string;
+    create_time: string;
+    doc_id: string;
+    kb_id: string;
+    status: number;
+    update_time: string;
     selected: boolean;
 }
 
-const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, onCancel, onOk }) => {
+const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, onCancel, onOk, onSwitchToQuestions }) => {
     const [form] = Form.useForm();
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedSources, setSelectedSources] = useState<('manual' | 'ai')[]>([]);
-    const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]);
+    const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
     const [canAccessStep2, setCanAccessStep2] = useState(false);
+    const { questionPageList } = useFetchRetrievalQuestionPageList();
+    const { saveRetrievalTask, loading: saveLoading } = useSaveRetrievalTask();
 
-    // 模拟问题数据
-    const manualQuestions: QuestionItem[] = [
-        { id: 1, question: '什么是人工智能？', source: 'manual', selected: false },
-        { id: 2, question: '机器学习的主要类型有哪些？', source: 'manual', selected: false },
-        { id: 3, question: '深度学习与传统机器学习的区别是什么？', source: 'manual', selected: false },
-    ];
+    // 根据接口数据生成问题列表
+    const getQuestionsFromApi = (): QuestionItem[] => {
+        return questionPageList.records.map((record: any) => ({
+            ...record,
+            selected: false
+        }));
+    };
 
-    const aiQuestions: QuestionItem[] = [
-        { id: 4, question: '神经网络的基本结构是什么？', source: 'ai', selected: false },
-        { id: 5, question: '如何评估机器学习模型的性能？', source: 'ai', selected: false },
-        { id: 6, question: '什么是强化学习？', source: 'ai', selected: false },
-    ];
+    const allQuestions = getQuestionsFromApi();
+    const manualQuestions = allQuestions.filter(q => !q.auto_generate);
+    const aiQuestions = allQuestions.filter(q => q.auto_generate);
 
     const handleSourceToggle = (source: 'manual' | 'ai') => {
         setSelectedSources(prev => {
@@ -54,15 +66,15 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                     const sourceQuestions = source === 'manual' ? manualQuestions : aiQuestions;
                     const newQuestionIds = sourceQuestions.map(q => q.id);
                     const existingIds = prevQuestions.filter(id => {
-                        const question = [...manualQuestions, ...aiQuestions].find(q => q.id === id);
-                        return question && newSources.includes(question.source);
+                        const question = allQuestions.find(q => q.id === id);
+                        return question && newSources.includes(question.auto_generate ? 'ai' : 'manual');
                     });
                     return [...new Set([...existingIds, ...newQuestionIds])];
                 } else {
                     // 取消来源时，移除该来源的所有问题
                     return prevQuestions.filter(id => {
-                        const question = [...manualQuestions, ...aiQuestions].find(q => q.id === id);
-                        return question && newSources.includes(question.source);
+                        const question = allQuestions.find(q => q.id === id);
+                        return question && newSources.includes(question.auto_generate ? 'ai' : 'manual');
                     });
                 }
             });
@@ -71,7 +83,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
         });
     };
 
-    const handleQuestionSelect = (questionId: number) => {
+    const handleQuestionSelect = (questionId: string) => {
         setSelectedQuestions(prev =>
             prev.includes(questionId)
                 ? prev.filter(id => id !== questionId)
@@ -80,8 +92,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
     };
 
     const getDisplayQuestions = () => {
-        const allQuestions = [...manualQuestions, ...aiQuestions];
-        return allQuestions.filter(question => selectedSources.includes(question.source));
+        return allQuestions.filter(question => selectedSources.includes(question.auto_generate ? 'ai' : 'manual'));
     };
     const handlePrev = () => {
         setCurrentStep(0);
@@ -98,23 +109,36 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
             });
         } else {
             // 验证所有字段，包括第一步的taskName
-            form.validateFields(['taskName', 'similarity_threshold', 'vector_similarity_weight']).then((formData) => {
-                const taskName = formData.taskName;
-                const selectedQuestionsData = getDisplayQuestions().filter(q => selectedQuestions.includes(q.id));
-                
-                onOk({
-                    taskName,
-                    selectedQuestions: selectedQuestionsData,
-                    formData
-                });
-                message.success('评估任务创建成功');
-                
-                // 创建成功后清空所有数据
-                setCurrentStep(0);
-                setSelectedSources([]);
-                setSelectedQuestions([]);
-                setCanAccessStep2(false);
-                form.resetFields();
+            form.validateFields(['taskName', 'similarity_threshold', 'vector_similarity_weight']).then(async (formData) => {
+                try {
+                    const taskName = formData.taskName;
+                    const selectedQuestionsData = allQuestions.filter(q => selectedQuestions.includes(q.id));
+                    
+                    // 调用保存接口
+                    await saveRetrievalTask({
+                        task_name: taskName,
+                        test_ques_ids: selectedQuestions
+                    });
+                    
+                    message.success('评估任务创建成功');
+                    
+                    // 调用父组件的回调
+                    onOk({
+                        taskName,
+                        selectedQuestions: selectedQuestionsData,
+                        formData
+                    });
+                    
+                    // 创建成功后清空所有数据
+                    setCurrentStep(0);
+                    setSelectedSources([]);
+                    setSelectedQuestions([]);
+                    setCanAccessStep2(false);
+                    form.resetFields();
+                } catch (error) {
+                    console.error('创建评估任务失败:', error);
+                    message.error(error instanceof Error ? error.message : '创建评估任务失败');
+                }
             });
         }
     };
@@ -144,8 +168,8 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
     const columns: ColumnsType<QuestionItem> = [
         {
             title: '问题内容',
-            dataIndex: 'question',
-            key: 'question',
+            dataIndex: 'question_text',
+            key: 'question_text',
             render: (text: string, record: QuestionItem) => (
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     {selectedQuestions.includes(record.id) && (
@@ -157,104 +181,120 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
         },
         {
             title: '来源',
-            dataIndex: 'source',
-            key: 'source',
+            dataIndex: 'auto_generate',
+            key: 'auto_generate',
             width: 100,
-            render: (source: string) => (
-                <Tag color={source === 'manual' ? 'blue' : 'green'}>
-                    {source === 'manual' ? '手工输入' : 'AI生成'}
+            render: (autoGenerate: boolean) => (
+                <Tag color={autoGenerate ? 'green' : 'blue'}>
+                    {autoGenerate ? 'AI生成' : '手工输入'}
                 </Tag>
             ),
         },
     ];
 
-    const renderStep1 = () => (
-        <div>
-            <div style={{
-                backgroundColor: '#fff7e6',
-                border: '1px solid #ffd591',
-                borderRadius: '6px',
-                padding: '12px 16px',
-                margin: '20px 0'
-            }}>
-                <p style={{ margin: 0, color: '#d46b08' }}>
-                    <strong>提示：</strong>一个评估任务发起后不支持修改，且生成报告会消耗较多tokens，请确认您要评估的问题集。
-                    确保问题较全面的覆盖您的业务场景。
-                </p>
-            </div>
+    const renderStep1 = () => {
+        // 如果没有问题数据，显示提示信息
+        if (questionPageList.records.length === 0) {
+            return (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <Title level={4}>暂时没有测试问题</Title>
+                    <Paragraph type="secondary" style={{ marginBottom: '30px' }}>
+                        请先新增测试问题，然后再创建评估任务
+                    </Paragraph>
+                </div>
+            );
+        }
 
-            <Form form={form} layout="vertical">
-                <Form.Item
-                    name="taskName"
-                    label="任务名称"
-                    rules={[{ required: true, message: '请输入任务名称' }]}
-                >
-                    <Input placeholder="请输入任务名称" />
-                </Form.Item>
-            </Form>
-
-            <div style={{ marginTop: '20px' }}>
-                <h4>选择测试问题</h4>
-
+        return (
+            <div>
                 <div style={{
-                    display: 'flex',
-                    marginTop: '16px',
-                    border: '1px solid #d9d9d9',
+                    backgroundColor: '#fff7e6',
+                    border: '1px solid #ffd591',
                     borderRadius: '6px',
-                    overflow: 'hidden'
+                    padding: '12px 16px',
+                    margin: '20px 0'
                 }}>
-                    {/* 问题来源选择 */}
-                    <div style={{
-                        width: '200px',
-                        flexShrink: 0,
-                        borderRight: '1px solid #d9d9d9',
-                        padding: '16px',
-                        backgroundColor: '#fafafa'
-                    }}>
-                        <div style={{ marginBottom: '12px', fontWeight: 'bold' }}>问题来源</div>
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                            <Button
-                                type={selectedSources.includes('manual') ? 'primary' : 'default'}
-                                block
-                                onClick={() => handleSourceToggle('manual')}
-                            >
-                                手工输入
-                            </Button>
-                            <Button
-                                type={selectedSources.includes('ai') ? 'primary' : 'default'}
-                                block
-                                onClick={() => handleSourceToggle('ai')}
-                            >
-                                AI生成
-                            </Button>
-                        </Space>
-                    </div>
+                    <p style={{ margin: 0, color: '#d46b08' }}>
+                        <strong>提示：</strong>一个评估任务发起后不支持修改，且生成报告会消耗较多tokens，请确认您要评估的问题集。
+                        确保问题较全面的覆盖您的业务场景。
+                    </p>
+                </div>
 
-                    {/* 问题列表 */}
-                    <div style={{ flex: 1, padding: '16px' }}>
-                        <div style={{ marginBottom: '12px', fontWeight: 'bold' }}>
-                            问题列表 (已选择 {selectedQuestions.length} 个)
+                <Form form={form} layout="vertical">
+                    <Form.Item
+                        name="taskName"
+                        label="任务名称"
+                        rules={[{ required: true, message: '请输入任务名称' }]}
+                    >
+                        <Input placeholder="请输入任务名称" />
+                    </Form.Item>
+                </Form>
+
+                <div style={{ marginTop: '20px' }}>
+                    <h4>选择测试问题</h4>
+
+                    <div style={{
+                        display: 'flex',
+                        marginTop: '16px',
+                        border: '1px solid #d9d9d9',
+                        borderRadius: '6px',
+                        overflow: 'hidden'
+                    }}>
+                        {/* 问题来源选择 */}
+                        <div style={{
+                            width: '200px',
+                            flexShrink: 0,
+                            borderRight: '1px solid #d9d9d9',
+                            padding: '16px',
+                            backgroundColor: '#fafafa'
+                        }}>
+                            <div style={{ marginBottom: '12px', fontWeight: 'bold' }}>问题来源</div>
+                            <Space direction="vertical" style={{ width: '100%' }}>
+                                <Button
+                                    type={selectedSources.includes('manual') ? 'primary' : 'default'}
+                                    block
+                                    onClick={() => handleSourceToggle('manual')}
+                                    disabled={manualQuestions.length === 0}
+                                >
+                                    手工输入 ({manualQuestions.length})
+                                </Button>
+                                <Button
+                                    type={selectedSources.includes('ai') ? 'primary' : 'default'}
+                                    block
+                                    onClick={() => handleSourceToggle('ai')}
+                                    disabled={aiQuestions.length === 0}
+                                >
+                                    AI生成 ({aiQuestions.length})
+                                </Button>
+                            </Space>
                         </div>
-                        <Table
-                            columns={columns}
-                            dataSource={getDisplayQuestions()}
-                            rowKey="id"
-                            pagination={false}
-                            size="small"
-                            onRow={(record) => ({
-                                onClick: () => handleQuestionSelect(record.id),
-                                style: {
-                                    cursor: 'pointer',
-                                    backgroundColor: selectedQuestions.includes(record.id) ? '#e6f7ff' : 'transparent',
-                                },
-                            })}
-                            locale={{ emptyText: '请先选择问题来源' }}
-                        />
+
+                        {/* 问题列表 */}
+                        <div style={{ flex: 1, padding: '16px' }}>
+                            <div style={{ marginBottom: '12px', fontWeight: 'bold' }}>
+                                问题列表 (已选择 {selectedQuestions.length} 个)
+                            </div>
+                            <Table
+                                columns={columns}
+                                dataSource={getDisplayQuestions()}
+                                rowKey="id"
+                                pagination={false}
+                                size="small"
+                                onRow={(record) => ({
+                                    onClick: () => handleQuestionSelect(record.id),
+                                    style: {
+                                        cursor: 'pointer',
+                                        backgroundColor: selectedQuestions.includes(record.id) ? '#e6f7ff' : 'transparent',
+                                    },
+                                })}
+                                locale={{ emptyText: '请先选择问题来源' }}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderStep2 = () => (
         <div>
@@ -354,50 +394,69 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
 
     );
 
+    // 根据是否有数据显示不同的底部按钮
+    const renderFooter = () => {
+        if (questionPageList.records.length === 0) {
+            return [
+                <Button key="cancel" onClick={handleCancel}>
+                    取消
+                </Button>,
+                <Button key="add" type="primary" onClick={() => {
+                    handleCancel();
+                    onSwitchToQuestions?.();
+                }}>
+                    去新增测试问题
+                </Button>,
+            ];
+        }
+
+        return [
+            <Button key="cancel" onClick={handleCancel}>
+                取消
+            </Button>,
+            currentStep === 1 && (
+                <Button key="prev" onClick={handlePrev}>
+                    上一步
+                </Button>
+            ),
+            <Button key="next" type="primary" onClick={handleNext} loading={saveLoading}>
+                {currentStep === 1 ? '创建任务' : '下一步'}
+            </Button>,
+        ].filter(Boolean);
+    };
+
     return (
         <Modal
-
             title={
                 <div style={{ textAlign: 'center', }}>
                     <span>创建评估任务</span>
-
                 </div>
             }
             open={visible}
             onCancel={handleCancel}
             width={800}
-            footer={[
-                <Button key="cancel" onClick={handleCancel}>
-                    取消
-                </Button>,
-                currentStep === 1 && (
-                    <Button key="prev" onClick={handlePrev}>
-                        上一步
-                    </Button>
-                ),
-                <Button key="next" type="primary" onClick={handleNext}>
-                    {currentStep === 1 ? '创建任务' : '下一步'}
-                </Button>,
-            ].filter(Boolean)}
+            footer={renderFooter()}
         >
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', margin: '20px 0', }}>
-                <Button
-                    type={currentStep === 0 ? 'primary' : 'default'}
-                    size="small"
-                    onClick={() => setCurrentStep(0)}
-                >
-                    1. 选择测试问题
-                </Button>
-                <Button
-                    type={currentStep === 1 ? 'primary' : 'default'}
-                    size="small"
-                    disabled={!canAccessStep2}
-                    onClick={() => canAccessStep2 && setCurrentStep(1)}
-                >
-                    2. 设置检索参数&评估指标
-                </Button>
-            </div>
-            {currentStep === 0 ? renderStep1() : renderStep2()}
+            {questionPageList.records.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', margin: '20px 0', }}>
+                    <Button
+                        type={currentStep === 0 ? 'primary' : 'default'}
+                        size="small"
+                        onClick={() => setCurrentStep(0)}
+                    >
+                        1. 选择测试问题
+                    </Button>
+                    <Button
+                        type={currentStep === 1 ? 'primary' : 'default'}
+                        size="small"
+                        disabled={!canAccessStep2}
+                        onClick={() => canAccessStep2 && setCurrentStep(1)}
+                    >
+                        2. 设置检索参数&评估指标
+                    </Button>
+                </div>
+            )}
+            {questionPageList.records.length === 0 ? renderStep1() : (currentStep === 0 ? renderStep1() : renderStep2())}
         </Modal>
     );
 };

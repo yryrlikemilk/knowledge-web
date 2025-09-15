@@ -33,7 +33,11 @@ const DeepSearch = () => {
                 </div>
 
                 <div style={{ flex: 1 }}>
-                    {activeTab === 'auto' ? <AutoEvaluation /> : <TestQuestions />}
+                    {activeTab === 'auto' ? (
+                        <AutoEvaluation onSwitchToQuestions={() => setActiveTab('questions')} />
+                    ) : (
+                        <TestQuestions />
+                    )}
                 </div>
 
             </div>

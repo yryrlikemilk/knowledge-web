@@ -63,6 +63,13 @@ export default {
   knowledge_graph: `${api_host}/chunk/knowledge_graph`,
   getVideoChunks: `${api_rag_host}/chunk/getVideoChunks`,
   minioGetDownloadUrl: `${api_rag_host}/minio/getDownloadUrl`,
+  check_for_file_updates:(knowledgeId: string)=>`${api_rag_host}/aiGeneration/checkForFileUpdates?kbId=${knowledgeId}`,
+  generate_ai_question:`${api_rag_host}/aiGeneration/generateAiQuestion`,
+  page_list:`${api_rag_host}/retrievalTask/pageList`,
+  save_retrieval_task:`${api_rag_host}/retrievalTask/save`,
+  retrieval_question_page_list:`${api_rag_host}/retrievalQuestion/pageList`,
+  add_questions:`${api_rag_host}/retrievalQuestion/addQuestions`,
+  update_question:`${api_rag_host}/retrievalQuestion/update`,
   // document
   get_document_list: `${api_rag_host}/file/docList`,
   get_run_status: (knowledgeId: string)=>`${api_rag_host}/dataset/getRunStatus?kbId=${knowledgeId}`,

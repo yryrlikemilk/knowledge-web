@@ -38,7 +38,15 @@ const {
   setMeta,
   //retrieval_test,
   getVideoChunks,
+ 
   minioGetDownloadUrl,
+  check_for_file_updates,
+  page_list,
+  save_retrieval_task,
+  retrieval_question_page_list,
+  add_questions,
+  update_question,
+  generate_ai_question,
 } = api;
 
 const methods = {
@@ -73,9 +81,9 @@ const methods = {
     url: document_change_status,
     method: 'post',
   },
-  document_update_status:{
-     url: document_update_status,
-    method: 'post'
+  document_update_status: {
+    url: document_update_status,
+    method: 'post',
   },
   document_rename: {
     url: document_rename,
@@ -167,13 +175,35 @@ const methods = {
     url: minioGetDownloadUrl,
     method: 'get',
   },
+  pageList:{
+    url: page_list,
+    method: 'post',
+  },
+  retrievalQuestionPageList:{
+    url: retrieval_question_page_list,
+    method: 'post',
+  },
+  addQuestions:{
+    url: add_questions,
+    method: 'post',
+  },
+  updateQuestion:{
+    url: update_question,
+    method: 'post',
+  },
+  saveRetrievalTask:{
+    url: save_retrieval_task,
+    method: 'post',
+  }
 };
 
 const kbService = registerServer<keyof typeof methods>(methods, request);
 export const retrieval_test = (body?: IFetchKnowledgeListRequestParams) => {
   return request.post(api.retrieval_test, { data: body });
 };
-export const batch_retrieval_test = (body?: IFetchKnowledgeListRequestParams) => {
+export const batch_retrieval_test = (
+  body?: IFetchKnowledgeListRequestParams,
+) => {
   return request.post(api.batch_retrieval_test, { data: body });
 };
 
@@ -194,13 +224,13 @@ export const renameTag = (
 
 export const documentRm = (
   knowledgeId: string,
-  body?: IFetchKnowledgeListRequestParams
-) => post(api.documentRm(knowledgeId), {data:body});
+  body?: IFetchKnowledgeListRequestParams,
+) => post(api.documentRm(knowledgeId), { data: body });
 export const rm_chunk = (
   knowledgeId: string,
-  document_id:string,
-  body?: IFetchKnowledgeListRequestParams
-) => post(api.rm_chunk(knowledgeId,document_id), {data:body});
+  document_id: string,
+  body?: IFetchKnowledgeListRequestParams,
+) => post(api.rm_chunk(knowledgeId, document_id), { data: body });
 export function getKnowledgeGraph(knowledgeId: string) {
   return request.get(api.getKnowledgeGraph(knowledgeId));
 }
@@ -221,6 +251,9 @@ export const listDocument = (
   body?: IFetchDocumentListRequestBody,
 ) => request.post(api.get_document_list, { data: body || {} });
 
+export function checkForFileUpdates(knowledgeId: string) {
+  return request.get(api.check_for_file_updates(knowledgeId));
+}
 export const getCount = () => {
   return request.get('/api/dataset/getCount');
 };
@@ -234,4 +267,17 @@ export const fetchVideoChunks = (chunk_ids: string[]) =>
 
 export const getMinioDownloadUrl = (docId: string[]) =>
   kbService['minioGetDownloadUrl']({ docId });
+
+export const generateAiQuestion = (body?:{ kb_id: string; question_count: number }) => {
+  return request.post(api.generate_ai_question, { data: body });
+};
+
+export const saveRetrievalTask = (body?:{ kb_id: string; task_name: string; test_ques_ids: string[] }) => {
+  return request.post(api.save_retrieval_task, { data: body });
+};
+
+export const updateQuestion = (body?:{ id: string; question_text: string }) => {
+  return request.post(api.update_question, { data: body });
+};
+
 export default kbService;

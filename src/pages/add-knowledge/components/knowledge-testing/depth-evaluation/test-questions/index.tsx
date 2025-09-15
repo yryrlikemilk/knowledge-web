@@ -1,80 +1,42 @@
 import React, { useState } from 'react';
-import { Typography, Space, Button, Table, Tag, Modal, message, Tooltip } from 'antd';
-import { Edit, Delete, Trash2 } from 'lucide-react';
+import { Typography, Space, Button, Table, Tag, Modal, message, Tooltip, Dropdown } from 'antd';
+import { Edit, Delete, Trash2, Plus, ChevronDown } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
+import { useFetchRetrievalQuestionPageList } from '@/hooks/knowledge-hooks';
+import ManualInputModal from './manual-input-modal';
+import AIGenerateModal from './ai-generate-modal';
+import EditQuestionModal from './edit-question-modal';
 
 const { Title, Paragraph } = Typography;
 
 interface QuestionItem {
-    id: number;
-    question: string;
-    type: string;
-    source: string;
-    sourceFile: string;
-    status: 'active' | 'inactive' | 'testing';
-    createTime: string;
+    id: string;
+    question_text: string;
+    auto_generate: boolean;
+    category_sub: string;
+    chunk_id: string;
+    create_time: string;
+    doc_id: string;
+    kb_id: string;
+    status: number;
+    update_time: string;
 }
 
 const TestQuestions = () => {
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<QuestionItem | null>(null);
+    const [isManualModalVisible, setIsManualModalVisible] = useState(false);
+    const [isAIModalVisible, setIsAIModalVisible] = useState(false);
+    const { questionPageList } = useFetchRetrievalQuestionPageList();
 
-    // 模拟测试问题数据
-    const [testQuestions, setTestQuestions] = useState<QuestionItem[]>([
-        {
-            id: 1,
-            question: '什么是人工智能？',
-            type: '基础概念',
-            source: '用户输入',
-            sourceFile: 'AI基础文档.pdf',
-            status: 'active',
-            createTime: '2024-01-15 10:30:00'
-        },
-        {
-            id: 2,
-            question: '机器学习的主要类型有哪些？',
-            type: '技术分类',
-            source: '知识库',
-            sourceFile: 'ML技术手册.docx',
-            status: 'active',
-            createTime: '2024-01-16 14:20:00'
-        },
-        {
-            id: 3,
-            question: '深度学习与传统机器学习的区别是什么？',
-            type: '技术对比',
-            source: '用户输入',
-            sourceFile: '深度学习指南.pdf',
-            status: 'testing',
-            createTime: '2024-01-17 09:15:00'
-        },
-        {
-            id: 4,
-            question: '神经网络的基本结构是什么？',
-            type: '技术原理',
-            source: '知识库',
-            sourceFile: '神经网络基础.pdf',
-            status: 'inactive',
-            createTime: '2024-01-18 16:45:00'
-        },
-        {
-            id: 5,
-            question: '如何评估机器学习模型的性能？',
-            type: '评估方法',
-            source: '用户输入',
-            sourceFile: '模型评估方法.docx',
-            status: 'active',
-            createTime: '2024-01-19 11:30:00'
-        },
-    ]);
-
-    const handleDelete = (id: number) => {
+    const handleDelete = (questionId: string) => {
         Modal.confirm({
             title: '确认删除',
             content: '确定要删除这个问题吗？',
             onOk() {
-                setTestQuestions(prev => prev.filter(item => item.id !== id));
+                // TODO: 调用删除接口
+                console.log('删除问题ID:', questionId);
                 message.success('删除成功');
             },
         });
@@ -85,7 +47,7 @@ const TestQuestions = () => {
             title: '批量删除',
             content: `确定要删除选中的 ${selectedRowKeys.length} 个问题吗？`,
             onOk() {
-                setTestQuestions(prev => prev.filter(item => !selectedRowKeys.includes(item.id)));
+                // TODO: 调用批量删除接口
                 setSelectedRowKeys([]);
                 message.success('批量删除成功');
             },
@@ -98,10 +60,9 @@ const TestQuestions = () => {
     };
 
     const handleEditModalOk = () => {
-        // 这里可以添加保存逻辑
         setIsEditModalVisible(false);
         setEditingQuestion(null);
-        message.success('编辑成功');
+        // 成功提示和问题列表刷新已在hook中处理
     };
 
     const handleEditModalCancel = () => {
@@ -109,21 +70,38 @@ const TestQuestions = () => {
         setEditingQuestion(null);
     };
 
-    const getStatusTag = (status: string) => {
+    const handleManualInput = () => {
+        setIsManualModalVisible(true);
+    };
+
+    const handleAIGenerate = () => {
+        setIsAIModalVisible(true);
+    };
+
+    const handleManualModalOk = () => {
+        setIsManualModalVisible(false);
+        // 成功提示和问题列表刷新已在hook中处理
+    };
+
+    const handleAIModalOk = () => {
+        setIsAIModalVisible(false);
+        // 成功提示和问题列表刷新已在hook中处理
+    };
+
+    const getStatusTag = (status: number) => {
         const statusMap = {
-            active: { color: 'green', text: '活跃' },
-            inactive: { color: 'red', text: '停用' },
-            testing: { color: 'blue', text: '测试中' },
+            0: { color: 'yellow', text: '待测试' },
+            1: { color: 'green', text: '已测试' },
         };
-        const config = statusMap[status as keyof typeof statusMap];
+        const config = statusMap[status as keyof typeof statusMap] || statusMap[0];
         return <Tag color={config.color}>{config.text}</Tag>;
     };
 
     const columns: ColumnsType<QuestionItem> = [
         {
             title: '问题',
-            dataIndex: 'question',
-            key: 'question',
+            dataIndex: 'question_text',
+            key: 'question_text',
             width: 300,
             ellipsis: true,
             render: (text: string) => (
@@ -134,26 +112,27 @@ const TestQuestions = () => {
         },
         {
             title: '类型',
-            dataIndex: 'type',
-            key: 'type',
+            dataIndex: 'category_sub',
+            key: 'category_sub',
             width: 120,
-            render: (type: string) => <Tag color="blue">{type}</Tag>,
+            render: (category: string) => <Tag color="blue">{category || '未分类'}</Tag>,
         },
         {
             title: '来源',
-            dataIndex: 'source',
-            key: 'source',
+            dataIndex: 'auto_generate',
+            key: 'auto_generate',
             width: 100,
+            render: (autoGenerate: boolean) => autoGenerate ? 'AI生成' : '手工输入',
         },
         {
             title: '来源文件',
-            dataIndex: 'sourceFile',
-            key: 'sourceFile',
+            dataIndex: 'doc_id',
+            key: 'doc_id',
             width: 150,
             ellipsis: true,
-            render: (text: string) => (
-                <Tooltip title={text} placement="topLeft">
-                    <span style={{ cursor: 'help' }}>{text}</span>
+            render: (docId: string) => (
+                <Tooltip title={docId} placement="topLeft">
+                    <span style={{ cursor: 'help' }}>{docId || '-'}</span>
                 </Tooltip>
             ),
         },
@@ -162,13 +141,14 @@ const TestQuestions = () => {
             dataIndex: 'status',
             key: 'status',
             width: 100,
-            render: (status: string) => getStatusTag(status),
+            render: (status: number) => getStatusTag(status),
         },
         {
             title: '创建时间',
-            dataIndex: 'createTime',
-            key: 'createTime',
-            width: 100,
+            dataIndex: 'create_time',
+            key: 'create_time',
+            width: 150,
+            render: (time: string) => time ? new Date(time).toLocaleString('zh-CN') : '-',
         },
         {
             title: '操作',
@@ -211,7 +191,36 @@ const TestQuestions = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
                     <Title level={3}>测试问题列表</Title>
-
+                    <Dropdown
+                        menu={{
+                            items: [
+                                {
+                                    key: 'manual',
+                                    label: (
+                                        <div style={{ padding: '8px 0' }}>
+                                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>手动输入</div>
+                                        </div>
+                                    ),
+                                    onClick: handleManualInput,
+                                },
+                                {
+                                    key: 'ai',
+                                    label: (
+                                        <div style={{ padding: '8px 0' }}>
+                                            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>AI生成</div>
+                                        </div>
+                                    ),
+                                    onClick: handleAIGenerate,
+                                },
+                            ],
+                        }}
+                        trigger={['click']}
+                        placement="bottomLeft"
+                    >
+                        <Button type="primary" style={{ marginBottom: '20px' }} icon={<Plus size={16} />}>
+                            新增测试问题 <ChevronDown size={14} />
+                        </Button>
+                    </Dropdown>
                 </div>
                 <Button
                     type="primary"
@@ -224,39 +233,50 @@ const TestQuestions = () => {
                 </Button>
             </div>
 
-            <Table
-                columns={columns}
-                dataSource={testQuestions}
-                rowKey="id"
-                rowSelection={rowSelection}
-                pagination={{
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
-                }}
-                scroll={{ x: 1000 }}
+            {questionPageList.records.length > 0 ? (
+                <Table
+                    columns={columns}
+                    dataSource={questionPageList.records}
+                    rowKey="id"
+                    rowSelection={rowSelection}
+                    pagination={{
+                        pageSize: 10,
+                        showSizeChanger: true,
+                        showQuickJumper: true,
+                        showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+                    }}
+                    scroll={{ x: 1000 }}
+                />
+            ) : (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <Title level={4}>暂无测试问题数据</Title>
+                    <Paragraph type="secondary">
+                        您还没有创建过任何测试问题，请点击上方按钮创建第一个测试问题
+                    </Paragraph>
+                </div>
+            )}
+
+            {/* 编辑问题弹窗 */}
+            <EditQuestionModal
+                visible={isEditModalVisible}
+                onCancel={handleEditModalCancel}
+                onOk={handleEditModalOk}
+                question={editingQuestion}
             />
 
-            <Modal
-                title="编辑问题"
-                open={isEditModalVisible}
-                onOk={handleEditModalOk}
-                onCancel={handleEditModalCancel}
-                width={600}
-            >
-                {editingQuestion && (
-                    <div>
-                        <p><strong>问题：</strong>{editingQuestion.question}</p>
-                        <p><strong>类型：</strong>{editingQuestion.type}</p>
-                        <p><strong>来源：</strong>{editingQuestion.source}</p>
-                        <p><strong>来源文件：</strong>{editingQuestion.sourceFile}</p>
-                        <p><strong>状态：</strong>{getStatusTag(editingQuestion.status)}</p>
-                        <p><strong>创建时间：</strong>{editingQuestion.createTime}</p>
-                        {/* 这里可以添加表单来编辑问题 */}
-                    </div>
-                )}
-            </Modal>
+            {/* 手动输入弹窗 */}
+            <ManualInputModal
+                visible={isManualModalVisible}
+                onCancel={() => setIsManualModalVisible(false)}
+                onOk={handleManualModalOk}
+            />
+
+            {/* AI生成弹窗 */}
+            <AIGenerateModal
+                visible={isAIModalVisible}
+                onCancel={() => setIsAIModalVisible(false)}
+                onOk={handleAIModalOk}
+            />
         </div>
     );
 };
