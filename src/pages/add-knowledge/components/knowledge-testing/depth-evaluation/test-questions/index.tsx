@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Typography, Space, Button, Table, Tag, Modal, message, Tooltip, Dropdown } from 'antd';
 import { Edit, Delete, Trash2, Plus, ChevronDown } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
-import { useFetchRetrievalQuestionPageList } from '@/hooks/knowledge-hooks';
+import { useFetchRetrievalQuestionPageList, useDeleteQuestions } from '@/hooks/knowledge-hooks';
 import ManualInputModal from './manual-input-modal';
 import AIGenerateModal from './ai-generate-modal';
 import EditQuestionModal from './edit-question-modal';
@@ -29,15 +29,19 @@ const TestQuestions = () => {
     const [isManualModalVisible, setIsManualModalVisible] = useState(false);
     const [isAIModalVisible, setIsAIModalVisible] = useState(false);
     const { questionPageList } = useFetchRetrievalQuestionPageList();
+    const { deleteQuestions, loading: deleteLoading } = useDeleteQuestions();
 
     const handleDelete = (questionId: string) => {
         Modal.confirm({
             title: '确认删除',
             content: '确定要删除这个问题吗？',
-            onOk() {
-                // TODO: 调用删除接口
-                console.log('删除问题ID:', questionId);
-                message.success('删除成功');
+            onOk: async () => {
+                try {
+                    await deleteQuestions([questionId]);
+                } catch (error) {
+                    console.error('删除问题失败:', error);
+                    message.error(error instanceof Error ? error.message : '删除失败');
+                }
             },
         });
     };
@@ -46,10 +50,14 @@ const TestQuestions = () => {
         Modal.confirm({
             title: '批量删除',
             content: `确定要删除选中的 ${selectedRowKeys.length} 个问题吗？`,
-            onOk() {
-                // TODO: 调用批量删除接口
-                setSelectedRowKeys([]);
-                message.success('批量删除成功');
+            onOk: async () => {
+                try {
+                    await deleteQuestions(selectedRowKeys as string[]);
+                    setSelectedRowKeys([]);
+                } catch (error) {
+                    console.error('批量删除失败:', error);
+                    message.error(error instanceof Error ? error.message : '批量删除失败');
+                }
             },
         });
     };

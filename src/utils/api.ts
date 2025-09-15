@@ -70,6 +70,7 @@ export default {
   retrieval_question_page_list:`${api_rag_host}/retrievalQuestion/pageList`,
   add_questions:`${api_rag_host}/retrievalQuestion/addQuestions`,
   update_question:`${api_rag_host}/retrievalQuestion/update`,
+  delete_questions:`${api_rag_host}/retrievalQuestion/deleteQuestions`,
   // document
   get_document_list: `${api_rag_host}/file/docList`,
   get_run_status: (knowledgeId: string)=>`${api_rag_host}/dataset/getRunStatus?kbId=${knowledgeId}`,

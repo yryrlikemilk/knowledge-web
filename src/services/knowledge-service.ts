@@ -46,6 +46,7 @@ const {
   retrieval_question_page_list,
   add_questions,
   update_question,
+  delete_questions,
   generate_ai_question,
 } = api;
 
@@ -191,6 +192,10 @@ const methods = {
     url: update_question,
     method: 'post',
   },
+  deleteQuestions:{
+    url: delete_questions,
+    method: 'post',
+  },
   saveRetrievalTask:{
     url: save_retrieval_task,
     method: 'post',
@@ -278,6 +283,10 @@ export const saveRetrievalTask = (body?:{ kb_id: string; task_name: string; test
 
 export const updateQuestion = (body?:{ id: string; question_text: string }) => {
   return request.post(api.update_question, { data: body });
+};
+
+export const deleteQuestions = (body?:{ questionIds: string[] }) => {
+  return request.post(api.delete_questions, { data: body });
 };
 
 export default kbService;

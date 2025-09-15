@@ -20,6 +20,7 @@ import kbService, {
   generateAiQuestion,
   saveRetrievalTask,
   updateQuestion,
+  deleteQuestions,
 } from '@/services/knowledge-service';
 import {
   useInfiniteQuery,
@@ -916,5 +917,31 @@ export const useUpdateQuestion = () => {
   return { 
     loading, 
     updateQuestion: mutateAsync 
+  };
+};
+
+// 删除问题
+export const useDeleteQuestions = () => {
+  const queryClient = useQueryClient();
+
+  const { mutateAsync, isPending: loading } = useMutation({
+    mutationFn: async (questionIds: string[]) => {
+      const response = await deleteQuestions({
+        questionIds: questionIds
+      });
+      
+      if (response?.data?.code === 0) {
+        message.success('删除成功');
+        // 刷新问题列表
+        queryClient.invalidateQueries({ queryKey: ['fetchRetrievalQuestionPageList'] });
+        return response.data.data;
+      }
+      throw new Error(response?.data?.message || '删除失败');
+    },
+  });
+
+  return { 
+    loading, 
+    deleteQuestions: mutateAsync 
   };
 };
