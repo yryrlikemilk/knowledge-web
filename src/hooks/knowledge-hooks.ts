@@ -10,6 +10,7 @@ import kbService, {
   deleteKnowledgeGraph,
   getCount,
   getKnowledgeGraph,
+  getKnowledgeRunStatus,
   listDataset,
   listTag,
   removeTag,
@@ -702,4 +703,27 @@ export const useFetchKnowledgeCount = () => {
 
 export const useAllTestingLoading = () => {
   return useIsMutating({ mutationKey: ['testChunkAll'] }) > 0;
+};
+
+export const useFetchKnowledgeRunStatus = () => {
+  const knowledgeBaseId = useKnowledgeBaseId();
+
+  const { data, isFetching: loading } = useQuery({
+    queryKey: ['fetchKnowledgeRunStatus', knowledgeBaseId],
+    enabled: !!knowledgeBaseId,
+    refetchInterval: 30000, // 30秒轮询一次
+    queryFn: async () => {
+      if (!knowledgeBaseId) return { doc_ids: [], run: 0 };
+      const response = await getKnowledgeRunStatus(knowledgeBaseId);
+      if (response?.data?.code === 0) {
+        return response.data.data;
+      }
+      return { doc_ids: [], run: 0 };
+    },
+  });
+
+  return { 
+    runStatus: data || { doc_ids: [], run: 0 }, 
+    loading 
+  };
 };

@@ -204,6 +204,9 @@ export const rm_chunk = (
 export function getKnowledgeGraph(knowledgeId: string) {
   return request.get(api.getKnowledgeGraph(knowledgeId));
 }
+export function getKnowledgeRunStatus(knowledgeId: string) {
+  return request.get(api.get_run_status(knowledgeId));
+}
 
 export function deleteKnowledgeGraph(knowledgeId: string) {
   return request.delete(api.getKnowledgeGraph(knowledgeId));

@@ -65,6 +65,7 @@ export default {
   minioGetDownloadUrl: `${api_rag_host}/minio/getDownloadUrl`,
   // document
   get_document_list: `${api_rag_host}/file/docList`,
+  get_run_status: (knowledgeId: string)=>`${api_rag_host}/dataset/getRunStatus?kbId=${knowledgeId}`,
   document_change_status: `${api_rag_host}/file/updateDocStatus`,
   document_update_status: `${api_rag_host}/file/updateDocStatus`,
   document_rm: `${api_host}/document/rm`,
