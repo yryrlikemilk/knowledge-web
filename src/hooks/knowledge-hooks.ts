@@ -9,10 +9,14 @@ import i18n from '@/locales/config';
 import kbService, {
   batch_retrieval_test,
   checkForFileUpdates,
+  checkFirstGenerate,
   deleteKnowledgeGraph,
   deleteQuestions,
   generateAiQuestion,
   getAiQuestionCount,
+  getAiQuestionCountByDocIds,
+  otherDocGenerateAiQuestion,
+  getAllQuestions,
   getCount,
   getKnowledgeGraph,
   getKnowledgeRunStatus,
@@ -826,6 +830,30 @@ export const useFetchRetrievalQuestionPageList = (
   };
 };
 
+// 获取全部问题列表（AI与手工）
+export const useFetchAllQuestions = () => {
+  const knowledgeBaseId = useKnowledgeBaseId();
+
+  const { data, isFetching: loading, refetch } = useQuery({
+    queryKey: ['fetchAllQuestions', knowledgeBaseId],
+    enabled: !!knowledgeBaseId,
+    queryFn: async () => {
+      if (!knowledgeBaseId) return { autoQuestion: [], manualQuestion: [] };
+      const resp = await getAllQuestions(knowledgeBaseId);
+      if (resp?.data?.code === 0) {
+        return resp.data.data;
+      }
+      return { autoQuestion: [], manualQuestion: [] };
+    },
+  });
+
+  return {
+    allQuestions: data || { autoQuestion: [], manualQuestion: [] },
+    loading,
+    refetch,
+  };
+};
+
 export const useAddQuestions = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
   const queryClient = useQueryClient();
@@ -1015,6 +1043,74 @@ export const useFetchAiQuestionCount = () => {
 
   return {
     questionCount: data || { limitCount: 0, recommendCount: 0 },
+    loading,
+    refetch,
+  };
+};
+
+// 基于选中文档ID获取AI题目数量限制
+export const useFetchAiQuestionCountByDocIds = () => {
+  const knowledgeBaseId = useKnowledgeBaseId();
+
+  const { data, isFetching: loading, refetch } = useQuery({
+    queryKey: ['fetchAiQuestionCountByDocIds', knowledgeBaseId],
+    enabled: false,
+    queryFn: async () => ({ limitCount: 0, recommendCount: 0 }),
+  });
+
+  const fetchCount = async (docIds: string[]) => {
+    if (!knowledgeBaseId) return { limitCount: 0, recommendCount: 0 };
+    const response = await getAiQuestionCountByDocIds({ kb_id: knowledgeBaseId, doc_ids: docIds  });
+    if (response?.data?.code === 0) {
+      return response.data.data as { limitCount: number; recommendCount: number };
+    }
+    return { limitCount: 0, recommendCount: 0 };
+  };
+
+  return { data: data || { limitCount: 0, recommendCount: 0 }, loading, refetch, fetchCount };
+};
+
+// 选中文档生成问题
+export const useOtherDocGenerateAiQuestion = () => {
+  const knowledgeBaseId = useKnowledgeBaseId();
+
+  const { mutateAsync, isPending: loading } = useMutation({
+    mutationFn: async (params: { doc_ids: string[]; question_count: number }) => {
+      if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
+      const response = await otherDocGenerateAiQuestion({
+        kb_id: knowledgeBaseId,
+        doc_ids: params.doc_ids,
+        question_count: params.question_count,
+      });
+      if (response?.data?.code === 0) {
+        return response.data.data;
+      }
+      throw new Error(response?.data?.message || '生成问题失败');
+    },
+  });
+
+  return { loading, otherDocGenerateAiQuestion: mutateAsync };
+};
+
+// 检查首次生成状态
+export const useFetchCheckFirstGenerate = () => {
+  const knowledgeBaseId = useKnowledgeBaseId();
+
+  const { data, isFetching: loading, refetch } = useQuery({
+    queryKey: ['fetchCheckFirstGenerate', knowledgeBaseId],
+    enabled: false, // 默认不自动执行，只在需要时手动调用
+    queryFn: async () => {
+      if (!knowledgeBaseId) return 0;
+      const response = await checkFirstGenerate(knowledgeBaseId);
+      if (response?.data?.code === 0) {
+        return response.data.data;
+      }
+      return 0;
+    },
+  });
+
+  return {
+    firstGenerateStatus: data || 0,
     loading,
     refetch,
   };

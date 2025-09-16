@@ -137,8 +137,8 @@ const FileUploadModal = ({
           fileList={fileList ? fileList : currentFileList}
           setFileList={setFileList ? setFileList : setCurrentFileList}
           uploadProgress={uploadProgress}
-          accept={'.docx,.xlsx,.xls,.ppt,.pdf,.txt,.jpeg,.jpg,.png,.tif,.gif,.csv,.json,.eml,.html,.mp3,.mp4'}
-          uploadLimitTip={'仅支持DOCX、XLSX、XLS、PPT、PDF、TXT、JPEG、JPG、PNG、TIF、GIF、CSV、JSON、EML、HTML、MP3、MP4文件格式'}
+          accept={'.docx,.xlsx,.xls,.ppt,.pdf,.txt,.jpeg,.jpg,.png,.tif,.gif,.csv,.json,.eml,.html,.mp3,.mp4,.avi'}
+          uploadLimitTip={'仅支持DOCX、XLSX、XLS、PPT、PDF、TXT、JPEG、JPG、PNG、TIF、GIF、CSV、JSON、EML、AVI、HTML、MP3、MP4文件格式'}
         ></FileUpload>
       ),
     },

@@ -41,12 +41,15 @@ const {
  
   minioGetDownloadUrl,
   get_ai_question_count,
+  get_ai_question_count_by_doc_ids,
+  other_doc_generate_ai_question,
   page_list,
   save_retrieval_task,
   retrieval_question_page_list,
   add_questions,
   update_question,
   delete_questions,
+  check_first_generate,
 } = api;
 
 const methods = {
@@ -179,6 +182,14 @@ const methods = {
     url: get_ai_question_count,
     method: 'post',
   },
+  getAiQuestionCountByDocIds: {
+    url: get_ai_question_count_by_doc_ids,
+    method: 'post',
+  },
+  otherDocGenerateAiQuestion: {
+    url: other_doc_generate_ai_question,
+    method: 'post',
+  },
   pageList:{
     url: page_list,
     method: 'post',
@@ -202,6 +213,10 @@ const methods = {
   saveRetrievalTask:{
     url: save_retrieval_task,
     method: 'post',
+  },
+  checkFirstGenerate:{
+    url: check_first_generate,
+    method: 'get',
   }
 };
 
@@ -262,6 +277,9 @@ export const listDocument = (
 export function checkForFileUpdates(knowledgeId: string) {
   return request.get(api.check_for_file_updates(knowledgeId));
 }
+export const getAllQuestions = (kbId: string) => {
+  return request.get(api.all_questions, { params: { kbId } });
+};
 export const getCount = () => {
   return request.get('/api/dataset/getCount');
 };
@@ -284,8 +302,16 @@ export const getAiQuestionCount = (body?:{ kb_id: string; doc_ids: string[] }) =
   return request.post(api.get_ai_question_count, { data: body });
 };
 
+export const getAiQuestionCountByDocIds = (body?:{ kb_id: string; doc_ids: string[]; }) => {
+  return request.post(api.get_ai_question_count_by_doc_ids, { data: body });
+};
+
+export const otherDocGenerateAiQuestion = (body?:{ kb_id: string; doc_ids: string[]; question_count: number }) => {
+  return request.post(api.other_doc_generate_ai_question, { data: body });
+};
+
 export const saveRetrievalTask = (body?:{ kb_id: string; task_name: string; questions: Array<{ question_id: string; question_text: string }> }) => {
-  return request.get(api.save_retrieval_task, { data: body });
+  return request.post(api.save_retrieval_task, { data: body });
 };
 
 export const updateQuestion = (body?:{ id: string; question_text: string }) => {
@@ -294,6 +320,10 @@ export const updateQuestion = (body?:{ id: string; question_text: string }) => {
 
 export const deleteQuestions = (body?:{ question_ids: string[] }) => {
   return request.post(api.delete_questions, { data: body });
+};
+
+export const checkFirstGenerate = (kbId: string) => {
+  return request.get(api.check_first_generate, { params: { kbId } });
 };
 
 export default kbService;

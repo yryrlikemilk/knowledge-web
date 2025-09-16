@@ -3,7 +3,7 @@ import { Modal, Form, Input, Button, Space, Table, Tag, InputNumber, message, Ty
 import { CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import Rerank from '@/components/rerank';
-import { useFetchRetrievalQuestionPageList, useSaveRetrievalTask } from '@/hooks/knowledge-hooks';
+import { useFetchAllQuestions, useSaveRetrievalTask } from '@/hooks/knowledge-hooks';
 
 const { Title, Paragraph } = Typography;
 
@@ -38,15 +38,28 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
     const [selectedSources, setSelectedSources] = useState<('manual' | 'ai')[]>([]);
     const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
     const [canAccessStep2, setCanAccessStep2] = useState(false);
-    const { questionPageList } = useFetchRetrievalQuestionPageList();
+    const { allQuestions: allQ } = useFetchAllQuestions();
     const { saveRetrievalTask, loading: saveLoading } = useSaveRetrievalTask();
 
     // 根据接口数据生成问题列表
+    const mapItem = (item: any): QuestionItem => ({
+        id: item.id,
+        question_text: item.questionText,
+        auto_generate: !!item.autoGenerate,
+        category_sub: item.categorySub,
+        chunk_id: item.chunkId,
+        create_time: item.createTime,
+        doc_id: item.docId,
+        kb_id: item.kbId,
+        status: item.status,
+        update_time: item.updateTime,
+        selected: false,
+    });
+
     const getQuestionsFromApi = (): QuestionItem[] => {
-        return questionPageList.records.map((record: any) => ({
-            ...record,
-            selected: false
-        }));
+        const ai = (allQ.autoQuestion || []).map(mapItem);
+        const manual = (allQ.manualQuestion || []).map(mapItem);
+        return [...manual, ...ai];
     };
 
     const allQuestions = getQuestionsFromApi();
@@ -195,7 +208,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
 
     const renderStep1 = () => {
         // 如果没有问题数据，显示提示信息
-        if (questionPageList.records.length === 0) {
+        if ((allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0) === 0) {
             return (
                 <div style={{ textAlign: 'center', padding: '40px 0' }}>
                     <Title level={4}>暂时没有测试问题</Title>
@@ -271,7 +284,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                         </div>
 
                         {/* 问题列表 */}
-                        <div style={{ flex: 1, padding: '16px' }}>
+                        <div style={{ flex: 1, padding: '16px' ,height:400,overflow:'auto' }}>
                             <div style={{ marginBottom: '12px', fontWeight: 'bold' }}>
                                 问题列表 (已选择 {selectedQuestions.length} 个)
                             </div>
@@ -397,7 +410,8 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
 
     // 根据是否有数据显示不同的底部按钮
     const renderFooter = () => {
-        if (questionPageList.records.length === 0) {
+        const totalCount = (allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0);
+        if (totalCount === 0) {
             return [
                 <Button key="cancel" onClick={handleCancel}>
                     取消
@@ -438,7 +452,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
             width={800}
             footer={renderFooter()}
         >
-            {questionPageList.records.length > 0 && (
+            {(allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0) > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', margin: '20px 0', }}>
                     <Button
                         type={currentStep === 0 ? 'primary' : 'default'}
@@ -457,7 +471,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                     </Button>
                 </div>
             )}
-            {questionPageList.records.length === 0 ? renderStep1() : (currentStep === 0 ? renderStep1() : renderStep2())}
+            {(allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0) === 0 ? renderStep1() : (currentStep === 0 ? renderStep1() : renderStep2())}
         </Modal>
     );
 };

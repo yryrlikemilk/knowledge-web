@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { Modal, Form, message, InputNumber, Button } from 'antd';
-import { useGenerateAiQuestion, useFetchFileUpdates, useFetchAiQuestionCount } from '@/hooks/knowledge-hooks';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Modal, Form, message, InputNumber, Table, Button, Space } from 'antd';
+import { useGenerateAiQuestion, useFetchFileUpdates, useFetchAiQuestionCount, useFetchCheckFirstGenerate, useFetchAiQuestionCountByDocIds, useOtherDocGenerateAiQuestion } from '@/hooks/knowledge-hooks';
 
 interface AIGenerateModalProps {
     visible: boolean;
@@ -13,32 +13,83 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
     const { generateAiQuestion, loading } = useGenerateAiQuestion();
     const { fileUpdates, loading: updatesLoading, refetch } = useFetchFileUpdates();
     const { questionCount, loading: countLoading, refetch: refetchCount } = useFetchAiQuestionCount();
+    const { firstGenerateStatus, loading: firstGenerateLoading, refetch: refetchFirstGenerate } = useFetchCheckFirstGenerate();
+    const { fetchCount } = useFetchAiQuestionCountByDocIds();
+    const { otherDocGenerateAiQuestion, loading: otherGenLoading } = useOtherDocGenerateAiQuestion();
+
+    // 左侧面板选中：'new' | 'edited'
+    const [activeSource, setActiveSource] = useState<'new' | 'edited'>('new');
+    // 右侧表格已选中id
+    const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+
+    // 可显示的数据，根据左侧选择切换
+    const displayedDocuments = useMemo(() => {
+        return activeSource === 'new' ? (fileUpdates.newDocuments || []) : (fileUpdates.modifiedDocuments || []);
+    }, [activeSource, fileUpdates]);
+
+    // 弹窗首次打开且有数据时，默认全选当前类别
+    useEffect(() => {
+        if (visible && fileUpdates?.hasUpdates) {
+            const initialList = activeSource === 'new' ? (fileUpdates.newDocuments || []) : (fileUpdates.modifiedDocuments || []);
+            setSelectedDocIds(initialList.map((d: any) => d.id).filter(Boolean));
+        }
+        // 仅在visible或数据源变化时重新默认选中
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [visible, activeSource, fileUpdates?.newDocuments, fileUpdates?.modifiedDocuments]);
+
+    const [dynamicLimit, setDynamicLimit] = useState<number | undefined>(undefined);
+    const [fetchingCount, setFetchingCount] = useState<boolean>(false);
 
     useEffect(() => {
         if (visible) {
             refetch();
             refetchCount();
+            refetchFirstGenerate();
+        } else {
+            // 弹窗关闭时重置内部状态，确保下次打开先显示文件列表
+            setDynamicLimit(undefined);
+            setSelectedDocIds([]);
+            setActiveSource('new');
         }
-    }, [visible, refetch, refetchCount]);
+    }, [visible, refetch, refetchCount, refetchFirstGenerate]);
 
     const handleOk = async () => {
         const values = await form.validateFields();
-
-        // 调用AI生成接口
-        await generateAiQuestion(values.questionCount);
-
+        const max = Number(questionCount?.limitCount || 0);
+        const qty = Number(values.questionCount || 0);
+        if (!qty || qty < 1 || (max > 0 && qty > max)) {
+            message.warning(`请输入大于1的数量`);
+            return;
+        }
+        await generateAiQuestion(qty);
         message.success('问题生成成功');
-
-        // 重置表单
         form.resetFields();
-
-        // 调用父组件的回调
         onOk();
-
     };
+
+    // 点击重新生成：按选中文档获取题目数量限制
+    const handleFetchCountByDocIds = async () => {
+        const ids = selectedDocIds;
+        if (!ids || ids.length === 0) {
+            message.warning('请先选择文件');
+            return;
+        }
+        setFetchingCount(true);
+        try {
+            const res = await fetchCount(ids);
+            form.setFieldsValue({ questionCount: res.recommendCount || 0 });
+            setDynamicLimit(res.limitCount || 0);
+        } finally {
+            setFetchingCount(false);
+        }
+    };
+
 
     const handleCancel = () => {
         form.resetFields();
+        setDynamicLimit(undefined);
+        setSelectedDocIds([]);
+        setActiveSource('new');
         onCancel();
     };
 
@@ -52,56 +103,171 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
             }
             open={visible}
             onCancel={handleCancel}
-            onOk={handleOk}
-            width={600}
-            okText={loading ? "生成中..." : "生成问题"}
-            cancelText="取消"
+            width={900}
             confirmLoading={loading}
+            footer={null}
         >
+            <div style={{ overflow: 'auto' }}>
+                <Form form={form} layout="horizontal" >
+                    {updatesLoading || countLoading || firstGenerateLoading ? (
+                        <div style={{ marginTop: 40, textAlign: 'center' }}>
+                            <div>加载中...</div>
+                        </div>
+                    ) : firstGenerateStatus === 1 ? (
+                        <div style={{ marginTop: 40 }}>
+                            <Form.Item
+                                name="questionCount"
+                                label="问题数量"
+                                rules={[{ required: true, message: '请输入生成数量' }]}
+                                initialValue={questionCount.recommendCount || 50}
+                            >
+                                <InputNumber
+                                    min={1}
+                                    max={questionCount.limitCount || 200}
+                                    style={{ width: '100%' }}
+                                    placeholder="请输入要生成的问题数量"
+                                />
+                            </Form.Item>
+                            <div style={{ marginTop: 40, display: 'flex', justifyContent: 'center', gap: 10 }}>
+                                <Button onClick={handleCancel}> 取消</Button>
+                                <Button type='primary' loading={loading} onClick={handleOk}> 生成</Button>
+                            </div>
 
-            <div style={{ marginBottom: 12, textAlign: 'center' }}>
-                <span>文件更新状态：
-                    <span style={{
-                        color: updatesLoading ? '#999' : (fileUpdates.hasUpdates ? '#52c41a' : '#999'),
-                        marginLeft: 6
-                    }}>
-                        {updatesLoading ? '检查中…' : (fileUpdates.hasUpdates ? '更新' : '未更新')}
-                    </span>
-                </span>
+                        </div>
+                    ) : (
+                        fileUpdates.hasUpdates === false ? (
+                            <div style={{ marginTop: 40 }}>
+                                <div  style={{ textAlign: 'center' }}>您当前知识库文件内容没有任何变更，暂时不需要重新生成</div>
+                                <div style={{ marginTop: 40, display: 'flex', justifyContent: 'center' }}>
+                                    <Button type='primary' onClick={handleCancel}> 关闭弹窗</Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ marginTop: 40 }}>
+
+                                {typeof dynamicLimit === 'undefined' ? (
+                                    <>
+                                        <div style={{ textAlign: 'center' }}>知识库文件内容有变动，以下文件建议重新生成问题</div>
+                                        {/* 文件变更列表（两列布局） */}
+                                        <div style={{
+                                            display: 'flex',
+                                            marginTop: 16,
+                                            border: '1px solid #d9d9d9',
+                                            borderRadius: 6,
+                                            overflow: 'hidden'
+                                        }}>
+                                            {/* 左侧：文件类型选择 */}
+                                            <div style={{
+                                                width: 200,
+                                                flexShrink: 0,
+                                                borderRight: '1px solid #d9d9d9',
+                                                padding: 16,
+                                                backgroundColor: '#fafafa'
+                                            }}>
+                                                <div style={{ marginBottom: 12, fontWeight: 'bold' }}>文件类型</div>
+                                                <Space direction="vertical" style={{ width: '100%' }}>
+                                                    <Button
+                                                        type={activeSource === 'new' ? 'primary' : 'default'}
+                                                        block
+                                                        onClick={() => setActiveSource('new')}
+                                                        disabled={(fileUpdates.newDocuments?.length || 0) === 0}
+                                                    >
+                                                        最新上传 ({fileUpdates.newDocuments?.length || 0})
+                                                    </Button>
+                                                    <Button
+                                                        type={activeSource === 'edited' ? 'primary' : 'default'}
+                                                        block
+                                                        onClick={() => setActiveSource('edited')}
+                                                        disabled={(fileUpdates.modifiedDocuments?.length || 0) === 0}
+                                                    >
+                                                        最新编辑 ({fileUpdates.modifiedDocuments?.length || 0})
+                                                    </Button>
+                                                </Space>
+                                            </div>
+
+                                            {/* 右侧：文件列表 */}
+                                            <div style={{ flex: 1, padding: 16 }}>
+                                                <div style={{ marginBottom: 12, fontWeight: 'bold' }}>
+                                                    文件列表 (已选择 {selectedDocIds.length} 个)
+                                                </div>
+                                                <Table
+                                                    columns={[
+                                                        { title: '文件名', dataIndex: 'name', key: 'name', width: 300 },
+                                                        { title: '更新时间', dataIndex: 'updateDate', key: 'updateDate' },
+                                                    ]}
+                                                    dataSource={displayedDocuments}
+                                                    rowKey={(r: any) => r.id}
+                                                    pagination={false}
+                                                    size="small"
+                                                    onRow={(record: any) => ({
+                                                        onClick: () => {
+                                                            const id = record.id;
+                                                            if (!id) return;
+                                                            setSelectedDocIds((prev) =>
+                                                                prev.includes(id)
+                                                                    ? prev.filter((x) => x !== id)
+                                                                    : [...prev, id],
+                                                            );
+                                                        },
+                                                        style: {
+                                                            cursor: 'pointer',
+                                                            backgroundColor: selectedDocIds.includes(record.id) ? '#e6f7ff' : 'transparent',
+                                                        },
+                                                    })}
+                                                    locale={{ emptyText: '暂无文件' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 10 }}>
+                                            <Button onClick={handleCancel}> 取消</Button>
+                                            <Button type='primary' loading={fetchingCount} onClick={handleFetchCountByDocIds}> 重新生成</Button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Form.Item
+                                            name="questionCount"
+                                            label="问题数量"
+                                            rules={[{ required: true, message: '请输入生成数量' }]}
+                                            initialValue={questionCount.recommendCount || 50}
+                                        >
+                                            <InputNumber
+                                                min={1}
+                                                max={dynamicLimit || questionCount.limitCount || 200}
+                                                style={{ width: '100%' }}
+                                                placeholder="请输入要生成的问题数量"
+                                            />
+                                        </Form.Item>
+                                        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center', gap: 10 }}>
+                                            <Button
+                                                type='primary'
+                                                loading={otherGenLoading}
+                                                onClick={async () => {
+                                                    const { questionCount } = await form.validateFields();
+                                                    const qty = Number(questionCount || 0);
+                                                    const max = Number(dynamicLimit || 0);
+                                                    if (!qty || qty < 1 || (max > 0 && qty > max)) {
+                                                        message.warning(`请输入大于1的数量`);
+                                                        return;
+                                                    }
+                                                    await otherDocGenerateAiQuestion({ doc_ids: selectedDocIds, question_count: qty });
+                                                    message.success('问题生成成功');
+                                                    handleCancel();
+                                                }}
+                                            > 确定生成</Button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))}
+
+
+
+
+                </Form>
             </div>
 
 
-            <Form form={form} layout="horizontal" style={{ height: 260 }}>
-                {updatesLoading || countLoading ? (
-                    <div style={{ marginTop: 40, textAlign: 'center' }}>
-                        <div>加载中...</div>
-                    </div>
-                ) : fileUpdates.hasUpdates ? (
-                    <div style={{ marginTop: 40 }}>
-                        <Form.Item
-                            name="questionCount"
-                            label="问题数量"
-                            rules={[{ required: true, message: '请输入生成数量' }]}
-                            initialValue={questionCount.recommendCount || 50}
-                        >
-                            <InputNumber
-                                min={1}
-                                max={questionCount.limitCount || 200}
-                                style={{ width: '100%' }}
-                                placeholder="请输入要生成的问题数量"
-                            />
-                        </Form.Item>
-                    </div>
-                ) : (
-                    <div>
-                        <div>您当前知识库文件内容没有任何变更，暂时不需要重新生成</div>
-                    </div>
-                )}
-
-
-
-
-            </Form>
 
 
         </Modal>
