@@ -126,8 +126,10 @@ const ClusteringAnalysis = () => {
             console.log('onMessage', new Date().toLocaleString());
             try {
               const data = JSON.parse(chunk);
-              if (data.choices !== undefined) {
-                const reasoningContent = data.choices[0]?.delta?.reasoning_content ?? data.choices[0]?.delta?.content ?? '';
+             // if (data.choices !== undefined) {
+              //   const reasoningContent = data.choices[0]?.delta?.reasoning_content ?? data.choices[0]?.delta?.content ?? '';
+              if (data.content !== undefined) {
+                const reasoningContent = data.content ;
                 setAnalysisResult(prev => prev + reasoningContent);
               }
             } catch {
