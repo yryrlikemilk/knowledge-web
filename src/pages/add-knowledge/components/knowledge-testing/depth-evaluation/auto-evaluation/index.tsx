@@ -29,42 +29,11 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
     const location = useLocation();
     const [currentStep] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
-    const { pageList } = useFetchPageList();
+    const [current, setCurrent] = useState<number>(1);
+    const [pageSize, setPageSize] = useState<number>(10);
+    const { pageList } = useFetchPageList(current, pageSize);
     const [taskList, setTaskList] = useState<EvaluationTask[]>([
-        {
-            id: '1',
-            taskName: 'AI知识库评估任务',
-            questionCount: 15,
-            questionSource: '手工输入',
-            status: 'completed',
-            score: 85,
-            retrievalParams: '相似度阈值: 20',
-            evaluationParams: '系统默认指标',
-            updateTime: '2024-01-15 14:30:00'
-        },
-        {
-            id: '2',
-            taskName: '机器学习文档测试',
-            questionCount: 8,
-            questionSource: 'AI生成',
-            status: 'running',
-            score: undefined,
-            retrievalParams: '相似度阈值: 25',
-            evaluationParams: '系统默认指标',
-            updateTime: '2024-01-15 15:20:00'
-        },
-        {
-            id: '3',
-            taskName: '深度学习评估',
-            questionCount: 12,
-            questionSource: '手工输入+AI生成',
-            status: 'pending',
-            score: undefined,
-            retrievalParams: '相似度阈值: 18',
-            evaluationParams: 'Claude-3',
-            updateTime: '2024-01-15 16:10:00'
-        }
-    ]);
+     ]);
 
     const steps = [
         {
@@ -103,29 +72,12 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
         setModalVisible(false);
 
         // 输出所有收集的数据到控制台
-        console.log('=== 创建评估任务数据 ===');
         console.log('任务名称:', data.taskName);
         console.log('选择的问题列表:', data.selectedQuestions);
         console.log('检索设置表单数据:', data.formData);
         console.log('=== 数据输出完成 ===', data);
 
-        // 添加新任务到列表
-        const newTask: EvaluationTask = {
-            id: Date.now().toString(),
-            taskName: data.taskName,
-            questionCount: data.selectedQuestions.length,
-            questionSource: data.selectedQuestions.some(q => q.source === 'manual') && data.selectedQuestions.some(q => q.source === 'ai')
-                ? '手工输入+AI生成'
-                : data.selectedQuestions.some(q => q.source === 'manual')
-                    ? '手工输入'
-                    : 'AI生成',
-            status: 'pending',
-            retrievalParams: `相似度阈值: ${data.formData.similarity_threshold}, 权重: ${data.formData.vector_similarity_weight}%`,
-            evaluationParams: data.formData.model || 'GPT-3.5 Turbo',
-            updateTime: new Date().toLocaleString('zh-CN')
-        };
 
-        setTaskList(prev => [newTask, ...prev]);
     };
 
     const handleViewReport = (record: EvaluationTask) => {
@@ -136,9 +88,9 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
 
     const getStatusTag = (status: string) => {
         const statusMap = {
-            pending: { color: 'default', text: '待开始' },
-            running: { color: 'processing', text: '进行中' },
-            completed: { color: 'success', text: '已完成' },
+            pending: { color: 'default', text: '未开始' },
+            running: { color: 'processing', text: '正在评估中' },
+            completed: { color: 'success', text: '成功' },
             failed: { color: 'error', text: '失败' }
         };
         const config = statusMap[status as keyof typeof statusMap] || statusMap.pending;
@@ -148,21 +100,21 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
     const columns: ColumnsType<EvaluationTask> = [
         {
             title: '任务名',
-            dataIndex: 'taskName',
-            key: 'taskName',
+            dataIndex: 'name',
+            key: 'name',
             width: 200,
         },
         {
             title: '问题数量',
-            dataIndex: 'questionCount',
-            key: 'questionCount',
+            dataIndex: 'question_count',
+            key: 'question_count',
             width: 100,
             align: 'center',
         },
         {
             title: '问题来源',
-            dataIndex: 'questionSource',
-            key: 'questionSource',
+            dataIndex: 'question_source',
+            key: 'question_source',
             width: 120,
         },
         {
@@ -194,8 +146,8 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
         },
         {
             title: '更新时间',
-            dataIndex: 'updateTime',
-            key: 'updateTime',
+            dataIndex: 'update_time',
+            key: 'update_time',
             width: 150,
         },
         {
@@ -217,36 +169,42 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
     ];
 
     return (
-        <div style={{
-            padding: '0',
-            position: 'relative',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center'
-        }}>
+        <>
 
             {/* 评估任务列表 - 根据pageList数据长度显示 */}
             {pageList.records.length > 0 ? (
                 <div style={{ marginTop: '40px', width: '100%' }}>
-                    <Button type="primary" style={{ marginBottom: '20px' }}>新增评估任务</Button>
+                    <Button type="primary" style={{ marginBottom: '20px' }} onClick={handleCreateTask}>新增评估任务</Button>
                     <Table
                         columns={columns}
-                        dataSource={taskList}
+                        dataSource={pageList.records}
                         rowKey="id"
                         pagination={{
-                            pageSize: 10,
+                            current,
+                            pageSize,
+                            total: pageList.total,
                             showSizeChanger: true,
                             showQuickJumper: true,
                             showTotal: (total) => `共 ${total} 条`,
+                            onChange: (page, size) => {
+                                setCurrent(page);
+                                setPageSize(size || 10);
+                            },
                         }}
                         scroll={{ x: 1200 }}
                         size="middle"
                     />
                 </div>
             ) : (
-                <div>
+                <div style={{
+                    padding: '0',
+                    position: 'relative',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
                     <div style={{
                         textAlign: 'center',
                         maxWidth: '600px',
@@ -254,16 +212,16 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                     }}>
                         <div style={{ marginBottom: '40px' }}>
                             <Title level={4}>你还没有创建过深度评估任务</Title>
-            <Paragraph type="secondary">
-            点击创建，选择评估问题集，大模型自动打分，并生成评估报告
-            </Paragraph>
+                            <Paragraph type="secondary">
+                                点击创建，选择评估问题集，大模型自动打分，并生成评估报告
+                            </Paragraph>
                         </div>
 
                         <div style={{ marginBottom: '20px' }}>
                             {/* {currentStep === 0 ? ( */}
                             <Button type="primary" size="large" onClick={handleCreateTask}>
-                    创建评估任务
-                </Button>
+                                创建评估任务
+                            </Button>
                             {/* ) : (
 
                     )} */}
@@ -287,7 +245,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                             size="default"
                             style={{ maxWidth: '800px' }}
                         />
-            </div>
+                    </div>
                 </div>
             )}
 
@@ -301,7 +259,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             />
 
 
-        </div>
+        </>
     );
 };
 

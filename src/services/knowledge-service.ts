@@ -40,14 +40,13 @@ const {
   getVideoChunks,
  
   minioGetDownloadUrl,
-  check_for_file_updates,
+  get_ai_question_count,
   page_list,
   save_retrieval_task,
   retrieval_question_page_list,
   add_questions,
   update_question,
   delete_questions,
-  generate_ai_question,
 } = api;
 
 const methods = {
@@ -176,6 +175,10 @@ const methods = {
     url: minioGetDownloadUrl,
     method: 'get',
   },
+  getAiQuestionCount: {
+    url: get_ai_question_count,
+    method: 'post',
+  },
   pageList:{
     url: page_list,
     method: 'post',
@@ -277,15 +280,19 @@ export const generateAiQuestion = (body?:{ kb_id: string; question_count: number
   return request.post(api.generate_ai_question, { data: body });
 };
 
-export const saveRetrievalTask = (body?:{ kb_id: string; task_name: string; test_ques_ids: string[] }) => {
-  return request.post(api.save_retrieval_task, { data: body });
+export const getAiQuestionCount = (body?:{ kb_id: string; doc_ids: string[] }) => {
+  return request.post(api.get_ai_question_count, { data: body });
+};
+
+export const saveRetrievalTask = (body?:{ kb_id: string; task_name: string; questions: Array<{ question_id: string; question_text: string }> }) => {
+  return request.get(api.save_retrieval_task, { data: body });
 };
 
 export const updateQuestion = (body?:{ id: string; question_text: string }) => {
   return request.post(api.update_question, { data: body });
 };
 
-export const deleteQuestions = (body?:{ questionIds: string[] }) => {
+export const deleteQuestions = (body?:{ question_ids: string[] }) => {
   return request.post(api.delete_questions, { data: body });
 };
 

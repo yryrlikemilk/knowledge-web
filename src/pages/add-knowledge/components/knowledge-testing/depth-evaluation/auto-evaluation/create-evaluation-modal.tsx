@@ -117,7 +117,8 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                     // 调用保存接口
                     await saveRetrievalTask({
                         task_name: taskName,
-                        test_ques_ids: selectedQuestions
+                        test_ques_ids: selectedQuestions,
+                        selectedQuestionsData: selectedQuestionsData
                     });
                     
                     message.success('评估任务创建成功');

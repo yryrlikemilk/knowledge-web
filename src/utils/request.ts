@@ -76,7 +76,7 @@ const errorHandler = (error: {
 
 const request: RequestMethod = extend({
   errorHandler,
-  timeout: 300000, // 5分钟 = 300000毫秒
+  timeout: 600000, // 5分钟 = 300000毫秒
   getResponse: true,
 });
 
@@ -98,7 +98,7 @@ request.interceptors.request.use((url: string, options: any) => {
   
   // 为文件下载请求设置5分钟超时时间
   if (options.responseType === 'blob') {
-    options.timeout = 300000; // 5分钟
+    options.timeout = 600000; // 5分钟
   }
   
   const headers = {

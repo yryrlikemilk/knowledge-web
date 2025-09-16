@@ -83,22 +83,20 @@ const EditQuestionModal: React.FC<EditQuestionModalProps> = ({ visible, onCancel
         >
             <Form
                 form={form}
-                layout="vertical"
+                layout="horizontal"
                 style={{ marginTop: 20 }}
             >
                 <Form.Item
                     name="question_text"
-                    label="问题内容"
+                    label="问题"
                     rules={[
                         { required: true, message: '请输入问题内容' },
                         { min: 1, message: '问题内容不能为空' }
                     ]}
                 >
-                    <Input.TextArea
-                        rows={4}
+                    <Input
                         placeholder="请输入问题内容"
-                        maxLength={1000}
-                        showCount
+                        maxLength={500}
                     />
                 </Form.Item>
             </Form>

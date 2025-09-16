@@ -28,7 +28,9 @@ const TestQuestions = () => {
     const [editingQuestion, setEditingQuestion] = useState<QuestionItem | null>(null);
     const [isManualModalVisible, setIsManualModalVisible] = useState(false);
     const [isAIModalVisible, setIsAIModalVisible] = useState(false);
-    const { questionPageList } = useFetchRetrievalQuestionPageList();
+    const [current, setCurrent] = useState<number>(1);
+    const [pageSize, setPageSize] = useState<number>(10);
+    const { questionPageList } = useFetchRetrievalQuestionPageList(current, pageSize);
     const { deleteQuestions, loading: deleteLoading } = useDeleteQuestions();
 
     const handleDelete = (questionId: string) => {
@@ -248,10 +250,16 @@ const TestQuestions = () => {
                     rowKey="id"
                     rowSelection={rowSelection}
                     pagination={{
-                        pageSize: 10,
+                        current,
+                        pageSize,
+                        total: questionPageList.total,
                         showSizeChanger: true,
                         showQuickJumper: true,
-                        showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+                        showTotal: (total, range) => `共 ${total} 条`,
+                        onChange: (page, size) => {
+                            setCurrent(page);
+                            setPageSize(size || 10);
+                        },
                     }}
                     scroll={{ x: 1000 }}
                 />

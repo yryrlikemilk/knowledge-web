@@ -7,8 +7,12 @@ import {
 } from '@/interfaces/database/knowledge';
 import i18n from '@/locales/config';
 import kbService, {
+  batch_retrieval_test,
   checkForFileUpdates,
   deleteKnowledgeGraph,
+  deleteQuestions,
+  generateAiQuestion,
+  getAiQuestionCount,
   getCount,
   getKnowledgeGraph,
   getKnowledgeRunStatus,
@@ -16,11 +20,8 @@ import kbService, {
   listTag,
   removeTag,
   renameTag,
-    batch_retrieval_test,
-  generateAiQuestion,
   saveRetrievalTask,
   updateQuestion,
-  deleteQuestions,
 } from '@/services/knowledge-service';
 import {
   useInfiniteQuery,
@@ -263,7 +264,7 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
       const questions = Array.isArray(values.question)
         ? values.question
         : [values.question];
-      const { data }  = await batch_retrieval_test({
+      const { data } = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
         query: questions,
         keyword: false,
@@ -279,7 +280,8 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
               },
             }
           : {}),
-        ...(values.vector_similarity_weight !== null && values.vector_similarity_weight !== undefined
+        ...(values.vector_similarity_weight !== null &&
+        values.vector_similarity_weight !== undefined
           ? { vector_similarity_weight: 1 - values.vector_similarity_weight }
           : {}),
         metadata_condition: {
@@ -293,13 +295,13 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
         },
         page,
         page_size: pageSize,
-        idOfQuery: values.idOfQuery !== undefined ? values.idOfQuery : 0, 
+        idOfQuery: values.idOfQuery !== undefined ? values.idOfQuery : 0,
       });
-      console.log('data312312',data)
+      console.log('data312312', data);
       if (data.code === 0) {
         const res = data.data;
         // 处理所有问题的结果
-        console.log('resres',res)
+        console.log('resres', res);
         const allResults = res.map((item: any, index: number) => ({
           query: item.query || `问题${index + 1}`,
           chunks: item.difyResultDto.records.map((record: any) => ({
@@ -322,7 +324,7 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
           documents: item.difyResultDto.doc_aggs,
           total: item.difyResultDto.records.length,
         }));
-        console.log('allResultsallResults',allResults)
+        console.log('allResultsallResults', allResults);
         console.log(`allResults11111111111111`, allResults, res);
         return {
           ...res,
@@ -385,7 +387,8 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
               },
             }
           : {}),
-        ...(values.vector_similarity_weight !== null && values.vector_similarity_weight !== undefined
+        ...(values.vector_similarity_weight !== null &&
+        values.vector_similarity_weight !== undefined
           ? { vector_similarity_weight: 1 - values.vector_similarity_weight }
           : {}),
         metadata_condition: {
@@ -426,7 +429,7 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
           documents: item.difyResultDto.doc_aggs,
           total: item.difyResultDto.records.length,
         }));
-        
+
         console.log(`allResults2222`, allResults, res);
         return {
           ...res,
@@ -518,11 +521,8 @@ export const useAllTestingResult = (): ITestingResult => {
 export const useAllTestingStatus = () => {
   const statusList = useMutationState({
     filters: { mutationKey: ['testChunkAll'] },
-    select: (mutation) => mutation.state.status as
-      | 'idle'
-      | 'pending'
-      | 'error'
-      | 'success',
+    select: (mutation) =>
+      mutation.state.status as 'idle' | 'pending' | 'error' | 'success',
   });
   const latest = statusList.at(-1);
   return latest ?? 'idle';
@@ -727,20 +727,22 @@ export const useFetchKnowledgeRunStatus = () => {
     },
   });
 
-  return { 
-    runStatus: data || { doc_ids: [], run: 0 }, 
-    loading 
+  return {
+    runStatus: data || { doc_ids: [], run: 0 },
+    loading,
   };
 };
 
 export const useFetchFileUpdates = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
-  const { data, isFetching: loading } = useQuery({
+  const { data, isFetching: loading, refetch } = useQuery({
     queryKey: ['fetchFileUpdates', knowledgeBaseId],
     enabled: !!knowledgeBaseId,
     queryFn: async () => {
-      if (!knowledgeBaseId) return { hasUpdates: false, modifiedDocuments: [], newDocuments: [] };
+      console.log(`knowledgeBaseId11111111`,knowledgeBaseId)
+      if (!knowledgeBaseId)
+        return { hasUpdates: false, modifiedDocuments: [], newDocuments: [] };
       const response = await checkForFileUpdates(knowledgeBaseId);
       if (response?.data?.code === 0) {
         return response.data.data;
@@ -749,46 +751,31 @@ export const useFetchFileUpdates = () => {
     },
   });
 
-  return { 
-    fileUpdates: data || { hasUpdates: false, modifiedDocuments: [], newDocuments: [] }, 
-    loading 
-  };
-};
-
-export const useFetchPageList = () => {
-  const knowledgeBaseId = useKnowledgeBaseId();
-
-  const { data, isFetching: loading } = useQuery({
-    queryKey: ['fetchPageList', knowledgeBaseId],
-    enabled: !!knowledgeBaseId,
-    queryFn: async () => {
-      if (!knowledgeBaseId) return { current: 0, pages: 0, records: [], size: 0, total: 0 };
-      const response = await kbService.pageList({ kb_id: knowledgeBaseId,page:1,page_size:10,autoGenerated:true });
-      if (response?.data?.code === 0) {
-        return response.data.data;
-      }
-      return { current: 0, pages: 0, records: [], size: 0, total: 0 };
+  return {
+    fileUpdates: data || {
+      hasUpdates: false,
+      modifiedDocuments: [],
+      newDocuments: [],
     },
-  });
-
-  return { 
-    pageList: data || { current: 0, pages: 0, records: [], size: 0, total: 0 }, 
-    loading 
+    loading,
+    refetch,
   };
 };
 
-export const useFetchRetrievalQuestionPageList = () => {
+export const useFetchPageList = (page: number = 1, pageSize: number = 10) => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
   const { data, isFetching: loading } = useQuery({
-    queryKey: ['fetchRetrievalQuestionPageList', knowledgeBaseId],
+    queryKey: ['fetchPageList', knowledgeBaseId, page, pageSize],
     enabled: !!knowledgeBaseId,
     queryFn: async () => {
-      if (!knowledgeBaseId) return { current: 0, pages: 0, records: [], size: 0, total: 0 };
-      const response = await kbService.retrievalQuestionPageList({ 
-        kb_id: knowledgeBaseId, 
-        page: 1, 
-        page_size: 10 
+      if (!knowledgeBaseId)
+        return { current: 0, pages: 0, records: [], size: 0, total: 0 };
+      const response = await kbService.pageList({
+        kb_id: knowledgeBaseId,
+        page,
+        page_size: pageSize,
+        auto_generate: '',
       });
       if (response?.data?.code === 0) {
         return response.data.data;
@@ -797,9 +784,45 @@ export const useFetchRetrievalQuestionPageList = () => {
     },
   });
 
-  return { 
-    questionPageList: data || { current: 0, pages: 0, records: [], size: 0, total: 0 }, 
-    loading 
+  return {
+    pageList: data || { current: 0, pages: 0, records: [], size: 0, total: 0 },
+    loading,
+  };
+};
+
+export const useFetchRetrievalQuestionPageList = (
+  page: number = 1,
+  pageSize: number = 10,
+) => {
+  const knowledgeBaseId = useKnowledgeBaseId();
+
+  const { data, isFetching: loading } = useQuery({
+    queryKey: ['fetchRetrievalQuestionPageList', knowledgeBaseId, page, pageSize],
+    enabled: !!knowledgeBaseId,
+    queryFn: async () => {
+      if (!knowledgeBaseId)
+        return { current: 0, pages: 0, records: [], size: 0, total: 0 };
+      const response = await kbService.retrievalQuestionPageList({
+        kb_id: knowledgeBaseId,
+        page,
+        page_size: pageSize,
+      });
+      if (response?.data?.code === 0) {
+        return response.data.data;
+      }
+      return { current: 0, pages: 0, records: [], size: 0, total: 0 };
+    },
+  });
+
+  return {
+    questionPageList: data || {
+      current: 0,
+      pages: 0,
+      records: [],
+      size: 0,
+      total: 0,
+    },
+    loading,
   };
 };
 
@@ -815,24 +838,26 @@ export const useAddQuestions = () => {
     mutationKey: ['addQuestions'],
     mutationFn: async (questions: string[]) => {
       if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
-      const response = await kbService.addQuestions({ 
+      const response = await kbService.addQuestions({
         questions,
-        kb_id: knowledgeBaseId 
+        kb_id: knowledgeBaseId,
       });
       if (response?.data?.code === 0) {
         message.success('问题创建成功');
         // 刷新问题列表
-        queryClient.invalidateQueries({ queryKey: ['fetchRetrievalQuestionPageList'] });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchRetrievalQuestionPageList'],
+        });
         return response.data.data;
       }
       throw new Error(response?.data?.message || '创建问题失败');
     },
   });
 
-  return { 
-    data, 
-    loading, 
-    addQuestions: mutateAsync 
+  return {
+    data,
+    loading,
+    addQuestions: mutateAsync,
   };
 };
 
@@ -846,21 +871,23 @@ export const useGenerateAiQuestion = () => {
       if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
       const response = await generateAiQuestion({
         kb_id: knowledgeBaseId,
-        question_count: questionCount
+        question_count: questionCount,
       });
-      
+
       if (response?.data?.code === 0) {
         // 刷新问题列表
-        queryClient.invalidateQueries({ queryKey: ['fetchRetrievalQuestionPageList'] });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchRetrievalQuestionPageList'],
+        });
         return response.data.data;
       }
       throw new Error(response?.data?.message || 'AI生成问题失败');
     },
   });
 
-  return { 
-    loading, 
-    generateAiQuestion: mutateAsync 
+  return {
+    loading,
+    generateAiQuestion: mutateAsync,
   };
 };
 
@@ -870,14 +897,29 @@ export const useSaveRetrievalTask = () => {
   const queryClient = useQueryClient();
 
   const { mutateAsync, isPending: loading } = useMutation({
-    mutationFn: async (params: { task_name: string; test_ques_ids: string[] }) => {
+    mutationFn: async (params: {
+      task_name: string;
+      test_ques_ids: string[];
+      selectedQuestionsData?: Array<{ id: string; question_text: string }>;
+    }) => {
       if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
+
+      // 提取并转换questions数据
+      const questions =
+        params.selectedQuestionsData ||
+        params.test_ques_ids.map((id) => ({
+          question_id: id,
+          question_text: '',
+        }));
       const response = await saveRetrievalTask({
         kb_id: knowledgeBaseId,
         task_name: params.task_name,
-        test_ques_ids: params.test_ques_ids
+        questions: questions.map((q:any) => ({
+          question_id: q.question_id || q.id,
+          question_text: q.question_text
+        }))
       });
-      
+
       if (response?.data?.code === 0) {
         // 刷新任务列表
         queryClient.invalidateQueries({ queryKey: ['fetchPageList'] });
@@ -887,9 +929,9 @@ export const useSaveRetrievalTask = () => {
     },
   });
 
-  return { 
-    loading, 
-    saveRetrievalTask: mutateAsync 
+  return {
+    loading,
+    saveRetrievalTask: mutateAsync,
   };
 };
 
@@ -901,22 +943,24 @@ export const useUpdateQuestion = () => {
     mutationFn: async (params: { id: string; question_text: string }) => {
       const response = await updateQuestion({
         id: params.id,
-        question_text: params.question_text
+        question_text: params.question_text,
       });
-      
+
       if (response?.data?.code === 0) {
         message.success('问题更新成功');
         // 刷新问题列表
-        queryClient.invalidateQueries({ queryKey: ['fetchRetrievalQuestionPageList'] });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchRetrievalQuestionPageList'],
+        });
         return response.data.data;
       }
       throw new Error(response?.data?.message || '更新问题失败');
     },
   });
 
-  return { 
-    loading, 
-    updateQuestion: mutateAsync 
+  return {
+    loading,
+    updateQuestion: mutateAsync,
   };
 };
 
@@ -927,21 +971,51 @@ export const useDeleteQuestions = () => {
   const { mutateAsync, isPending: loading } = useMutation({
     mutationFn: async (questionIds: string[]) => {
       const response = await deleteQuestions({
-        questionIds: questionIds
+        question_ids: questionIds,
       });
-      
+
       if (response?.data?.code === 0) {
         message.success('删除成功');
         // 刷新问题列表
-        queryClient.invalidateQueries({ queryKey: ['fetchRetrievalQuestionPageList'] });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchRetrievalQuestionPageList'],
+        });
         return response.data.data;
       }
       throw new Error(response?.data?.message || '删除失败');
     },
   });
 
-  return { 
-    loading, 
-    deleteQuestions: mutateAsync 
+  return {
+    loading,
+    deleteQuestions: mutateAsync,
+  };
+};
+
+// 获取AI问题生成限制
+export const useFetchAiQuestionCount = () => {
+  const knowledgeBaseId = useKnowledgeBaseId();
+
+  const { data, isFetching: loading, refetch } = useQuery({
+    queryKey: ['fetchAiQuestionCount', knowledgeBaseId],
+    enabled: !!knowledgeBaseId,
+    queryFn: async () => {
+      if (!knowledgeBaseId)
+        return { limitCount: 0, recommendCount: 0 };
+      const response = await getAiQuestionCount({
+        kb_id: knowledgeBaseId,
+        doc_ids: [],
+      });
+      if (response?.data?.code === 0) {
+        return response.data.data;
+      }
+      return { limitCount: 0, recommendCount: 0 };
+    },
+  });
+
+  return {
+    questionCount: data || { limitCount: 0, recommendCount: 0 },
+    loading,
+    refetch,
   };
 };
