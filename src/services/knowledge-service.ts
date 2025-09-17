@@ -38,7 +38,7 @@ const {
   setMeta,
   //retrieval_test,
   getVideoChunks,
- 
+
   minioGetDownloadUrl,
   get_ai_question_count,
   get_ai_question_count_by_doc_ids,
@@ -190,34 +190,34 @@ const methods = {
     url: other_doc_generate_ai_question,
     method: 'post',
   },
-  pageList:{
+  pageList: {
     url: page_list,
     method: 'post',
   },
-  retrievalQuestionPageList:{
+  retrievalQuestionPageList: {
     url: retrieval_question_page_list,
     method: 'post',
   },
-  addQuestions:{
+  addQuestions: {
     url: add_questions,
     method: 'post',
   },
-  updateQuestion:{
+  updateQuestion: {
     url: update_question,
     method: 'post',
   },
-  deleteQuestions:{
+  deleteQuestions: {
     url: delete_questions,
     method: 'post',
   },
-  saveRetrievalTask:{
+  saveRetrievalTask: {
     url: save_retrieval_task,
     method: 'post',
   },
-  checkFirstGenerate:{
+  checkFirstGenerate: {
     url: check_first_generate,
     method: 'get',
-  }
+  },
 };
 
 const kbService = registerServer<keyof typeof methods>(methods, request);
@@ -294,31 +294,55 @@ export const fetchVideoChunks = (chunk_ids: string[]) =>
 export const getMinioDownloadUrl = (docId: string[]) =>
   kbService['minioGetDownloadUrl']({ docId });
 
-export const generateAiQuestion = (body?:{ kb_id: string; question_count: number }) => {
+export const generateAiQuestion = (body?: {
+  kb_id: string;
+  question_count: number;
+}) => {
   return request.post(api.generate_ai_question, { data: body });
 };
 
-export const getAiQuestionCount = (body?:{ kb_id: string; doc_ids: string[] }) => {
+export const getAiQuestionCount = (body?: {
+  kb_id: string;
+  doc_ids: string[];
+}) => {
   return request.post(api.get_ai_question_count, { data: body });
 };
 
-export const getAiQuestionCountByDocIds = (body?:{ kb_id: string; doc_ids: string[]; }) => {
+export const getAiQuestionCountByDocIds = (body?: {
+  kb_id: string;
+  doc_ids: string[];
+}) => {
   return request.post(api.get_ai_question_count_by_doc_ids, { data: body });
 };
 
-export const otherDocGenerateAiQuestion = (body?:{ kb_id: string; doc_ids: string[]; question_count: number }) => {
+export const otherDocGenerateAiQuestion = (body?: {
+  kb_id: string;
+  doc_ids: string[];
+  question_count: number;
+}) => {
   return request.post(api.other_doc_generate_ai_question, { data: body });
 };
 
-export const saveRetrievalTask = (body?:{ kb_id: string; task_name: string; questions: Array<{ question_id: string; question_text: string }> }) => {
+export const saveRetrievalTask = (body?: {
+  kb_id: string;
+  task_name: string;
+  questions: Array<{ question_id: string; question_text: string }>;
+  similarity_threshold: number;
+  top_k: number;
+  rerank_id: string;
+  vector_similarity_weight: number;
+}) => {
   return request.post(api.save_retrieval_task, { data: body });
 };
 
-export const updateQuestion = (body?:{ id: string; question_text: string }) => {
+export const updateQuestion = (body?: {
+  id: string;
+  question_text: string;
+}) => {
   return request.post(api.update_question, { data: body });
 };
 
-export const deleteQuestions = (body?:{ question_ids: string[] }) => {
+export const deleteQuestions = (body?: { question_ids: string[] }) => {
   return request.post(api.delete_questions, { data: body });
 };
 

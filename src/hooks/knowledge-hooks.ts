@@ -929,6 +929,10 @@ export const useSaveRetrievalTask = () => {
       task_name: string;
       test_ques_ids: string[];
       selectedQuestionsData?: Array<{ id: string; question_text: string }>;
+      similarity_threshold:number;
+      top_k:number;
+      rerank_id:string;
+      vector_similarity_weight:number;
     }) => {
       if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
 
@@ -942,6 +946,10 @@ export const useSaveRetrievalTask = () => {
       const response = await saveRetrievalTask({
         kb_id: knowledgeBaseId,
         task_name: params.task_name,
+        similarity_threshold: params.similarity_threshold,
+        vector_similarity_weight: params.vector_similarity_weight,
+        rerank_id: params.rerank_id,
+        top_k: params.top_k,
         questions: questions.map((q:any) => ({
           question_id: q.question_id || q.id,
           question_text: q.question_text

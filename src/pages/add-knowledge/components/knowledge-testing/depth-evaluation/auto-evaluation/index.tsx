@@ -10,7 +10,7 @@ const { Title, Paragraph } = Typography;
 
 interface EvaluationTask {
     id: string;
-    taskName: string;
+    task_name: string;
     questionCount: number;
     questionSource: string;
     status: 'pending' | 'running' | 'completed' | 'failed';
@@ -65,14 +65,14 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
     };
 
     const handleModalOk = (data: {
-        taskName: string;
+        task_name: string;
         selectedQuestions: any[];
         formData: any;
     }) => {
         setModalVisible(false);
 
         // 输出所有收集的数据到控制台
-        console.log('任务名称:', data.taskName);
+        console.log('任务名称:', data.task_name);
         console.log('选择的问题列表:', data.selectedQuestions);
         console.log('检索设置表单数据:', data.formData);
         console.log('=== 数据输出完成 ===', data);

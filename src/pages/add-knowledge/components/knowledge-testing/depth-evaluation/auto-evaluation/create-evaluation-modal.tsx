@@ -11,7 +11,7 @@ interface CreateEvaluationModalProps {
     visible: boolean;
     onCancel: () => void;
     onOk: (data: {
-        taskName: string;
+        task_name: string;
         selectedQuestions: QuestionItem[];
         formData: any;
     }) => void;
@@ -112,7 +112,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
     };
     const handleNext = () => {
         if (currentStep === 0) {
-            form.validateFields(['taskName']).then(() => {
+            form.validateFields(['task_name']).then(() => {
                 if (selectedQuestions.length === 0) {
                     message.warning('请至少选择一个测试问题');
                     return;
@@ -121,28 +121,33 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                 setCurrentStep(1);
             });
         } else {
-            // 验证所有字段，包括第一步的taskName
-            form.validateFields(['taskName', 'similarity_threshold', 'vector_similarity_weight']).then(async (formData) => {
+            // 验证所有字段，包括第一步的task_name
+            form.validateFields(['task_name', 'similarity_threshold', 'vector_similarity_weight', 'rerank_id', 'top_k']).then(async (formData) => {
                 try {
-                    const taskName = formData.taskName;
+                    console.log(`formDataformDataformData`, formData)
                     const selectedQuestionsData = allQuestions.filter(q => selectedQuestions.includes(q.id));
-                    
-                    // 调用保存接口
+
+                    // // 调用保存接口
                     await saveRetrievalTask({
-                        task_name: taskName,
+                        task_name: formData.task_name,
                         test_ques_ids: selectedQuestions,
-                        selectedQuestionsData: selectedQuestionsData
+                        selectedQuestionsData: selectedQuestionsData,
+                        similarity_threshold: formData.similarity_threshold,
+                        vector_similarity_weight: formData.vector_similarity_weight,
+                        rerank_id: formData.rerank_id,
+                        top_k: formData.top_k
+
                     });
-                    
+
                     message.success('评估任务创建成功');
-                    
+
                     // 调用父组件的回调
                     onOk({
-                        taskName,
+                        task_name:formData.task_name,
                         selectedQuestions: selectedQuestionsData,
                         formData
                     });
-                    
+
                     // 创建成功后清空所有数据
                     setCurrentStep(0);
                     setSelectedSources([]);
@@ -166,6 +171,17 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
         form.resetFields();
         onCancel();
     };
+
+    // 初始化表单字段
+    // React.useEffect(() => {
+    //     if (visible) {
+    //         form.setFieldsValue({
+    //             similarity_threshold: 20,
+    //             vector_similarity_weight: 70,
+    //             top_k: 1024
+    //         });
+    //     }
+    // }, [visible, form]);
 
     // 监听弹窗关闭，清空数据
     React.useEffect(() => {
@@ -236,7 +252,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
 
                 <Form form={form} layout="vertical">
                     <Form.Item
-                        name="taskName"
+                        name="task_name"
                         label="任务名称"
                         rules={[{ required: true, message: '请输入任务名称' }]}
                     >
@@ -284,7 +300,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                         </div>
 
                         {/* 问题列表 */}
-                        <div style={{ flex: 1, padding: '16px' ,height:400,overflow:'auto' }}>
+                        <div style={{ flex: 1, padding: '16px', height: 400, overflow: 'auto' }}>
                             <div style={{ marginBottom: '12px', fontWeight: 'bold' }}>
                                 问题列表 (已选择 {selectedQuestions.length} 个)
                             </div>
