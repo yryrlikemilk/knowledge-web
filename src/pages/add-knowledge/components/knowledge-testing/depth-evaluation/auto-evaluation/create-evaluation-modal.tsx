@@ -38,7 +38,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
     const [selectedSources, setSelectedSources] = useState<('manual' | 'ai')[]>([]);
     const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
     const [canAccessStep2, setCanAccessStep2] = useState(false);
-    const { allQuestions: allQ } = useFetchAllQuestions();
+    const { allQuestions: allQ, loading: allQuestionLoading } = useFetchAllQuestions();
     const { saveRetrievalTask, loading: saveLoading } = useSaveRetrievalTask();
 
     // 根据接口数据生成问题列表
@@ -143,7 +143,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
 
                     // 调用父组件的回调
                     onOk({
-                        task_name:formData.task_name,
+                        task_name: formData.task_name,
                         selectedQuestions: selectedQuestionsData,
                         formData
                     });
@@ -172,16 +172,6 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
         onCancel();
     };
 
-    // 初始化表单字段
-    // React.useEffect(() => {
-    //     if (visible) {
-    //         form.setFieldsValue({
-    //             similarity_threshold: 20,
-    //             vector_similarity_weight: 70,
-    //             top_k: 1024
-    //         });
-    //     }
-    // }, [visible, form]);
 
     // 监听弹窗关闭，清空数据
     React.useEffect(() => {
@@ -468,26 +458,31 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
             width={800}
             footer={renderFooter()}
         >
-            {(allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0) > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', margin: '20px 0', }}>
-                    <Button
-                        type={currentStep === 0 ? 'primary' : 'default'}
-                        size="small"
-                        onClick={() => setCurrentStep(0)}
-                    >
-                        1. 选择测试问题
-                    </Button>
-                    <Button
-                        type={currentStep === 1 ? 'primary' : 'default'}
-                        size="small"
-                        disabled={!canAccessStep2}
-                        onClick={() => canAccessStep2 && setCurrentStep(1)}
-                    >
-                        2. 设置检索参数&评估指标
-                    </Button>
-                </div>
+            {allQuestionLoading ? (
+                <div>加载中---</div>
+            ) : (
+                <> {(allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', margin: '20px 0', }}>
+                        <Button
+                            type={currentStep === 0 ? 'primary' : 'default'}
+                            size="small"
+                            onClick={() => setCurrentStep(0)}
+                        >
+                            1. 选择测试问题
+                        </Button>
+                        <Button
+                            type={currentStep === 1 ? 'primary' : 'default'}
+                            size="small"
+                            disabled={!canAccessStep2}
+                            onClick={() => canAccessStep2 && setCurrentStep(1)}
+                        >
+                            2. 设置检索参数&评估指标
+                        </Button>
+                    </div>
+                )}
+                    {(allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0) === 0 ? renderStep1() : (currentStep === 0 ? renderStep1() : renderStep2())}</>
             )}
-            {(allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0) === 0 ? renderStep1() : (currentStep === 0 ? renderStep1() : renderStep2())}
+
         </Modal>
     );
 };

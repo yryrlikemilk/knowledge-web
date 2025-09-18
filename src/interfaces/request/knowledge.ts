@@ -35,7 +35,8 @@ export interface IFetchKnowledgeListRequestParams {
     top_k?: number;
   };
   metadata_condition?: any;
-  idOfQuery?: number; // 添加问题索引参数
+  idOfQuery?: number; 
+  questions?:any;
 }
 
 export interface IFetchDocumentListRequestBody {

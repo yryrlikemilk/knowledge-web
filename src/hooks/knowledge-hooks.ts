@@ -266,11 +266,11 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
     gcTime: 0,
     mutationFn: async (values: any) => {
       const questions = Array.isArray(values.question)
-        ? values.question
-        : [values.question];
+        ?  values.question.map((q:any) => ({ question_text: q }))
+        : [{question_text:values.question}];
       const { data } = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
-        query: questions,
+        questions: questions,
         keyword: false,
         document_ids: values.doc_ids,
         highlight: false,
@@ -372,11 +372,11 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
     mutationFn: async (values: any) => {
       console.log(`values222`, values, knowledgeBaseId);
       const questions = Array.isArray(values.question)
-        ? values.question
-        : [values.question];
+        ? values.question.map((q:any) => ({ question_text: q }))
+        : [{question_text:values.question}];
       const { data } = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
-        query: questions,
+        questions: questions,
         keyword: false,
         document_ids: values.doc_ids,
         highlight: false,
