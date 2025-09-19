@@ -160,7 +160,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                     type="link"
                     icon={<Eye size={14} />}
                     onClick={() => handleViewReport(record)}
-                    disabled={record.status !== 'completed'}
+                    // disabled={record.status !== 'completed'}
                 >
                     查看报告
                 </Button>

@@ -50,6 +50,8 @@ const {
   update_question,
   delete_questions,
   check_first_generate,
+  retrieval_task_report,
+  retrieval_task_question_list,
 } = api;
 
 const methods = {
@@ -218,6 +220,14 @@ const methods = {
     url: check_first_generate,
     method: 'get',
   },
+  retrievalTaskReport: {
+    url: retrieval_task_report,
+    method: 'post',
+  },
+  retrievalTaskQuestionList: {
+    url: retrieval_task_question_list,
+    method: 'post',
+  },
 };
 
 const kbService = registerServer<keyof typeof methods>(methods, request);
@@ -348,6 +358,28 @@ export const deleteQuestions = (body?: { question_ids: string[] }) => {
 
 export const checkFirstGenerate = (kbId: string) => {
   return request.get(api.check_first_generate, { params: { kbId } });
+};
+
+export const getRetrievalTaskReport = (body?: {
+  ai_generate?: boolean;
+  category?: string;
+  page?: number;
+  page_size?: number;
+  result?: number;
+  task_id?: string;
+}) => {
+  return request.post(api.retrieval_task_report, { data: body });
+};
+
+export const getRetrievalTaskQuestionList = (body?: {
+  ai_generate?: boolean;
+  category?: string;
+  page?: number;
+  page_size?: number;
+  result?: number;
+  task_id?: string;
+}) => {
+  return request.post(api.retrieval_task_question_list, { data: body });
 };
 
 export default kbService;

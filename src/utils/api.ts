@@ -76,6 +76,8 @@ export default {
   update_question:`${api_rag_host}/retrievalQuestion/update`,
   delete_questions:`${api_rag_host}/retrievalQuestion/deleteQuestions`,
   check_first_generate:`${api_rag_host}/retrievalQuestion/checkFirstGenerate`,
+  retrieval_task_report:`${api_rag_host}/retrievalTask/report`,
+  retrieval_task_question_list:`${api_rag_host}/retrievalTask/questionList`,
   // document
   get_document_list: `${api_rag_host}/file/docList`,
   get_run_status: (knowledgeId: string)=>`${api_rag_host}/dataset/getRunStatus?kbId=${knowledgeId}`,

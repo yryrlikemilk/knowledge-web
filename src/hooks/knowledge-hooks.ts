@@ -26,6 +26,8 @@ import kbService, {
   renameTag,
   saveRetrievalTask,
   updateQuestion,
+  getRetrievalTaskReport,
+  getRetrievalTaskQuestionList,
 } from '@/services/knowledge-service';
 import {
   useInfiniteQuery,
@@ -1119,6 +1121,137 @@ export const useFetchCheckFirstGenerate = () => {
 
   return {
     firstGenerateStatus: data || 0,
+    loading,
+    refetch,
+  };
+};
+
+// 获取检索任务报告
+export const useFetchRetrievalTaskReport = (taskId?: string, page: number = 0, pageSize: number = 0) => {
+  const { data, isFetching: loading, refetch } = useQuery({
+    queryKey: ['fetchRetrievalTaskReport', taskId, page, pageSize],
+    enabled: !!taskId,
+    queryFn: async () => {
+      if (!taskId) return {
+        accuracy_rate: 0,
+        answerable_rate: 0,
+        create_time: '',
+        question_count: 0,
+        score: 0,
+        task_id: '',
+        update_time: ''
+      };
+      const response = await getRetrievalTaskReport({
+        task_id: taskId,
+        ai_generate: true,
+        category: '',
+        page,
+        page_size: pageSize,
+        result: 0,
+      });
+      if (response?.data?.code === 0) {
+        return response.data.data;
+      }
+      return {
+        accuracy_rate: 0,
+        answerable_rate: 0,
+        create_time: '',
+        question_count: 0,
+        score: 0,
+        task_id: '',
+        update_time: ''
+      };
+    },
+  });
+
+  return {
+    reportData: data || {
+      accuracy_rate: 0,
+      answerable_rate: 0,
+      create_time: '',
+      question_count: 0,
+      score: 0,
+      task_id: '',
+      update_time: ''
+    },
+    loading,
+    refetch,
+  };
+};
+
+// 获取检索任务问题列表
+export const useFetchRetrievalTaskQuestionList = (
+  taskId?: string, 
+  page: number = 1, 
+  pageSize: number = 10,
+  aiGenerate?: boolean,
+  category?: string,
+  result?: number
+) => {
+  const { data, isFetching: loading, refetch } = useQuery({
+    queryKey: ['fetchRetrievalTaskQuestionList', taskId, page, pageSize, aiGenerate, category, result],
+    enabled: !!taskId,
+    queryFn: async () => {
+      if (!taskId) return {
+        page_result: {
+          current: 0,
+          pages: 0,
+          records: [],
+          size: 0,
+          total: 0
+        },
+        statistics: {
+          ai_generate_category: [],
+          ai_generate_count: 0,
+          manual_input_count: 0,
+          total_question_count: 0
+        }
+      };
+      const response = await getRetrievalTaskQuestionList({
+        task_id: taskId,
+        ai_generate: aiGenerate,
+        category: category || '',
+        page,
+        page_size: pageSize,
+        result: result || 0,
+      });
+      if (response?.data?.code === 0) {
+        return response.data.data;
+      }
+      return {
+        page_result: {
+          current: 0,
+          pages: 0,
+          records: [],
+          size: 0,
+          total: 0
+        },
+        statistics: {
+          ai_generate_category: [],
+          ai_generate_count: 0,
+          manual_input_count: 0,
+          total_question_count: 0
+        }
+      };
+    },
+  });
+
+  return {
+    questionListData: data || {
+      page_result: {
+        current: 0,
+        pages: 0,
+        records: [],
+        size: 0,
+        total: 0
+      },
+      statistics: {
+        ai_generate_category: [],
+        ai_generate_count: 0,
+        manual_input_count: 0,
+        total_question_count: 0
+      }
+    },
     loading,
     refetch,
   };
