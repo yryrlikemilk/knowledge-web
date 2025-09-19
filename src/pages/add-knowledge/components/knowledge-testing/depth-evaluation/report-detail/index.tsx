@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Button, Pagination, Select } from 'antd';
+import React, { useState, useMemo } from 'react';
+import { Button, Pagination, Dropdown, Menu } from 'antd';
+import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { useParams } from 'umi';
 import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList } from '@/hooks/knowledge-hooks';
@@ -33,7 +34,8 @@ const ReportDetail: React.FC = () => {
   // 筛选状态
   const [selectedSource, setSelectedSource] = useState<'all' | 'ai' | 'manual'>('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedResult] = useState<number | undefined>(undefined);
+  const [selectedResult, setSelectedResult] = useState<number>(0); // 默认选中第一个选项
+  const [resultOpen, setResultOpen] = useState<boolean>(false); // 新增：下拉打开状态
 
   // 获取报告数据
   const { reportData, loading: reportLoading } = useFetchRetrievalTaskReport(reportId, currentPage, pageSize);
@@ -56,6 +58,13 @@ const ReportDetail: React.FC = () => {
     manual_input_count: 0,
     total_question_count: 0
   };
+
+  // 缓存下拉选项
+  const resultOptions = useMemo(() => [
+    { value: 0, label: '全部' },
+    { value: 1, label: '无检索结果' },
+    { value: 2, label: '检索结果分数不足80分' }
+  ], []);
 
   // 计算每个分类的数量
   const getCategoryCount = (category: string) => {
@@ -91,15 +100,22 @@ const ReportDetail: React.FC = () => {
     setCurrentPage(1);
   };
 
+  const handleResultChange = (value: number) => {
+    setSelectedResult(value);
+    setCurrentPage(1); // 重置分页到第一页
+  };
+
   // 获取评分等级和颜色
   const getScoreLevel = (score: number) => {
     if (score >= 90) return { level: '优', color: '#52c41a' };
     if (score >= 70) return { level: '良', color: '#f9b83c' };
     return { level: '差', color: '#fd5d5f' };
   };
-const handleDownload=()=>{
-  console.log(`下载`)
-};
+
+  const handleDownload = () => {
+    console.log(`下载`)
+  };
+
   const scoreLevel = getScoreLevel(reportData.score);
 
   // 仪表盘配置
@@ -154,6 +170,93 @@ const handleDownload=()=>{
     ]
   };
 
+  // 缓存分类选项
+  const categoryOptions = useMemo(() => {
+    return [
+      { key: "all", value: "all", label: `全部(${getCategoryCount('all')})` },
+      ...statistics.ai_generate_category.map((categoryItem: CategoryItem) => ({
+        key: categoryItem.category,
+        value: categoryItem.category,
+        label: `${categoryItem.category}(${categoryItem.count})`
+      }))
+    ];
+  }, [statistics.ai_generate_category]);
+
+  // 缓存来源选项
+  const sourceOptions = useMemo(() => [
+    <span
+      key="all"
+      style={{
+        padding: '8px 16px',
+        marginRight: '16px',
+        cursor: 'pointer',
+        borderBottom: selectedSource === 'all' ? '2px solid #1890ff' : '2px solid transparent',
+        color: selectedSource === 'all' ? '#1890ff' : '#666'
+      }}
+      onClick={() => handleSourceChange('all')}
+    >
+      所有问题({getSourceCount('all')})
+    </span>,
+    <span
+      key="ai"
+      style={{
+        padding: '8px 16px',
+        marginRight: '16px',
+        cursor: 'pointer',
+        borderBottom: selectedSource === 'ai' ? '2px solid #1890ff' : '2px solid transparent',
+        color: selectedSource === 'ai' ? '#1890ff' : '#666'
+      }}
+      onClick={() => handleSourceChange('ai')}
+    >
+      AI生成({getSourceCount('ai')})
+    </span>,
+    <span
+      key="manual"
+      style={{
+        padding: '8px 16px',
+        marginRight: '16px',
+        cursor: 'pointer',
+        borderBottom: selectedSource === 'manual' ? '2px solid #1890ff' : '2px solid transparent',
+        color: selectedSource === 'manual' ? '#1890ff' : '#666'
+      }}
+      onClick={() => handleSourceChange('manual')}
+    >
+      手工输入({getSourceCount('manual')})
+    </span>
+  ], [selectedSource]);
+
+  // 检索结果下拉菜单
+  const resultMenu = (
+    <Menu
+      onClick={({ key }) => {
+        handleResultChange(Number(key));
+        // 点击菜单项后会自动触发 onVisibleChange 为 false，但这里可以确保关闭状态
+        setResultOpen(false);
+      }}
+      selectedKeys={[selectedResult.toString()]}
+    >
+      {resultOptions.map(option => (
+        <Menu.Item key={option.value}>
+          {option.label}
+        </Menu.Item>
+      ))}
+    </Menu>
+  );
+
+  // 分类下拉菜单
+  // const categoryMenu = (
+  //   <Menu
+  //     onClick={({ key }) => handleCategoryChange(key)}
+  //     selectedKeys={[selectedCategory]}
+  //   >
+  //     {categoryOptions.map(option => (
+  //       <Menu.Item key={option.value}>
+  //         {option.label}
+  //       </Menu.Item>
+  //     ))}
+  //   </Menu>
+  // );
+
   if (reportLoading || questionListLoading) {
     return (
       <div style={{ padding: 40, textAlign: 'center' }}>
@@ -163,20 +266,20 @@ const handleDownload=()=>{
   }
 
   return (
-    <div >
-      <div style={{ padding: 16, borderBottom: '1px solid #eee' }} >
+    <div>
+      <div style={{ padding: 16, borderBottom: '1px solid #eee' }}>
         <span>评估报告概览</span>
         <span>（评估分数：<span style={{ color: scoreLevel.color }}>
           {scoreLevel.level}
-        </span> 90-100 <span style={{ color: "#f9b83c",marginLeft: '6px' }}>
+        </span> 90-100 <span style={{ color: "#f9b83c", marginLeft: '6px' }}>
           良</span>70-90
-           <span style={{ color: "#fd5d5f",marginLeft: '6px' }}>
+           <span style={{ color: "#fd5d5f", marginLeft: '6px' }}>
           差</span>
           0-70）</span>
       </div>
-      <div style={{ padding: 16 }} >
+      <div style={{ padding: 16 }}>
         <div className='flex'>
-          <div className=' p-2 ' style={{ width: "30%" }} >
+          <div className=' p-2 ' style={{ width: "30%" }}>
             <div className='text-left w-full'>评估分数</div>
 
             <div style={{ width: '200px', height: '100px', margin: '0 auto' }}>
@@ -212,7 +315,6 @@ const handleDownload=()=>{
                   {Math.round(reportData.accuracy_rate * 100)}%
                 </div>
                 <div>问题覆盖率</div>
-
               </div>
             </div>
           </div>
@@ -228,54 +330,29 @@ const handleDownload=()=>{
           <Button type='primary'>去上传相关文件</Button>
         </div>
       </div>
-      <div style={{ padding: 16, display: 'flex', justifyContent: "space-between", borderBottom: '1px solid #eee' }} >
+      <div style={{ padding: 16, display: 'flex', justifyContent: "space-between", borderBottom: '1px solid #eee' }}>
         <span>测试问题分类</span>
         <div className='flex gap-2'>
-          <Button type='link' onClick={()=>{handleDownload()}} >下载</Button>
-          <span>无检查结果</span>
+          <Button type='link' onClick={() => { handleDownload() }}>下载</Button>
+          <Dropdown
+            overlay={resultMenu}
+            trigger={['click']}
+            onVisibleChange={(visible) => setResultOpen(visible)}
+            visible={resultOpen} // antd v4 使用 visible，v5 使用 open；若项目使用 v5 改为 open={resultOpen}
+          >
+            <Button type='link'>
+              {resultOptions.find(option => option.value === selectedResult)?.label || '全部'}
+              {/* 根据下拉打开状态切换图标 */}
+              {resultOpen ? <UpOutlined style={{ marginLeft: 8 }} /> : <DownOutlined style={{ marginLeft: 8 }} />}
+            </Button>
+          </Dropdown>
         </div>
-
       </div>
-      <div style={{ padding: 16 }} >
+      <div style={{ padding: 16 }}>
         <div>
           {/* 来源筛选 */}
           <div style={{ marginBottom: '16px' }}>
-            <span
-              style={{
-                padding: '8px 16px',
-                marginRight: '16px',
-                cursor: 'pointer',
-                borderBottom: selectedSource === 'all' ? '2px solid #1890ff' : '2px solid transparent',
-                color: selectedSource === 'all' ? '#1890ff' : '#666'
-              }}
-              onClick={() => handleSourceChange('all')}
-            >
-              所有问题({getSourceCount('all')})
-            </span>
-            <span
-              style={{
-                padding: '8px 16px',
-                marginRight: '16px',
-                cursor: 'pointer',
-                borderBottom: selectedSource === 'ai' ? '2px solid #1890ff' : '2px solid transparent',
-                color: selectedSource === 'ai' ? '#1890ff' : '#666'
-              }}
-              onClick={() => handleSourceChange('ai')}
-            >
-              AI生成({getSourceCount('ai')})
-            </span>
-            <span
-              style={{
-                padding: '8px 16px',
-                marginRight: '16px',
-                cursor: 'pointer',
-                borderBottom: selectedSource === 'manual' ? '2px solid #1890ff' : '2px solid transparent',
-                color: selectedSource === 'manual' ? '#1890ff' : '#666'
-              }}
-              onClick={() => handleSourceChange('manual')}
-            >
-              手工输入({getSourceCount('manual')})
-            </span>
+            {sourceOptions}
           </div>
           {/* 分类筛选 */}
           <div style={{
@@ -289,31 +366,21 @@ const handleDownload=()=>{
               display: 'inline-flex',
               minWidth: 'max-content',
             }}>
-              <span
-                style={{
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  borderBottom: selectedCategory === 'all' ? '2px solid #1890ff' : '2px solid transparent',
-                  color: selectedCategory === 'all' ? '#1890ff' : '#666',
-                  whiteSpace: 'nowrap'
-                }}
-                onClick={() => handleCategoryChange('all')}
-              >
-                全部({getCategoryCount('all')})
-              </span>
-              {statistics.ai_generate_category.map((categoryItem: CategoryItem) => (
+              {categoryOptions.map(option => (
                 <span
-                  key={categoryItem.category}
+                  key={option.value}
+                  onClick={() => handleCategoryChange(option.value)}
                   style={{
-                    padding: '8px 16px',
+                    padding: '8px 12px',
+                    marginRight: '12px',
                     cursor: 'pointer',
-                    borderBottom: selectedCategory === categoryItem.category ? '2px solid #1890ff' : '2px solid transparent',
-                    color: selectedCategory === categoryItem.category ? '#1890ff' : '#666',
-                    whiteSpace: 'nowrap'
+                    borderBottom: selectedCategory === option.value ? '2px solid #1890ff' : '2px solid transparent',
+                    color: selectedCategory === option.value ? '#1890ff' : '#666',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-block',
                   }}
-                  onClick={() => handleCategoryChange(categoryItem.category)}
                 >
-                  {categoryItem.category}({categoryItem.count})
+                  {option.label}
                 </span>
               ))}
             </div>
@@ -321,9 +388,9 @@ const handleDownload=()=>{
         </div>
         {/* 问题列表 */}
         {questionData.map((item: QuestionItem) => (
-          <div key={item.id} style={{ padding: 16, borderBottom: '1px solid #f0f0f0' }} >
+          <div key={item.id} style={{ padding: 16, borderBottom: '1px solid #f0f0f0' }}>
             <div className='flex justify-between items-center'>
-              <div >
+              <div>
                 <div style={{ fontSize: '16px', fontWeight: '500' }}>{item.question_text}</div>
                 <div style={{ marginTop: 8, color: '#666' }}>
                   <span style={{ marginRight: '16px' }}>检索结果数：{item.retrieval_count}</span>
@@ -360,11 +427,6 @@ const handleDownload=()=>{
           />
         </div>
       </div>
-
-      {/* <div >任务 ID: {reportId}</div>
-      {knowledgeId && (
-        <div >知识库 ID: {knowledgeId}</div>
-      )} */}
     </div>
   );
 };
