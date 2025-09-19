@@ -4,6 +4,7 @@ import { DownOutlined, UpOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react';
 import { useParams, useNavigate } from 'umi';
 import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList } from '@/hooks/knowledge-hooks';
+import styles from './index.less'; // 新增：引入样式模块
 
 interface QuestionItem {
   id: string;
@@ -493,7 +494,7 @@ const ReportDetail: React.FC = () => {
           {/* 根据评估类型及交互展示不同按钮 */}
           {(() => {
             const evaluation = getEvaluationPrompt();
-            if (evaluation.type === 'error' && selectedResult === 1) {
+            if (evaluation.type === 'error') {
               return (
                 <div style={{ marginTop: 12 }}>
                   <Button type="primary" onClick={handleUploadFiles}>
@@ -525,6 +526,7 @@ const ReportDetail: React.FC = () => {
             trigger={['click']}
             onOpenChange={(open) => setResultOpen(open)}
             open={resultOpen}
+            className={styles.customDropdown} // 新增：应用自定义样式，设置每项高度为20px
           >
             <Button type='link'>
               {resultOptions.find(option => option.value === selectedResult)?.label || '全部'}
