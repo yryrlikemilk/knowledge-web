@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Form, message, InputNumber, Table, Button, Space } from 'antd';
+import { Modal, Form, message, InputNumber, Table, Button, Space, Tooltip } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import { useGenerateAiQuestion, useFetchFileUpdates, useFetchAiQuestionCount, useFetchCheckFirstGenerate, useFetchAiQuestionCountByDocIds, useOtherDocGenerateAiQuestion } from '@/hooks/knowledge-hooks';
 
 interface AIGenerateModalProps {
@@ -121,12 +122,28 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                 rules={[{ required: true, message: '请输入生成数量' }]}
                                 initialValue={questionCount.recommendCount || 50}
                             >
-                                <InputNumber
-                                    min={1}
-                                    max={questionCount.limitCount || 200}
-                                    style={{ width: '100%' }}
-                                    placeholder="请输入要生成的问题数量"
-                                />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <InputNumber
+                                        min={1}
+                                        max={questionCount.limitCount || 200}
+                                        style={{ width: '100%' }}
+                                        placeholder="请输入要生成的问题数量"
+                                    />
+                                    <Tooltip
+                                        title={
+                                            <div style={{ maxWidth: 280, lineHeight: 1.6 }}>
+                                                <div><strong>问题总数推荐规则：</strong></div>
+                                                <div>· 小文件（解析块 &lt; 10）：1-2 个问题</div>
+                                                <div>· 中文件（10 ≤ 解析块 ≤ 100）：3-5 个问题</div>
+                                                <div>· 大文件（解析块 &gt; 100）：10-20 个问题</div>
+                                                <div style={{ marginTop: 6 }}><strong>推荐值：</strong>按每类文件最低值计算总和，支持修改但不超过上限。</div>
+                                                <div><strong>上限值：</strong>按每类文件最高值计算总和。</div>
+                                            </div>
+                                        }
+                                    >
+                                        <InfoCircleOutlined style={{ color: '#1890ff', fontSize: 16, cursor: 'pointer' }} />
+                                    </Tooltip>
+                                </div>
                             </Form.Item>
                             <div style={{ marginTop: 40, display: 'flex', justifyContent: 'center', gap: 10 }}>
                                 <Button onClick={handleCancel}> 取消</Button>
@@ -231,12 +248,28 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                             rules={[{ required: true, message: '请输入生成数量' }]}
                                             initialValue={questionCount.recommendCount || 50}
                                         >
-                                            <InputNumber
-                                                min={1}
-                                                max={dynamicLimit || questionCount.limitCount || 200}
-                                                style={{ width: '100%' }}
-                                                placeholder="请输入要生成的问题数量"
-                                            />
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <InputNumber
+                                                    min={1}
+                                                    max={dynamicLimit || questionCount.limitCount || 200}
+                                                    style={{ width: '100%' }}
+                                                    placeholder="请输入要生成的问题数量"
+                                                />
+                                                <Tooltip
+                                                    title={
+                                                        <div style={{ maxWidth: 280, lineHeight: 1.6 }}>
+                                                            <div><strong>问题总数推荐规则：</strong></div>
+                                                            <div>· 小文件（解析块 &lt; 10）：1-2 个问题</div>
+                                                            <div>· 中文件（10 ≤ 解析块 ≤ 100）：3-5 个问题</div>
+                                                            <div>· 大文件（解析块 &gt; 100）：10-20 个问题</div>
+                                                            <div style={{ marginTop: 6 }}><strong>推荐值：</strong>按每类文件最低值计算总和，支持修改但不超过上限。</div>
+                                                            <div><strong>上限值：</strong>按每类文件最高值计算总和。</div>
+                                                        </div>
+                                                    }
+                                                >
+                                                    <InfoCircleOutlined style={{ color: '#1890ff', fontSize: 16, cursor: 'pointer' }} />
+                                                </Tooltip>
+                                            </div>
                                         </Form.Item>
                                         <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center', gap: 10 }}>
                                             <Button

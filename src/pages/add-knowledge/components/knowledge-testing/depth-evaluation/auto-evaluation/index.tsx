@@ -13,7 +13,8 @@ interface EvaluationTask {
     task_name: string;
     questionCount: number;
     questionSource: string;
-    status: 'pending' | 'running' | 'completed' | 'failed';
+    // 状态由接口返回 0/1/2/3
+    status: 0 | 1 | 2 | 3;
     score?: number;
     retrievalParams: string;
     evaluationParams: string;
@@ -86,14 +87,14 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
         navigate(`/knowledge/testing/deep-search/report/${record.id}${knowledgeId ? `?id=${knowledgeId}` : ''}`);
     };
 
-    const getStatusTag = (status: string) => {
-        const statusMap = {
-            pending: { color: 'default', text: '未开始' },
-            running: { color: 'processing', text: '正在评估中' },
-            completed: { color: 'success', text: '成功' },
-            failed: { color: 'error', text: '失败' }
+    const getStatusTag = (status: number) => {
+        const statusMap: Record<number, { color: string; text: string }> = {
+            0: { color: 'default', text: '未开始' },
+            1: { color: 'processing', text: '正在评估中' },
+            2: { color: 'success', text: '成功' },
+            3: { color: 'error', text: '失败' },
         };
-        const config = statusMap[status as keyof typeof statusMap] || statusMap.pending;
+        const config = statusMap[status] || statusMap[0];
         return <Tag color={config.color}>{config.text}</Tag>;
     };
 
@@ -122,7 +123,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             dataIndex: 'status',
             key: 'status',
             width: 100,
-            render: (status: string) => getStatusTag(status),
+            render: (status: number) => getStatusTag(status),
         },
         {
             title: '结果分数',
@@ -160,7 +161,8 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                     type="link"
                     icon={<Eye size={14} />}
                     onClick={() => handleViewReport(record)}
-                    // disabled={record.status !== 'completed'}
+                    // completed 对应接口状态 2
+                    disabled={record.status !== 2}
                 >
                     查看报告
                 </Button>

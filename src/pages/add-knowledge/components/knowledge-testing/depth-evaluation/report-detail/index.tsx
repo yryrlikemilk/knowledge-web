@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { Button, Pagination, Dropdown, Menu } from 'antd';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Button, Pagination, Dropdown, message } from 'antd';
 import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
-import { useParams } from 'umi';
+import { useParams, useNavigate } from 'umi';
 import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList } from '@/hooks/knowledge-hooks';
 
 interface QuestionItem {
@@ -16,6 +16,7 @@ interface QuestionItem {
   retrieval_count: number;
   task_id: string;
   update_time: string;
+  doc_count?:number;
 }
 
 interface CategoryItem {
@@ -26,11 +27,12 @@ interface CategoryItem {
 const ReportDetail: React.FC = () => {
   const params = useParams();
   const reportId = params.id as string;
+  const navigate = useNavigate(); // 新增：用于页面跳转
 
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  
+
   // 筛选状态
   const [selectedSource, setSelectedSource] = useState<'all' | 'ai' | 'manual'>('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -39,7 +41,7 @@ const ReportDetail: React.FC = () => {
 
   // 获取报告数据
   const { reportData, loading: reportLoading } = useFetchRetrievalTaskReport(reportId, currentPage, pageSize);
-  
+
   // 获取问题列表数据
   const { questionListData, loading: questionListLoading } = useFetchRetrievalTaskQuestionList(
     reportId,
@@ -52,12 +54,12 @@ const ReportDetail: React.FC = () => {
 
   // 从API数据获取问题列表
   const questionData = questionListData.page_result.records || [];
-  const statistics = questionListData.statistics || {
+  const statistics = useMemo(() => questionListData.statistics || {
     ai_generate_category: [],
     ai_generate_count: 0,
     manual_input_count: 0,
     total_question_count: 0
-  };
+  }, [questionListData.statistics]);
 
   // 缓存下拉选项
   const resultOptions = useMemo(() => [
@@ -67,16 +69,16 @@ const ReportDetail: React.FC = () => {
   ], []);
 
   // 计算每个分类的数量
-  const getCategoryCount = (category: string) => {
+  const getCategoryCount = useCallback((category: string) => {
     if (category === 'all') {
       return statistics.total_question_count;
     }
     const categoryData = statistics.ai_generate_category.find((item: CategoryItem) => item.category === category);
     return categoryData ? categoryData.count : 0;
-  };
+  }, [statistics]);
 
   // 计算每个来源的数量
-  const getSourceCount = (source: string) => {
+  const getSourceCount = useCallback((source: string) => {
     if (source === 'all') {
       return statistics.total_question_count;
     }
@@ -87,7 +89,7 @@ const ReportDetail: React.FC = () => {
       return statistics.manual_input_count;
     }
     return 0;
-  };
+  }, [statistics]);
 
   // 处理筛选变化，重置分页
   const handleSourceChange = (source: 'all' | 'ai' | 'manual') => {
@@ -114,6 +116,74 @@ const ReportDetail: React.FC = () => {
 
   const handleDownload = () => {
     console.log(`下载`)
+  };
+
+  const handleUploadFiles = () => {
+    // TODO: 根据实际路由调整跳转地址或打开上传弹窗
+    // 这里默认跳转到知识库文件管理页，使用 reportId 作为引用参数
+    navigate(`/knowledge/${reportId}/files`);
+  };
+
+  const handleCreateAssistant = async () => {
+    // TODO: 替换为实际创建助手的接口调用逻辑
+    // 示例：跳转到创建助理页面并传入当前 reportId/knowledge id
+    try {
+      navigate(`/assistants/create?source=report&reportId=${reportId}`);
+      message.success('正在跳转至创建助手页面');
+    } catch (err) {
+      message.error('创建助手失败，请重试');
+    }
+  };
+
+  // 获取评价提示
+  const getEvaluationPrompt = () => {
+    const RECOMMENDED_QUESTION_COUNT = 10;
+    const answerableRate = (reportData?.answerable_rate || 0) * 100; // 转换为百分比
+    const accuracyRate = (reportData?.accuracy_rate || 0) * 100; // 转换为百分比
+    const N = reportData?.question_count || 0; // 当前问题数
+
+    // 可回答率 < 100%
+    if (answerableRate < 100) {
+      return {
+        type: 'error',
+        message: '可回答率低',
+        description: '建议继续补充知识库内容，点击查看无检索结果的问题',
+      };
+    }
+
+    // 可回答率 = 100 且 回答准确率 < 85%
+    if (answerableRate >= 100 && accuracyRate < 85) {
+      return {
+        type: 'warning',
+        message: '问题可回答率高，但部分问题的答案准确率低',
+        description: '建议优化参数或者补充相关文档试试，点击查看回答准确率较低的问题',
+      };
+    }
+
+    // 可回答率 = 100 且 回答准确率 >= 85 且 N >= 推荐问题数
+    if (answerableRate >= 100 && accuracyRate >= 85 && N >= RECOMMENDED_QUESTION_COUNT) {
+      return {
+        type: 'success',
+        message: '问题可回答率高',
+        description: `且大部分问题的回答准确率较高，建议可直接创建助手进行问答体验`,
+      };
+    }
+
+    // 可回答率 = 100 且 回答准确率 >= 85 且 N < 推荐问题数
+    if (answerableRate >= 100 && accuracyRate >= 85 && N < RECOMMENDED_QUESTION_COUNT) {
+      return {
+        type: 'info',
+        message: '问题可回答率高',
+        description: `，且大部分问题的回答准确率较高，但问题较少，建议添加问题继续测试。`,
+      };
+    }
+
+    // 默认情况
+    return {
+      type: 'info',
+      message: '评估中...',
+      description: '正在分析知识库质量',
+    };
   };
 
   const scoreLevel = getScoreLevel(reportData.score);
@@ -180,7 +250,7 @@ const ReportDetail: React.FC = () => {
         label: `${categoryItem.category}(${categoryItem.count})`
       }))
     ];
-  }, [statistics.ai_generate_category]);
+  }, [statistics.ai_generate_category, getCategoryCount]);
 
   // 缓存来源选项
   const sourceOptions = useMemo(() => [
@@ -223,25 +293,23 @@ const ReportDetail: React.FC = () => {
     >
       手工输入({getSourceCount('manual')})
     </span>
-  ], [selectedSource]);
+  ], [selectedSource, getSourceCount]);
 
-  // 检索结果下拉菜单
-  const resultMenu = (
-    <Menu
-      onClick={({ key }) => {
-        handleResultChange(Number(key));
-        // 点击菜单项后会自动触发 onVisibleChange 为 false，但这里可以确保关闭状态
-        setResultOpen(false);
-      }}
-      selectedKeys={[selectedResult.toString()]}
-    >
-      {resultOptions.map(option => (
-        <Menu.Item key={option.value}>
-          {option.label}
-        </Menu.Item>
-      ))}
-    </Menu>
-  );
+  // 检索结果下拉菜单（antd v5：使用 menu 配置而非 overlay/Menu 组件）
+  const resultMenuItems = resultOptions.map(option => ({
+    key: option.value.toString(),
+    label: option.label,
+  }));
+
+  const resultMenu = {
+    items: resultMenuItems,
+    selectable: true,
+    selectedKeys: [selectedResult.toString()],
+    onClick: ({ key }: { key: string }) => {
+      handleResultChange(Number(key));
+      setResultOpen(false);
+    },
+  };
 
   // 分类下拉菜单
   // const categoryMenu = (
@@ -269,12 +337,12 @@ const ReportDetail: React.FC = () => {
     <div>
       <div style={{ padding: 16, borderBottom: '1px solid #eee' }}>
         <span>评估报告概览</span>
-        <span>（评估分数：<span style={{ color: scoreLevel.color }}>
-          {scoreLevel.level}
+        <span>（评估分数：<span style={{ color: "#52c41a" }}>
+          优
         </span> 90-100 <span style={{ color: "#f9b83c", marginLeft: '6px' }}>
-          良</span>70-90
-           <span style={{ color: "#fd5d5f", marginLeft: '6px' }}>
-          差</span>
+            良</span>70-90
+          <span style={{ color: "#fd5d5f", marginLeft: '6px' }}>
+            差</span>
           0-70）</span>
       </div>
       <div style={{ padding: 16 }}>
@@ -314,20 +382,126 @@ const ReportDetail: React.FC = () => {
                 <div style={{ fontSize: 30, fontWeight: 600 }}>
                   {Math.round(reportData.accuracy_rate * 100)}%
                 </div>
-                <div>问题覆盖率</div>
+                <div>回答准确率</div>
+              </div>
+              <div className='p-4' style={{
+                width: "40%",
+                borderRadius: '8px', backgroundColor: '#eaeaea'
+              }}>
+                <div style={{ fontSize: 30, fontWeight: 600 }}>
+                  {reportData.question_count}
+                </div>
+                <div>问题总数</div>
               </div>
             </div>
           </div>
         </div>
 
         <div>
-          <div className='my-2'>
-            {reportData.answerable_rate < 0.8 
-              ? '问题可回答率较低，建议继续补充知识库内容，点击查看无检索结果的问题'
-              : '知识库内容较为完善，问题可回答率良好'
+          {(() => {
+            const evaluation = getEvaluationPrompt();
+            const getPromptStyle = (type: string) => {
+              switch (type) {
+                case 'error':
+                  return {
+                    color: '#666666',
+                    backgroundColor: '#fff2f0',
+                    border: '1px solid #ffccc7',
+                    padding: '12px 16px',
+                    borderRadius: '6px',
+                    marginBottom: '12px'
+                  };
+                case 'warning':
+                  return {
+                    color: '#666666',
+                    backgroundColor: '#fff7e6',
+                    border: '1px solid #ffd591',
+                    padding: '12px 16px',
+                    borderRadius: '6px',
+                    marginBottom: '12px'
+                  };
+                case 'success':
+                  return {
+                    color: '#666666',
+                    backgroundColor: '#f6ffed',
+                    border: '1px solid #b7eb8f',
+                    padding: '12px 16px',
+                    borderRadius: '6px',
+                    marginBottom: '12px'
+                  };
+                case 'info':
+                default:
+                  return {
+                    color: '#666666',
+                    backgroundColor: '#e6f7ff',
+                    border: '1px solid #91d5ff',
+                    padding: '12px 16px',
+                    borderRadius: '6px',
+                    marginBottom: '12px'
+                  };
+              }
+            };
+
+            return (
+              <div style={getPromptStyle(evaluation.type)}>
+                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                  {evaluation.type === 'error' ? (
+                    <div>
+                      <span>
+                        可回答率低，建议继续补充知识库内容，
+                      </span>
+                      <Button type='link' style={{padding: 0}}
+                        onClick={() => handleResultChange(1)}
+                      >
+                        点击查看无检索结果的问题
+                      </Button>
+                    </div>
+
+                  ) : evaluation.type === 'warning' ? (
+                    <div>
+                      <span>
+                        问题可回答率高，但部分问题的答案准确率低,建议优化参数或者补充相关文档试试，
+                      </span>
+                      <Button type='link'
+                        style={{ color: '#1677ff', cursor: 'pointer', textDecoration: 'underline' }}
+                        onClick={() => handleResultChange(2)}
+                      >
+                        点击查看回答准确率较低的问题
+                      </Button>
+                    </div>
+
+                  ) : (
+                    evaluation.description
+                  )}
+                </div>
+
+              </div>
+            );
+          })()}
+          {/* 根据评估类型及交互展示不同按钮 */}
+          {(() => {
+            const evaluation = getEvaluationPrompt();
+            if (evaluation.type === 'error' && selectedResult === 1) {
+              return (
+                <div style={{ marginTop: 12 }}>
+                  <Button type="primary" onClick={handleUploadFiles}>
+                    去上传相关文件
+                  </Button>
+                </div>
+              );
             }
-          </div>
-          <Button type='primary'>去上传相关文件</Button>
+            if (evaluation.type === 'success') {
+              return (
+                <div style={{ marginTop: 12 }}>
+                  <Button type="primary" onClick={handleCreateAssistant}>
+                    一键创建助手
+                  </Button>
+                </div>
+              );
+            }
+            // 其他情况不显示按钮
+            return null;
+          })()}
         </div>
       </div>
       <div style={{ padding: 16, display: 'flex', justifyContent: "space-between", borderBottom: '1px solid #eee' }}>
@@ -335,10 +509,10 @@ const ReportDetail: React.FC = () => {
         <div className='flex gap-2'>
           <Button type='link' onClick={() => { handleDownload() }}>下载</Button>
           <Dropdown
-            overlay={resultMenu}
+            menu={resultMenu}
             trigger={['click']}
-            onVisibleChange={(visible) => setResultOpen(visible)}
-            visible={resultOpen} // antd v4 使用 visible，v5 使用 open；若项目使用 v5 改为 open={resultOpen}
+            onOpenChange={(open) => setResultOpen(open)}
+            open={resultOpen}
           >
             <Button type='link'>
               {resultOptions.find(option => option.value === selectedResult)?.label || '全部'}
@@ -394,7 +568,7 @@ const ReportDetail: React.FC = () => {
                 <div style={{ fontSize: '16px', fontWeight: '500' }}>{item.question_text}</div>
                 <div style={{ marginTop: 8, color: '#666' }}>
                   <span style={{ marginRight: '16px' }}>检索结果数：{item.retrieval_count}</span>
-                  <span style={{ marginRight: '16px' }}>最高分：{item.max_score}</span>
+                  <span style={{ marginRight: '16px' }}>文档数：{item.doc_count}</span>
                   <span style={{ marginRight: '16px' }}>来源：{item.auto_generate ? 'AI生成' : '手工输入'}</span>
                   {item.category_sub && <span>分类：{item.category_sub}</span>}
                 </div>
@@ -405,7 +579,7 @@ const ReportDetail: React.FC = () => {
             </div>
           </div>
         ))}
-        
+
         {/* 分页组件 */}
         <div style={{ padding: '16px 0', textAlign: 'right' }}>
           <Pagination
@@ -415,7 +589,7 @@ const ReportDetail: React.FC = () => {
             showSizeChanger
             align="end"
             showQuickJumper
-            showTotal={(total, range) => `共 ${total} 条`}
+            showTotal={(total) => `共 ${total} 条`}
             onChange={(page, size) => {
               setCurrentPage(page);
               setPageSize(size || 10);
