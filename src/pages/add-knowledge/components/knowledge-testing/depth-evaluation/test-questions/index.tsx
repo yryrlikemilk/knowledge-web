@@ -167,14 +167,16 @@ const TestQuestions = () => {
             fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
-                    <Button
-                        type="default"
-                        size="small"
-                        icon={<Edit size={12} />}
-                        onClick={() => handleEdit(record)}
-                    >
-                        编辑
-                    </Button>
+                    {!record.auto_generate && (
+                        <Button
+                            type="default"
+                            size="small"
+                            icon={<Edit size={12} />}
+                            onClick={() => handleEdit(record)}
+                        >
+                            编辑
+                        </Button>
+                    )}
                     <Button
                         type="text"
                         size="small"

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Button, Pagination, Dropdown, message } from 'antd';
-import { DownOutlined, UpOutlined } from '@ant-design/icons';
+import { Button, Pagination, Dropdown, message, Tooltip } from 'antd';
+import { DownOutlined, UpOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { useParams, useNavigate } from 'umi';
 import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList } from '@/hooks/knowledge-hooks';
@@ -16,7 +16,7 @@ interface QuestionItem {
   retrieval_count: number;
   task_id: string;
   update_time: string;
-  doc_count?:number;
+  doc_count?: number;
 }
 
 interface CategoryItem {
@@ -25,6 +25,7 @@ interface CategoryItem {
 }
 
 const ReportDetail: React.FC = () => {
+
   const params = useParams();
   const reportId = params.id as string;
   const navigate = useNavigate(); // 新增：用于页面跳转
@@ -137,7 +138,6 @@ const ReportDetail: React.FC = () => {
 
   // 获取评价提示
   const getEvaluationPrompt = () => {
-    const RECOMMENDED_QUESTION_COUNT = 10;
     const answerableRate = (reportData?.answerable_rate || 0) * 100; // 转换为百分比
     const accuracyRate = (reportData?.accuracy_rate || 0) * 100; // 转换为百分比
     const N = reportData?.question_count || 0; // 当前问题数
@@ -161,7 +161,7 @@ const ReportDetail: React.FC = () => {
     }
 
     // 可回答率 = 100 且 回答准确率 >= 85 且 N >= 推荐问题数
-    if (answerableRate >= 100 && accuracyRate >= 85 && N >= RECOMMENDED_QUESTION_COUNT) {
+    if (answerableRate >= 100 && accuracyRate >= 85 && N >=  reportData?.recommend_count) {
       return {
         type: 'success',
         message: '问题可回答率高',
@@ -170,7 +170,7 @@ const ReportDetail: React.FC = () => {
     }
 
     // 可回答率 = 100 且 回答准确率 >= 85 且 N < 推荐问题数
-    if (answerableRate >= 100 && accuracyRate >= 85 && N < RECOMMENDED_QUESTION_COUNT) {
+    if (answerableRate >= 100 && accuracyRate >= 85 && N <  reportData?.recommend_count) {
       return {
         type: 'info',
         message: '问题可回答率高',
@@ -384,15 +384,27 @@ const ReportDetail: React.FC = () => {
                 </div>
                 <div>回答准确率</div>
               </div>
-              <div className='p-4' style={{
-                width: "40%",
-                borderRadius: '8px', backgroundColor: '#eaeaea'
-              }}>
-                <div style={{ fontSize: 30, fontWeight: 600 }}>
-                  {reportData.question_count}
+
+              <Tooltip
+                title={`根据知识库文件个数、大小建议需 ${ reportData?.recommend_count} 个问题进行测试。`}
+              >
+                <div className='p-4' style={{
+                  width: "40%",
+                  borderRadius: '8px', backgroundColor: '#eaeaea'
+                }}>
+                  <div style={{ fontSize: 30, fontWeight: 600 }}>
+                    {reportData.question_count}
+                  </div>
+
+
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <span>问题总数</span>
+
+                  </div>
                 </div>
-                <div>问题总数</div>
-              </div>
+              </Tooltip>
+
             </div>
           </div>
         </div>
@@ -450,7 +462,7 @@ const ReportDetail: React.FC = () => {
                       <span>
                         可回答率低，建议继续补充知识库内容，
                       </span>
-                      <Button type='link' style={{padding: 0}}
+                      <Button type='link' style={{ padding: 0 }}
                         onClick={() => handleResultChange(1)}
                       >
                         点击查看无检索结果的问题
