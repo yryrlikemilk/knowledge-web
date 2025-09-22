@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Button, Pagination, Dropdown, message, Tooltip } from 'antd';
-import { DownOutlined, UpOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
-import { useParams, useNavigate } from 'umi';
+import { useLocation, useNavigate } from 'umi';
+import request from '@/utils/request';
 import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList } from '@/hooks/knowledge-hooks';
+// import request from '@/utils/request';
+import RetrievalResultModal from './retrieval-result-modal';
 import styles from './index.less'; // 新增：引入样式模块
 
 interface QuestionItem {
@@ -27,8 +30,12 @@ interface CategoryItem {
 
 const ReportDetail: React.FC = () => {
 
-  const params = useParams();
-  const reportId = params.id as string;
+  // 从查询参数读取 reportId 和 知识库 id（id）
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const reportId = (query.get('reportId') || query.get('report_id') || '') as string;
+  const knowledgeId = (query.get('id') || query.get('kb_id') || '') as string;
+
   const navigate = useNavigate(); // 新增：用于页面跳转
 
   // 分页状态
@@ -41,6 +48,9 @@ const ReportDetail: React.FC = () => {
   const [selectedResult, setSelectedResult] = useState<number>(0); // 默认选中第一个选项
   const [resultOpen, setResultOpen] = useState<boolean>(false); // 新增：下拉打开状态
 
+  // 检索结果弹窗状态
+  const [retrievalModalVisible, setRetrievalModalVisible] = useState(false);
+  const [itemQuestion,setItemQuestion]=useState<any>(null)
   // 获取报告数据
   const { reportData, loading: reportLoading } = useFetchRetrievalTaskReport(reportId, currentPage, pageSize);
 
@@ -121,18 +131,52 @@ const ReportDetail: React.FC = () => {
   };
 
   const handleUploadFiles = () => {
-    // TODO: 根据实际路由调整跳转地址或打开上传弹窗
-    // 这里默认跳转到知识库文件管理页，使用 reportId 作为引用参数
-    navigate(`/knowledge/${reportId}/files`);
+    navigate(`/knowledge/dataset?id=${knowledgeId}`);
   };
 
   const handleCreateAssistant = async () => {
-    // TODO: 替换为实际创建助手的接口调用逻辑
-    // 示例：跳转到创建助理页面并传入当前 reportId/knowledge id
+    // 组装创建助手参数并调用接口
+    // llm_id 优先取可用的第一个（若无法获取则回退到默认值）
+    let llmId = 'DeepSeek-R1___OpenAI-API@OpenAI-API-Compatible';
+    // 如后续需要可在此处补充获取可用 llm 列表的逻辑，并设置 llmId = list[0].id
+
+    const payload = {
+      name: `快速助理-${Date.now()}`,
+      icon: '',
+      llm_id: llmId,
+      llm_setting: {
+        temperature: 0.1,
+        top_p: 0.3,
+        presence_penalty: 0.4,
+        frequency_penalty: 0.7,
+      },
+      prompt_config: {
+        system: `你是一个智能助手，请总结知识库的内容来回答问题，请列举知识库中的数据详细回答。当所有知识库内容都与问题无关时，你的回答必须包括“知识库中未找到您要的答案！”这句话。回答需要考虑聊天历史。
+        以下是知识库：
+        {knowledge}
+        以上是知识库。`,
+        refine_multiturn: false,
+        use_kg: false,
+        reasoning: false,
+        parameters: [],
+        empty_response: '',
+      },
+      similarity_threshold: 0.2,
+      vector_similarity_weight: 0.7,
+      top_n: 8,
+    };
+
     try {
-      navigate(`/assistants/create?source=report&reportId=${reportId}`);
-      message.success('正在跳转至创建助手页面');
+      const {data} = await request.post('/v1/dialog/set', { data: payload });
+      console.log(`resprespresp`,data)
+      if (data && data.code === 0 ) {
+        message.success('助手创建成功');
+        navigate(`/chat`);
+      } else {
+        message.error('助手创建失败');
+      }
     } catch (err) {
+      console.error(err);
       message.error('创建助手失败，请重试');
     }
   };
@@ -245,7 +289,7 @@ const ReportDetail: React.FC = () => {
   const categoryOptions = useMemo(() => {
     return [
       { key: "all", value: "all", label: `全部(${getCategoryCount('all')})` },
-      ...statistics.ai_generate_category.map((categoryItem: CategoryItem) => ({
+      ...statistics.ai_generate_category?.map((categoryItem: CategoryItem) => ({
         key: categoryItem.category,
         value: categoryItem.category,
         label: `${categoryItem.category}(${categoryItem.count})`
@@ -325,6 +369,12 @@ const ReportDetail: React.FC = () => {
   //     ))}
   //   </Menu>
   // );
+
+  // 打开弹窗（由弹窗内部拉取检索结果）
+  const handleViewRetrieval = async (item: QuestionItem) => {
+    setItemQuestion(item)
+    setRetrievalModalVisible(true);
+  };
 
   if (reportLoading || questionListLoading) {
     return (
@@ -528,7 +578,7 @@ const ReportDetail: React.FC = () => {
             open={resultOpen}
             className={styles.customDropdown} // 新增：应用自定义样式，设置每项高度为20px
           >
-            <Button type='link'>
+            <Button type='link' style={{lineHeight: 20}}>
               {resultOptions.find(option => option.value === selectedResult)?.label || '全部'}
               {/* 根据下拉打开状态切换图标 */}
               {resultOpen ? <UpOutlined style={{ marginLeft: 8 }} /> : <DownOutlined style={{ marginLeft: 8 }} />}
@@ -588,7 +638,7 @@ const ReportDetail: React.FC = () => {
                 </div>
               </div>
               <div>
-                <Button type='primary'>查看检索结果</Button>
+                <Button type='primary' onClick={() => handleViewRetrieval(item)}>查看检索结果</Button>
               </div>
             </div>
           </div>
@@ -614,6 +664,13 @@ const ReportDetail: React.FC = () => {
             }}
           />
         </div>
+
+        {/* 检索结果弹窗 */}
+        <RetrievalResultModal
+          visible={retrievalModalVisible}
+          onCancel={() => setRetrievalModalVisible(false)}
+          itemQuestion={itemQuestion}
+        />
       </div>
     </div>
   );

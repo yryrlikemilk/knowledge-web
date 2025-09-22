@@ -84,7 +84,8 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
     const handleViewReport = (record: EvaluationTask) => {
         const params = new URLSearchParams(location.search);
         const knowledgeId = params.get('id') || '';
-        navigate(`/knowledge/testing/deep-search/report/${record.id}${knowledgeId ? `?id=${knowledgeId}` : ''}`);
+        // 同时传递 reportId 和 知识库 id（id），使用查询参数避免路由冲突
+        navigate(`/knowledge/testing/deep-search/report?reportId=${record.id}${knowledgeId ? `&id=${knowledgeId}` : ''}`);
     };
 
     const getStatusTag = (status: number) => {

@@ -81,7 +81,7 @@ const routes = [
             component: '@/pages/add-knowledge/components/knowledge-testing/depth-evaluation',
           },
           {
-            path: '/knowledge/testing/deep-search/report/:id',
+            path: '/knowledge/testing/deep-search/report',
             component: '@/pages/add-knowledge/components/knowledge-testing/depth-evaluation/report-detail',
           },
           {

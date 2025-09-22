@@ -1,15 +1,24 @@
-
-
 .customDropdown {
   .ant-dropdown-menu-item,
   .ant-menu-item,
   .rc-dropdown-menu-item,
-  .rc-menu-item {
-    display: flex;
-    align-items: center;
+  .rc-menu-item,
+  .ant-select-item-option,
+  .ant-select-item {
+    display: flex !important;
+    align-items: center !important;
     height: 20px !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
     line-height: 20px !important;
+  }
+
+
+  .ant-select-item-option-content,
+  .ant-dropdown-menu-item-content {
+    display: inline-block;
+    height: 20px !important;
+    line-height: 20px !important;
+    vertical-align: middle;
   }
 }

@@ -373,12 +373,12 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
     gcTime: 0,
     mutationFn: async (values: any) => {
       console.log(`values222`, values, knowledgeBaseId);
-      const questions = Array.isArray(values.question)
-        ? values.question.map((q:any) => ({ question_text: q }))
-        : [{question_text:values.question}];
+         const questions = Array.isArray(values.question)
+        ? values.question
+        : [values.question];
       const { data } = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
-        questions: questions,
+       query: questions,
         keyword: false,
         document_ids: values.doc_ids,
         highlight: false,
