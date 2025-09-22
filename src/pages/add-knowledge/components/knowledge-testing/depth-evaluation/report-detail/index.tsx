@@ -73,7 +73,7 @@ const ReportDetail: React.FC = () => {
   // 计算每个分类的数量
   const getCategoryCount = useCallback((category: string) => {
     if (category === 'all') {
-      return statistics.total_question_count;
+      return statistics.category_count;
     }
     const categoryData = statistics.ai_generate_category.find((item: CategoryItem) => item.category === category);
     return categoryData ? categoryData.count : 0;
