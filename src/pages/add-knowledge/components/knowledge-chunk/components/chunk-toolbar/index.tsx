@@ -12,6 +12,7 @@ import {
   FilePdfOutlined,
   PlusOutlined,
   SearchOutlined,
+  UpOutlined, // 新增：向上图标
 } from '@ant-design/icons';
 import {
   Button,
@@ -63,6 +64,7 @@ const ChunkToolBar = ({
   const documentInfo = data?.documentInfo;
   const knowledgeBaseId = useKnowledgeBaseId();
   const [isShowSearchBox, setIsShowSearchBox] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false); // 新增：记录筛选 Popover 展开状态
   const { t } = useTranslate('chunk');
 
   const handleSelectAllCheck = useCallback(
@@ -157,12 +159,18 @@ const ChunkToolBar = ({
   const filterContent = (
     <Radio.Group onChange={handleFilterChange} value={available}>
       <Space direction="vertical">
-        <Radio value={undefined}>{t('all')}</Radio>
+        <Radio value={undefined}>全部</Radio>
         <Radio value={1}>{t('enabled')}</Radio>
         <Radio value={0}>{t('disabled')}</Radio>
       </Space>
     </Radio.Group>
   );
+
+  const getFilterLabel = () => {
+    if (available === 1) return t('enabled');
+    if (available === 0) return t('disabled');
+    return '全部';
+  };
 
   return (
     <Flex justify="space-between" align="center">
@@ -178,21 +186,25 @@ const ChunkToolBar = ({
         </Text>
       </Space>
       <Space>
+        
+        {/*
+        //全文-省略
         <Segmented
           options={[
             { label: t(ChunkTextMode.Full), value: ChunkTextMode.Full },
             { label: t(ChunkTextMode.Ellipse), value: ChunkTextMode.Ellipse },
           ]}
           onChange={changeChunkTextMode as SegmentedProps['onChange']}
-        />
+        /> */}
         <Popover content={content} placement="bottom" arrow={false}>
           <Button>
             {t('bulk')}
             <DownOutlined />
           </Button>
         </Popover>
-        {isShowSearchBox ? (
+        {/* {isShowSearchBox ? ( */}
           <Input
+          style={{width:150}}
             size="middle"
             placeholder={t('search')}
             prefix={<SearchOutlined />}
@@ -201,18 +213,31 @@ const ChunkToolBar = ({
             onBlur={handleSearchBlur}
             value={searchString}
           />
-        ) : (
+        {/* ) : (
           <Button icon={<SearchOutlined />} onClick={handleSearchIconClick} />
-        )}
+        )} */}
 
-        <Popover content={filterContent} placement="bottom" arrow={false}>
-          <Button icon={<FilterIcon />} />
+        <Popover
+          content={filterContent}
+          placement="bottom"
+          arrow={false}
+          open={filterOpen}
+          onOpenChange={(open) => setFilterOpen(open)}
+        >
+          <div style={{ marginRight: 6}}>
+            <span style={{ marginLeft: 6 }}>{getFilterLabel()}</span>
+            {/* 根据 Popover 展开状态切换箭头方向 */}
+            {filterOpen ? (
+              <UpOutlined style={{ marginLeft: 6 }} />
+            ) : (
+              <DownOutlined style={{ marginLeft: 6 }} />
+            )}
+          </div>
         </Popover>
         <Button
-          icon={<PlusOutlined />}
           type="primary"
           onClick={() => createChunk()}
-        />
+        >新增</Button>
       </Space>
     </Flex>
   );

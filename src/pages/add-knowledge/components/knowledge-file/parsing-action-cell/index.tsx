@@ -39,11 +39,14 @@ const ParsingActionCell = ({
   const onRmDocument = () => {
     if (!isRunning) {
       console.log(`knowledgeId`,knowledgeId);
+      console.log(`objectrecord`,record)
       showDeleteConfirm({
+        title:'你确定删除这个文件吗',
         onOk: () => removeDocument({ documentIds: [documentId], knowledgeId }),
-        content: record?.parser_config?.graphrag?.use_graphrag
-          ? t('deleteDocumentConfirmContent')
-          : '',
+        // content:JSON.parse( record?.parser_config as string)?.graphrag?.use_graphrag
+        //   ? t('deleteDocumentConfirmContent')
+        //   : '',
+        content:`${record.name}被删除后，将无法恢复`
       });
     }
   };

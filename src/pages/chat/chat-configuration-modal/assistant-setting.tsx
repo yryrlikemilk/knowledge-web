@@ -3,11 +3,11 @@ import { TavilyItem } from '@/components/tavily-item';
 import { useTranslate } from '@/hooks/common-hooks';
 import { useFetchTenantInfo } from '@/hooks/user-setting-hooks';
 import { PlusOutlined } from '@ant-design/icons';
-import { Form, Input, message, Select, Switch, Upload } from 'antd';
+import { Button, Form, Input, message, Select, Switch, Upload } from 'antd';
 import classNames from 'classnames';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { ISegmentedContentProps } from '../interface';
-
+import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import styles from './index.less';
 
 const emptyResponseField = ['prompt_config', 'empty_response'];
@@ -19,7 +19,7 @@ const AssistantSetting = ({
 }: ISegmentedContentProps) => {
   const { t } = useTranslate('chat');
   const { data } = useFetchTenantInfo(true);
-
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const handleChange = useCallback(() => {
     const kbIds = form.getFieldValue('kb_ids');
     const emptyResponse = form.getFieldValue(emptyResponseField);
@@ -42,7 +42,9 @@ const AssistantSetting = ({
     }
     return e?.fileList;
   };
-
+  const toggleAdvanced = useCallback(() => {
+    setShowAdvanced((v) => !v);
+  }, []);
   const handleTtsChange = useCallback(
     (checked: boolean) => {
       if (checked && !data.tts_id) {
@@ -92,67 +94,84 @@ const AssistantSetting = ({
           {show ? uploadButton : null}
         </Upload>
       </Form.Item>
-      <Form.Item
-        name={'language'}
-        label={t('language')}
-        initialValue={'English'}
-        tooltip="coming soon"
-        style={{ display: 'none' }}
-      >
-        <Select
-          options={[
-            { value: 'Chinese', label: t('chinese', { keyPrefix: 'common' }) },
-            { value: 'English', label: t('english', { keyPrefix: 'common' }) },
-          ]}
-        />
-      </Form.Item>
-      <Form.Item
-        name={emptyResponseField}
-        label={t('emptyResponse')}
-        tooltip={t('emptyResponseTip')}
-      >
-        <Input placeholder="" onChange={handleChange} />
-      </Form.Item>
-      <Form.Item
-        name={['prompt_config', 'prologue']}
-        label={t('setAnOpener')}
-        tooltip={t('setAnOpenerTip')}
-        initialValue={t('setAnOpenerInitial')}
-      >
-        <Input.TextArea autoSize={{ minRows: 5 }} />
-      </Form.Item>
-      <Form.Item
-        label={t('quote')}
-        valuePropName="checked"
-        name={['prompt_config', 'quote']}
-        tooltip={t('quoteTip')}
-        initialValue={true}
-      >
-        <Switch />
-      </Form.Item>
-      <Form.Item
-        label={t('keyword')}
-        valuePropName="checked"
-        name={['prompt_config', 'keyword']}
-        tooltip={t('keywordTip')}
-        initialValue={false}
-      >
-        <Switch />
-      </Form.Item>
-      <Form.Item
-        label={t('tts')}
-        valuePropName="checked"
-        name={['prompt_config', 'tts']}
-        tooltip={t('ttsTip')}
-        initialValue={false}
-      >
-        <Switch onChange={handleTtsChange} />
-      </Form.Item>
-      <TavilyItem></TavilyItem>
       <KnowledgeBaseItem
         required={false}
         onChange={handleChange}
       ></KnowledgeBaseItem>
+
+      {/* <Form.Item label=' '> */}
+        <div style={{width:240, display: 'flex', justifyContent: 'flex-start', marginBottom: 8 }}>
+          <Button variant="link" color="default" onClick={toggleAdvanced} style={{ padding: 0 }}>
+            {'高级选项'}
+            {showAdvanced ? <UpOutlined style={{ marginLeft: 6 }} /> : <DownOutlined style={{ marginLeft: 6 }} />}
+          </Button>
+        </div>
+      {/* </Form.Item> */}
+
+      {showAdvanced && (
+        <>
+
+          <Form.Item
+            name={'language'}
+            label={t('language')}
+            initialValue={'English'}
+            tooltip="coming soon"
+            style={{ display: 'none' }}
+          >
+            <Select
+              options={[
+                { value: 'Chinese', label: t('chinese', { keyPrefix: 'common' }) },
+                { value: 'English', label: t('english', { keyPrefix: 'common' }) },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            name={emptyResponseField}
+            label={t('emptyResponse')}
+            tooltip={t('emptyResponseTip')}
+          >
+            <Input placeholder="" onChange={handleChange} />
+          </Form.Item>
+          <Form.Item
+            name={['prompt_config', 'prologue']}
+            label={t('setAnOpener')}
+            tooltip={t('setAnOpenerTip')}
+            initialValue={t('setAnOpenerInitial')}
+          >
+            <Input.TextArea autoSize={{ minRows: 5 }} />
+          </Form.Item>
+          <Form.Item
+            label={t('quote')}
+            valuePropName="checked"
+            name={['prompt_config', 'quote']}
+            tooltip={t('quoteTip')}
+            initialValue={true}
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            label={t('keyword')}
+            valuePropName="checked"
+            name={['prompt_config', 'keyword']}
+            tooltip={t('keywordTip')}
+            initialValue={false}
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            label={t('tts')}
+            valuePropName="checked"
+            name={['prompt_config', 'tts']}
+            tooltip={t('ttsTip')}
+            initialValue={false}
+          >
+            <Switch onChange={handleTtsChange} />
+          </Form.Item>
+          <TavilyItem></TavilyItem>
+        </>
+      )}
+
+
     </section>
   );
 };

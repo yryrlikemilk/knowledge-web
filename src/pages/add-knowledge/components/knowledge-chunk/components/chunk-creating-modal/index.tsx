@@ -2,8 +2,8 @@ import EditTag from '@/components/edit-tag';
 import { useFetchChunk } from '@/hooks/chunk-hooks';
 import { IModalProps } from '@/interfaces/common';
 import { IChunk } from '@/interfaces/database/knowledge';
-import { DeleteOutlined } from '@ant-design/icons';
-import { Divider, Form, Input, Modal, Space, Switch } from 'antd';
+import { DeleteOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
+import { Divider, Form, Input, Modal, Space, Switch, Button } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDeleteChunkByIds } from '../../hooks';
@@ -39,11 +39,16 @@ const ChunkCreatingModal: React.FC<IProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [checked, setChecked] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { removeChunk } = useDeleteChunkByIds();
   const { data } = useFetchChunk(chunkId);
   const { t } = useTranslation();
 
   const isTagParser = parserId === 'tag';
+
+  const toggleAdvanced = useCallback(() => {
+    setShowAdvanced((v) => !v);
+  }, []);
 
   const handleOk = useCallback(async () => {
     try {
@@ -100,26 +105,39 @@ const ChunkCreatingModal: React.FC<IProps> = ({
           <Input.TextArea autoSize={{ minRows: 4, maxRows: 10 }} />
         </Form.Item>
 
-        <Form.Item<FieldType> label={t('chunk.keyword')} name="important_kwd">
-          <EditTag></EditTag>
-        </Form.Item>
-        <Form.Item<FieldType>
-          label={t('chunk.question')}
-          name="question_kwd"
-          tooltip={t('chunk.questionTip')}
-        >
-          <EditTag></EditTag>
-        </Form.Item>
-        {isTagParser && (
-          <Form.Item<FieldType>
-            label={t('knowledgeConfiguration.tagName')}
-            name="tag_kwd"
-          >
-            <EditTag></EditTag>
-          </Form.Item>
-        )}
+        {/* 高级选项 折叠开关 */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 8 }}>
+          <Button variant="link" color="default" onClick={toggleAdvanced} style={{ padding: 0 }}>
+            {t('高级选项')}
+            {showAdvanced ? <UpOutlined style={{ marginLeft: 6 }} /> : <DownOutlined style={{ marginLeft: 6 }} />}
+          </Button>
+        </div>
 
-        {!isTagParser && <TagFeatureItem></TagFeatureItem>}
+        {/* 折叠区域：默认隐藏，点击展开显示以下表单项 */}
+        {showAdvanced && (
+          <>
+            <Form.Item<FieldType> label={t('chunk.keyword')} name="important_kwd">
+              <EditTag />
+            </Form.Item>
+            <Form.Item<FieldType>
+              label={t('chunk.question')}
+              name="question_kwd"
+              tooltip={t('chunk.questionTip')}
+            >
+              <EditTag />
+            </Form.Item>
+            {isTagParser && (
+              <Form.Item<FieldType>
+                label={t('knowledgeConfiguration.tagName')}
+                name="tag_kwd"
+              >
+                <EditTag />
+              </Form.Item>
+            )}
+
+            {!isTagParser && <TagFeatureItem />}
+          </>
+        )}
       </Form>
 
       {chunkId && (

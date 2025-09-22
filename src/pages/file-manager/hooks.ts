@@ -143,6 +143,7 @@ export const useHandleDeleteFile = (
 
   const handleRemoveFile = () => {
     showDeleteConfirm({
+      title:'你确定删除这个文件吗',
       onOk: async () => {
         const code = await removeDocument({ fileIds, parentId });
         if (code === 0) {
@@ -150,6 +151,7 @@ export const useHandleDeleteFile = (
         }
         return;
       },
+      content:`文件被删除后，将无法恢复`
     });
   };
 

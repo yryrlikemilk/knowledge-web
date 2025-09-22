@@ -27,7 +27,11 @@ const KnowledgeCard = ({ item, onDeleted }: IProps) => {
   };
 
   const handleDelete = () => {
-    showDeleteConfirm({ onOk: removeKnowledge });
+    showDeleteConfirm({
+      title:'你确定删除这个知识库吗',
+       onOk: removeKnowledge,
+       content:`${item.name}被删除后，将无法恢复`
+      });
   };
 
   const handleCardClick = () => {

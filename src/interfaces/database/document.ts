@@ -9,7 +9,7 @@ export interface IDocumentInfo {
   kb_id: string;
   location: string;
   name: string;
-  parser_config: IParserConfig;
+  parser_config: IParserConfig | string;
   parser_id: string;
   process_begin_at?: string;
   process_duation: number;
