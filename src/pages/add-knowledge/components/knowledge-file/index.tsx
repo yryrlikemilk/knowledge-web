@@ -446,6 +446,11 @@ const KnowledgeFile = () => {
    navigate(`/knowledge/testing/quick-test?id=${knowledgeId}`);
   };
 
+  const tipDisabled = loading ;
+  const tipStyle: React.CSSProperties = tipDisabled
+    ? { opacity: 0.6, pointerEvents: 'none', userSelect: 'none' }
+    : {};
+
   return (
     <div className={styles.datasetWrapper}>
       <div className={styles.topFex}>
@@ -492,40 +497,60 @@ const KnowledgeFile = () => {
       />
       {/* 根据知识库运行状态显示提示 */}
       {(runStatus.doc_ids.length > 0 || runStatus.run === 0 || runStatus.run === 1) && (
-        <div className={styles.testingControlTip}>
-          <div>  <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" style={{ width: 20, height: 20, marginRight: 8, }} viewBox="0 0 20 20">
-            <defs>
-              <clipPath id="master_svg0_2_7215">
-                <rect x="0" y="0" width="20" height="20" rx="0" style={{ width: 20, height: 20, }} />
-              </clipPath>
-            </defs>
-            <g clipPath="url(#master_svg0_2_7215)">
-              <g>
-                <path d="M10,1.25C14.8307,1.25,18.75,5.16387,18.75,10C18.75,14.8361,14.8361,18.75,10,18.75C5.16387,18.75,1.25,14.8361,1.25,10C1.25,5.16387,5.16934,1.25,10,1.25ZM11.09238,13.2826L8.90762,13.2826L8.90762,15.4674L11.09238,15.4674L11.09238,13.2826ZM11.09238,4.53262L8.90762,4.53262L8.90762,11.09238L11.09238,11.09238L11.09238,4.53262Z" fill="#F9CA06" fillOpacity="1" style={{ width: 20, height: 20, }} />
-              </g>
-            </g>
-          </svg></div>
-          <p className={styles.testingDescription}>
-            {runStatus.doc_ids.length > 0 ? (
-              <>
+        <div className={styles.testingControlTip} style={tipStyle}>
+           <div>  <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" style={{ width: 20, height: 20, marginRight: 8, }} viewBox="0 0 20 20">
+             <defs>
+               <clipPath id="master_svg0_2_7215">
+                 <rect x="0" y="0" width="20" height="20" rx="0" style={{ width: 20, height: 20, }} />
+               </clipPath>
+             </defs>
+             <g clipPath="url(#master_svg0_2_7215)">
+               <g>
+                 <path d="M10,1.25C14.8307,1.25,18.75,5.16387,18.75,10C18.75,14.8361,14.8361,18.75,10,18.75C5.16387,18.75,1.25,14.8361,1.25,10C1.25,5.16387,5.16934,1.25,10,1.25ZM11.09238,13.2826L8.90762,13.2826L8.90762,15.4674L11.09238,15.4674L11.09238,13.2826ZM11.09238,4.53262L8.90762,4.53262L8.90762,11.09238L11.09238,11.09238L11.09238,4.53262Z" fill="#F9CA06" fillOpacity="1" style={{ width: 20, height: 20, }} />
+               </g>
+             </g>
+           </svg></div>
+           <p className={styles.testingDescription}>
+             {runStatus.doc_ids.length > 0 ? (
+               <>
                 特别提醒: 有 {runStatus.doc_ids.length} 个文档正在解析中，是否
-                <a style={{ color: '#1890ff', margin: '0 6px', cursor: 'pointer' }} onClick={handleReparse}>重新解析</a>
+                <a
+                  style={{ color: tipDisabled ? '#999' : '#1890ff', margin: '0 6px', cursor: tipDisabled ? 'default' : 'pointer' }}
+                  onClick={() => { if (!tipDisabled) handleReparse(); }}
+                >
+                  重新解析
+                </a>
                 ？ 否则继续
-                <a style={{ color: '#1890ff', margin: '0 6px', cursor: 'pointer' }} onClick={handleContinueUpload}>上传文件</a>
-              </>
-            ) : runStatus.run === 0 ? (
-              <>
-                特别提醒：{runStatus.success_num} 个文件全部解析成功，是否立即
-                <a style={{ color: '#1890ff', margin: '0 6px', cursor: 'pointer' }} onClick={handleRunRetrievalTest}>进入检索测试</a>
+                <a
+                  style={{ color: tipDisabled ? '#999' : '#1890ff', margin: '0 6px', cursor: tipDisabled ? 'default' : 'pointer' }}
+                  onClick={() => { if (!tipDisabled) handleContinueUpload(); }}
+                >
+                  上传文件
+                </a>
+               </>
+             ) : runStatus.run === 0 ? (
+               <>
+                 特别提醒：{runStatus.success_num} 个文件全部解析成功，是否立即
+                <a
+                  style={{ color: tipDisabled ? '#999' : '#1890ff', margin: '0 6px', cursor: tipDisabled ? 'default' : 'pointer' }}
+                  onClick={() => { if (!tipDisabled) handleRunRetrievalTest(); }}
+                >
+                  进入检索测试
+                </a>
                 ？ 否则
-                <a style={{ color: '#1890ff', margin: '0 6px', cursor: 'pointer' }} onClick={handleContinueUpload}>继续上传文件</a>
-              </>
-            ) : (
+                <a
+                  style={{ color: tipDisabled ? '#999' : '#1890ff', margin: '0 6px', cursor: tipDisabled ? 'default' : 'pointer' }}
+                  onClick={() => { if (!tipDisabled) handleContinueUpload(); }}
+                >
+                  继续上传文件
+                </a>
+               </>
+             ) : (
              '特别提醒:解析成功后才能问答哦。'
                           
             )}
-          </p>
-        </div>
+           </p>
+         </div>
       )}
       <Table
         rowKey="id"

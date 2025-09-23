@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Modal, Card, Collapse, Empty, Flex, Image, Space, Spin, Button, Table, Tooltip, Pagination } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
 import { ReactComponent as SelectedFilesCollapseIcon } from '@/assets/svg/selected-files-collapse.svg';
@@ -135,13 +135,20 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
-  // 打开弹窗时和分页变化时拉取数据
-  useEffect(() => {
-    const fetchRetrieval = async () => {
+  // fetchRetrieval：根据 question_id、page、page_size 和可选 doc_id 拉取检索结果
+  const fetchRetrieval = useCallback(
+    async (opts?: { page?: number; page_size?: number; doc_id?: string }) => {
+      const p = opts?.page ?? page;
+      const ps = opts?.page_size ?? pageSize;
+      const docId = opts?.doc_id;
       if (!visible || !itemQuestion?.id) return;
       setLoading(true);
       try {
-        const body = { question_id: itemQuestion.id, page, page_size: pageSize };
+        const body: any = { question_id: itemQuestion.id, page: p, page_size: ps };
+        // 仅当传入单个 doc id 时带上 doc_id
+        if (typeof docId === 'string' && docId.trim() !== '') {
+          body.doc_id = docId;
+        }
         const resp = await request.post('/api/retrievalTask/retrievalResult', { data: body });
         setRetrievalData(resp?.data || null);
       } catch (e) {
@@ -150,9 +157,17 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
       } finally {
         setLoading(false);
       }
-    };
-    fetchRetrieval();
-  }, [visible, itemQuestion?.id, page, pageSize]);
+    },
+    [itemQuestion?.id, page, pageSize, visible],
+  );
+
+  // 初始加载与依赖变化时触发（page / pageSize / visible / itemQuestion / selectedDocumentIds）
+  useEffect(() => {
+    // 只有在弹窗可见且有 question id 时才请求
+    if (!visible || !itemQuestion?.id) return;
+    const docIdToSend = selectedDocumentIds.length === 1 ? selectedDocumentIds[0] : undefined;
+    fetchRetrieval({ page, page_size: pageSize, doc_id: docIdToSend });
+  }, [visible, itemQuestion?.id, page, pageSize, selectedDocumentIds, fetchRetrieval]);
 
   // 关闭时重置分页和数据
   useEffect(() => {
@@ -571,9 +586,11 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
   }
 
   const onTesting = (ids: string[]) => {
-    // 这里可以添加重新测试的逻辑
-    console.log('重新测试文档:', ids);
-  };
+    setSelectedDocumentIds(ids);
+    setPage(1);
+    const docIdToSend = ids.length === 1 ? ids[0] : undefined;
+    fetchRetrieval({ page: 1, page_size: pageSize, doc_id: docIdToSend });
+   };
 
   return (
     <>
