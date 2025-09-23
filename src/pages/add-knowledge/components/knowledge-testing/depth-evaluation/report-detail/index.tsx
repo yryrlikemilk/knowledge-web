@@ -287,15 +287,18 @@ const ReportDetail: React.FC = () => {
 
   // 缓存分类选项
   const categoryOptions = useMemo(() => {
+    const aiCategories: CategoryItem[] = Array.isArray(statistics.ai_generate_category)
+      ? statistics.ai_generate_category
+      : [];
     return [
-      { key: "all", value: "all", label: `全部(${getCategoryCount('all')})` },
-      ...statistics.ai_generate_category?.map((categoryItem: CategoryItem) => ({
+      { key: "all", value: "all", label: `全部(${getCategoryCount('all') || 0})` },
+      ...aiCategories.map((categoryItem: CategoryItem) => ({
         key: categoryItem.category,
         value: categoryItem.category,
         label: `${categoryItem.category}(${categoryItem.count})`
       }))
     ];
-  }, [statistics.ai_generate_category, getCategoryCount]);
+  }, [statistics, getCategoryCount]);
 
   // 缓存来源选项
   const sourceOptions = useMemo(() => [
