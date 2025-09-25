@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Modal, Form, message, InputNumber, Table, Button, Space, Tooltip } from 'antd';
-import { InfoCircleOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { useGenerateAiQuestion, useFetchFileUpdates, useFetchAiQuestionCount, useFetchCheckFirstGenerate, useFetchAiQuestionCountByDocIds, useOtherDocGenerateAiQuestion } from '@/hooks/knowledge-hooks';
 
 interface AIGenerateModalProps {
@@ -78,9 +78,18 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
         setFetchingCount(true);
         try {
             const res = await fetchCount(ids);
-            form.setFieldsValue({ questionCount: res.recommendCount || 0 });
+            const rec = res.recommendCount || 0;
+            form.setFieldsValue({ questionCount: rec });
             setDynamicLimit(res.limitCount || 0);
-        } finally {
+            // 同步本地状态（并标记为未手动修改，若希望覆盖用户输入可去掉 manualEditedRef）
+            manualEditedRef.current = false;
+            setQuestionNumber(validateQuestionCount(rec, res.limitCount || 0));
+        // try {
+        //     const res = await fetchCount(ids);
+        //     form.setFieldsValue({ questionCount: res.recommendCount || 0 });
+        //     setDynamicLimit(res.limitCount || 0);
+        } 
+        finally {
             setFetchingCount(false);
         }
     };
@@ -95,15 +104,58 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
     };
 
 
+    const [questionNumber, setQuestionNumber] = useState<{
+        value: number;
+        validateStatus?: 'error' | 'success' | undefined;
+        errorMsg?: string | null;
+    }>({ value: questionCount?.recommendCount ?? 1 });
+    const manualEditedRef = useRef(false);
+
+    // 当弹窗打开或后端的 recommendCount 更新且用户未手动修改时，初始化本地值与表单
+    useEffect(() => {
+        if (visible && !manualEditedRef.current) {
+            const v = questionCount?.recommendCount ?? 1;
+            setQuestionNumber({ value: v, validateStatus: undefined, errorMsg: null });
+            form.setFieldsValue({ questionCount: v });
+        }
+    }, [visible, questionCount, form]);
+
+    // 当通过按选中文档获取推荐值时，也同步到本地 state（handleFetchCountByDocIds 已经设置了 form）
+    // 确保 handleFetchCountByDocIds 在设置 form 后也调用 setQuestionNumber（见下方修改）
+
+    const validateQuestionCount = (val: number | undefined, max?: number) => {
+        const value = Number(val || 0);
+        if (!value || value < 1) {
+            return { value, validateStatus: 'error' as const, errorMsg: '请输入大于0的数量' };
+        }
+        if (max && max > 0 && value > max) {
+            return { value, validateStatus: 'error' as const, errorMsg: `不能超过上限 ${max}` };
+        }
+        return { value, validateStatus: 'success' as const, errorMsg: null };
+    };
+
+    const onNumberChange: React.ComponentProps<typeof InputNumber>['onChange'] = (val) => {
+        const max = dynamicLimit || questionCount?.limitCount || 0;
+        const next = validateQuestionCount(val as number, max);
+        manualEditedRef.current = true;
+        setQuestionNumber(next);
+        // 同步到 form
+        form.setFieldsValue({ questionCount: next.value });
+    };
+
+
     return (
         <Modal
             title={
-                <div style={{ textAlign: 'center' }}>
+                <div style={{ textAlign: 'center', pointerEvents: 'auto' }}>
                     <span>AI生成测试问题</span>
                 </div>
             }
             open={visible}
             onCancel={handleCancel}
+            closable={true}
+            maskClosable={true}
+            closeIcon={<CloseOutlined onClick={handleCancel} />}
             width={900}
             confirmLoading={loading}
             footer={null}
@@ -120,14 +172,17 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                 name="questionCount"
                                 label="问题数量"
                                 rules={[{ required: true, message: '请输入生成数量' }]}
-                                initialValue={questionCount.recommendCount || 50}
+                                validateStatus={questionNumber.validateStatus}
+                                help={questionNumber.errorMsg || null}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <InputNumber
                                         min={1}
-                                        max={questionCount.limitCount || 200}
+                                        max={dynamicLimit || questionCount.limitCount || 200}
+                                        value={questionNumber.value}
                                         style={{ width: '100%' }}
                                         placeholder="请输入要生成的问题数量"
+                                        onChange={onNumberChange}
                                     />
                                     <Tooltip
                                         title={
@@ -154,7 +209,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                     ) : (
                         fileUpdates.hasUpdates === false ? (
                             <div style={{ marginTop: 40 }}>
-                                <div  style={{ textAlign: 'center' }}>您当前知识库文件内容没有任何变更，暂时不需要重新生成</div>
+                                <div style={{ textAlign: 'center' }}>您当前知识库文件内容没有任何变更，暂时不需要重新生成</div>
                                 <div style={{ marginTop: 40, display: 'flex', justifyContent: 'center' }}>
                                     <Button type='primary' onClick={handleCancel}> 关闭弹窗</Button>
                                 </div>
@@ -246,14 +301,17 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                             name="questionCount"
                                             label="问题数量"
                                             rules={[{ required: true, message: '请输入生成数量' }]}
-                                            initialValue={questionCount.recommendCount || 50}
+                                            validateStatus={questionNumber.validateStatus}
+                                            help={questionNumber.errorMsg || null}
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                 <InputNumber
                                                     min={1}
                                                     max={dynamicLimit || questionCount.limitCount || 200}
+                                                    value={questionNumber.value}
                                                     style={{ width: '100%' }}
                                                     placeholder="请输入要生成的问题数量"
+                                                     onChange={onNumberChange}
                                                 />
                                                 <Tooltip
                                                     title={

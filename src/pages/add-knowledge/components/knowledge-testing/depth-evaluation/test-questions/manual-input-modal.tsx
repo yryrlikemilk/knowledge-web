@@ -102,7 +102,7 @@ const ManualInputModal: React.FC<ManualInputModalProps> = ({ visible, onCancel, 
             onOk={handleOk}
             width={600}
          
-            okText="创建问题"
+            okText="确认"
             cancelText="取消"
             confirmLoading={loading}
         >
