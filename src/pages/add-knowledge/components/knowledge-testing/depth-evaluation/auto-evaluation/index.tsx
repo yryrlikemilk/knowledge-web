@@ -3,11 +3,17 @@ import { Typography, Button, Steps, Table, Tag } from 'antd';
 import { FileText, Settings, BarChart3, Eye } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import CreateEvaluationModal from './create-evaluation-modal';
+import ViewRetrievalParamsModal from './view-retrieval-params-modal';
 import { useNavigate, useLocation } from 'umi';
 import { useFetchPageList } from '@/hooks/knowledge-hooks';
-
+import depthEvaluationNoData from '@/assets/imgs/depth-evaluation-noData.png';
 const { Title, Paragraph } = Typography;
-
+import set1 from '@/assets/imgs/set1.png';
+import set2 from '@/assets/imgs/set2.png';
+import set3 from '@/assets/imgs/set3.png';
+import set11 from '@/assets/imgs/111.png';
+import set22 from '@/assets/imgs/222.png';
+import set33 from '@/assets/imgs/333.png';
 interface EvaluationTask {
     id: string;
     task_name: string;
@@ -30,26 +36,23 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
     const location = useLocation();
     const [currentStep] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
+    const [viewParamsVisible, setViewParamsVisible] = useState(false);
+    const [viewParamsData, setViewParamsData] = useState<any>(null);
     const [current, setCurrent] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
     const { pageList } = useFetchPageList(current, pageSize);
-    const [taskList, setTaskList] = useState<EvaluationTask[]>([
-     ]);
 
     const steps = [
         {
             title: '准备测试问题',
-            description: '选择或创建评估问题集',
             icon: <FileText size={20} />,
         },
         {
             title: '设置检索参数&评估指标',
-            description: '配置检索参数和评估标准',
             icon: <Settings size={20} />,
         },
         {
             title: '自动生成评估报告',
-            description: '大模型自动打分并生成报告',
             icon: <BarChart3 size={20} />,
         },
     ];
@@ -99,6 +102,18 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
         return <Tag color={config.color}>{config.text}</Tag>;
     };
 
+    const openViewParams = (record: any) => {
+        // 从记录中提取参数；similarity_threshold 需要乘以10用于列表展示，但在弹窗中按原值显示
+        const params = {
+            similarity_threshold: Number(record.similarity_threshold ?? 0),
+            vector_similarity_weight: Number(record.vector_similarity_weight ?? 0),
+            rerank_id: record.rerank_id,
+            top_k: record.top_k,
+        };
+        setViewParamsData(params);
+        setViewParamsVisible(true);
+    };
+
     const columns: ColumnsType<EvaluationTask> = [
         {
             title: '任务名',
@@ -139,12 +154,22 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             dataIndex: 'retrievalParams',
             key: 'retrievalParams',
             width: 200,
+            render: (_: any, record: any) => (
+                <Button type="link" onClick={() => openViewParams(record)}>
+                    相似度阈值{typeof record.similarity_threshold === 'number' ? record.similarity_threshold : '0'}
+                </Button>
+            ),
         },
         {
             title: '评估指标',
             dataIndex: 'evaluationParams',
             key: 'evaluationParams',
             width: 150,
+            render: () => (
+                <Button type="link" onClick={() => setViewParamsVisible(true)}>
+                    系统默认指标
+                </Button>
+            ),
         },
         {
             title: '更新时间',
@@ -205,24 +230,32 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'center',
+                    // justifyContent: 'center',
                     alignItems: 'center'
                 }}>
+                    <img style={{ margin: "20px 0", height: 180, width: 180 }} src={depthEvaluationNoData} alt="图片" />
                     <div style={{
                         textAlign: 'center',
                         maxWidth: '600px',
                         width: '100%'
                     }}>
-                        <div style={{ marginBottom: '40px' }}>
-                            <Title level={4}>你还没有创建过深度评估任务</Title>
-                            <Paragraph type="secondary">
+                        <div style={{ marginBottom: '24px' }}>
+                            <span style={{
+                                fontSize: 18,
+                                fontWeight: "normal",
+                                color: '#1D2129'
+                            }}>你还没有创建过深度评估任务</span>
+                            <Paragraph type="secondary" style={{ color: ' rgba(29, 33, 41, 0.55)' }}>
                                 点击创建，选择评估问题集，大模型自动打分，并生成评估报告
                             </Paragraph>
                         </div>
 
-                        <div style={{ marginBottom: '20px' }}>
+                        <div style={{ marginBottom: '30px' }}>
                             {/* {currentStep === 0 ? ( */}
-                            <Button type="primary" size="large" onClick={handleCreateTask}>
+                            <Button type="primary" size="large" style={{
+                                background: 'linear-gradient(80deg, #55C9FF 0%, #336AFD 100%)',
+                                borderRadius: '60px', border: 'none'
+                            }} onClick={handleCreateTask}>
                                 创建评估任务
                             </Button>
                             {/* ) : (
@@ -240,16 +273,96 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                     <div style={{
                         width: '100%',
                         display: 'flex',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        padding: '0 40px',
+                        alignItems: 'center'
+
                     }}>
-                        <Steps
-                            current={currentStep}
-                            items={steps}
-                            size="default"
-                            style={{ maxWidth: '800px' }}
-                        />
+                        <div style={{ zIndex: 3, textAlign: 'center' }}>
+                            <img style={{ width: 140 }} src={set1} alt="第一步" />
+                        </div>
+                        <div style={{
+                            flex: 1,
+                            borderTop: '2px dashed #9ECBFF',
+                            zIndex: 1,
+                            pointerEvents: 'none',
+                            position: 'relative',
+                        }} >
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="16"
+                                height="16"
+                                style={{
+                                    position: 'absolute',
+                                    top: '-9px',
+                                    left: '50%',
+                                    zIndex: 2,
+                                    pointerEvents: 'none'
+                                }}
+                            >
+                                <polygon points="6,4 18,12 6,20" fill="#9ECBFF" />
+                            </svg>
+                        </div>
+                        <div style={{ zIndex: 3, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <img style={{ width: 140 }} src={set2} alt="第二步" />
+                        </div>
+                        <div style={{
+                            flex: 1,
+                            borderTop: '2px dashed #9ECBFF',
+                            zIndex: 1,
+                            pointerEvents: 'none',
+                            position: 'relative',
+                        }} >
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="16"
+                                height="16"
+                                style={{
+                                    position: 'absolute',
+                                    top: '-9px',
+                                    left: '50%',
+                                    zIndex: 2,
+                                    pointerEvents: 'none'
+                                }}
+                            >
+                                <polygon points="6,4 18,12 6,20" fill="#9ECBFF" />
+                            </svg>
+                        </div>
+
+                        <div style={{ zIndex: 3, textAlign: 'center' }}>
+                            <img style={{ width: 140 }} src={set3} alt="第三步" />
+                        </div>
                     </div>
-                </div>
+                    <div style={{
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginTop: 10,
+                        marginBottom: 10,
+                        alignItems: 'center',
+                        padding: '0 40px',
+
+                    }}>
+                        <span style={{ width: '140px', textAlign: 'center' }}>1.准备测试问题</span>
+                        <span style={{ width: '180px', textAlign: 'center' }}>2.设置检索参数&评估指标</span>
+                        <span style={{ width: '140px', textAlign: 'center' }}>3.自动生成评估报告</span>
+                    </div>
+                    <div style={{
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '0 40px',
+                        alignItems: 'center'
+
+                    }}>
+
+                        <img src={set11} style={{ width: '330px', height: "170" }} alt="" />
+                        <img src={set22} style={{ width: '330px', height: "170" }} alt="" />
+                        <img src={set33} style={{ width: '330px', height: "170" }} alt="" />
+                    </div>
+                </div >
             )}
 
 
@@ -261,6 +374,12 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                 onSwitchToQuestions={onSwitchToQuestions}
             />
 
+            {/* 查看检索参数/评估指标弹窗（只读） */}
+            <ViewRetrievalParamsModal
+                visible={viewParamsVisible}
+                onClose={() => setViewParamsVisible(false)}
+                params={viewParamsData}
+            />
 
         </>
     );

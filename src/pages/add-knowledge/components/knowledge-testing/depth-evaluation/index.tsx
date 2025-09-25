@@ -11,22 +11,23 @@ const DeepSearch = () => {
         <div className={styles.deepSearchWrapper}>
             <div  style={{ width: '100%' ,height:'100%',flexDirection:'column',display:'flex'}}>
                 <div style={{
-                    display: 'flex', justifyContent: 'center',
-                    gap: '10px', marginBottom: '20px', marginTop: 20
+                    display: 'flex', justifyContent: 'start',
                 }}>
                     <Button
                         type={activeTab === 'auto' ? 'primary' : 'default'}
                         // icon={<Search size={16} />}
                         onClick={() => setActiveTab('auto')}
-                        size="large"
+                        style={{borderRadius:4}}
+                        size="middle"
                     >
                         自动评估
                     </Button>
                     <Button
+                    style={{borderRadius:4}}
                         type={activeTab === 'questions' ? 'primary' : 'default'}
                         // icon={<ListIcon size={16} />}
                         onClick={() => setActiveTab('questions')}
-                        size="large"
+                        size="middle"
                     >
                         测试问题
                     </Button>

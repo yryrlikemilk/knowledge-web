@@ -496,7 +496,7 @@ const KnowledgeFile = () => {
         onFilteredDocumentsChange={setFilteredDocuments}
       />
       {/* 根据知识库运行状态显示提示 */}
-      {(runStatus.doc_ids.length > 0 || runStatus.run === 0 || runStatus.run === 1) && (
+      {(runStatus?.doc_ids?.length > 0 || runStatus?.run === 0 || runStatus?.run === 1) && (
         <div className={styles.testingControlTip} style={tipStyle}>
            <div>  <svg xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" style={{ width: 20, height: 20, marginRight: 8, }} viewBox="0 0 20 20">
              <defs>
