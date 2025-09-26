@@ -8,7 +8,10 @@ import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList } from '
 // import request from '@/utils/request';
 import RetrievalResultModal from './retrieval-result-modal';
 import styles from './index.less'; // 新增：引入样式模块
-
+import cha from '@/assets/imgs/cha.png';
+import you from '@/assets/imgs/you.png';
+import liang from '@/assets/imgs/liang.png';
+import reportDetailTopBg from '@/assets/imgs/report-detail-top-bg.png';
 interface QuestionItem {
   id: string;
   auto_generate: boolean;
@@ -50,7 +53,7 @@ const ReportDetail: React.FC = () => {
 
   // 检索结果弹窗状态
   const [retrievalModalVisible, setRetrievalModalVisible] = useState(false);
-  const [itemQuestion,setItemQuestion]=useState<any>(null)
+  const [itemQuestion, setItemQuestion] = useState<any>(null)
   // 获取报告数据
   const { reportData, loading: reportLoading } = useFetchRetrievalTaskReport(reportId, currentPage, pageSize);
 
@@ -167,9 +170,9 @@ const ReportDetail: React.FC = () => {
     };
 
     try {
-      const {data} = await request.post('/v1/dialog/set', { data: payload });
-      console.log(`resprespresp`,data)
-      if (data && data.code === 0 ) {
+      const { data } = await request.post('/v1/dialog/set', { data: payload });
+      console.log(`resprespresp`, data)
+      if (data && data.code === 0) {
         message.success('助手创建成功');
         navigate(`/chat`);
       } else {
@@ -206,7 +209,7 @@ const ReportDetail: React.FC = () => {
     }
 
     // 可回答率 = 100 且 回答准确率 >= 85 且 N >= 推荐问题数
-    if (answerableRate >= 100 && accuracyRate >= 85 && N >=  reportData?.recommend_count) {
+    if (answerableRate >= 100 && accuracyRate >= 85 && N >= reportData?.recommend_count) {
       return {
         type: 'success',
         message: '问题可回答率高',
@@ -215,7 +218,7 @@ const ReportDetail: React.FC = () => {
     }
 
     // 可回答率 = 100 且 回答准确率 >= 85 且 N < 推荐问题数
-    if (answerableRate >= 100 && accuracyRate >= 85 && N <  reportData?.recommend_count) {
+    if (answerableRate >= 100 && accuracyRate >= 85 && N < reportData?.recommend_count) {
       return {
         type: 'info',
         message: '问题可回答率高',
@@ -389,19 +392,20 @@ const ReportDetail: React.FC = () => {
 
   return (
     <div>
-      <div style={{ padding: 16, borderBottom: '1px solid #eee' }}>
-        <span>评估报告概览</span>
-        <span>（评估分数：<span style={{ color: "#52c41a" }}>
-          优
-        </span> 90-100 <span style={{ color: "#f9b83c", marginLeft: '6px' }}>
-            良</span>70-90
-          <span style={{ color: "#fd5d5f", marginLeft: '6px' }}>
-            差</span>
-          0-70）</span>
+      <div style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div>
+          <i style={{ height: '100%', borderLeft: "4px solid #0C7CFF", borderRadius: '4px' }}></i>
+          <span className='pl-2 text-[16px] font-bold '>评估报告概览</span>
+        </div>
+        <div className='pl-2  flex'>
+          <span className='flex'>（评估分数：<img style={{ height: 22 }} src={you} alt="优" /> 90-100 <img style={{ height: 22 }} src={liang} alt="良" /> 70-90
+            <img src={cha} style={{ height: 22 }} alt="差" />
+            0-70）</span>
+        </div>
       </div>
       <div style={{ padding: 16 }}>
         <div className='flex'>
-          <div className=' p-2 ' style={{ width: "30%" }}>
+          <div className=' p-2 ' style={{ width: "25%" }}>
             <div className='text-left w-full'>评估分数</div>
 
             <div style={{ width: '200px', height: '100px', margin: '0 auto' }}>
@@ -417,12 +421,17 @@ const ReportDetail: React.FC = () => {
               {scoreLevel.level}
             </div>
           </div>
-          <div className=' p-2 ' style={{ width: "70%" }}>
+
+
+          <div className=' p-2 ' style={{ width: "75%" }}>
             <div className='w-full text-left'>单项情况</div>
             <div className='flex justify-center gap-4'>
               <div className='p-4 ' style={{
                 width: "40%",
-                backgroundColor: '#eaeaea',
+                backgroundImage: `url(${reportDetailTopBg})`,
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
               }}>
                 <div style={{ fontSize: 30, fontWeight: 600, color: '#63a103' }}>
                   {Math.round(reportData.answerable_rate * 100)}%
@@ -431,7 +440,10 @@ const ReportDetail: React.FC = () => {
               </div>
               <div className='p-4' style={{
                 width: "40%",
-                borderRadius: '8px', backgroundColor: '#eaeaea'
+                backgroundImage: `url(${reportDetailTopBg})`,
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
               }}>
                 <div style={{ fontSize: 30, fontWeight: 600 }}>
                   {Math.round(reportData.accuracy_rate * 100)}%
@@ -440,11 +452,14 @@ const ReportDetail: React.FC = () => {
               </div>
 
               <Tooltip
-                title={`根据知识库文件个数、大小建议需 ${ reportData?.recommend_count} 个问题进行测试。`}
+                title={`根据知识库文件个数、大小建议需 ${reportData?.recommend_count} 个问题进行测试。`}
               >
                 <div className='p-4' style={{
                   width: "40%",
-                  borderRadius: '8px', backgroundColor: '#eaeaea'
+                  backgroundImage: `url(${reportDetailTopBg})`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
                 }}>
                   <div style={{ fontSize: 30, fontWeight: 600 }}>
                     {reportData.question_count}
@@ -571,7 +586,11 @@ const ReportDetail: React.FC = () => {
         </div>
       </div>
       <div style={{ padding: 16, display: 'flex', justifyContent: "space-between", borderBottom: '1px solid #eee' }}>
-        <span>测试问题分类</span>
+        <div>
+          <i style={{ height: '100%', borderLeft: "4px solid #0C7CFF", borderRadius: '4px' }}></i>
+          <span className='pl-2 text-[16px] font-bold'>测试问题分类</span>
+        </div>
+
         <div className='flex gap-2'>
           <Button type='link' onClick={() => { handleDownload() }}>下载</Button>
           <Dropdown
@@ -581,7 +600,7 @@ const ReportDetail: React.FC = () => {
             open={resultOpen}
             className={styles.customDropdown} // 新增：应用自定义样式，设置每项高度为20px
           >
-            <Button type='link' style={{lineHeight: 20}}>
+            <Button type='link' style={{ lineHeight: 20 }}>
               {resultOptions.find(option => option.value === selectedResult)?.label || '全部'}
               {/* 根据下拉打开状态切换图标 */}
               {resultOpen ? <UpOutlined style={{ marginLeft: 8 }} /> : <DownOutlined style={{ marginLeft: 8 }} />}
