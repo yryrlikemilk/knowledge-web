@@ -924,8 +924,9 @@ export const useGenerateProgress = (historyId: string | null) => {
     queryKey: ['fetchGenerateProgress', historyId],
     enabled: !!historyId,
     refetchInterval: (query) => {
-      // 如果进度为1（100%），停止轮询
-      if (query.state.data?.progress === 1) {
+      // 如果进度为1（100%）或 -1（异常/网络错误），停止轮询
+      const p = query.state.data?.progress;
+      if (p === 1 || p === -1) {
         return false;
       }
       // 否则每2秒轮询一次
@@ -954,12 +955,13 @@ export const useSaveAiQuestions = () => {
   const queryClient = useQueryClient();
 
   const { mutateAsync, isPending: loading } = useMutation({
-    mutationFn: async (aiQuestions: any[]) => {
+    mutationFn: async (params: { aiQuestions: any[]; historyId: string }) => {
       if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
       
       const response = await saveAiQuestions({
-        ai_generate_questions: aiQuestions,
+        ai_generate_questions: params.aiQuestions,
         kb_id: knowledgeBaseId,
+        history_id: params.historyId,
       });
 
       if (response?.data?.code === 0) {

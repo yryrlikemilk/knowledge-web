@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Button, Space, Table, Tag, InputNumber, message, Typography } from 'antd';
+import { Modal, Form, Input, Button, Space, Table, Tag, InputNumber, message, Typography, Tooltip } from 'antd';
 import { CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import Rerank from '@/components/rerank';
@@ -402,9 +402,20 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
             </div>
             <div className='flex justify-center w-full'>
                 <div style={{ width: 500, margin: 20 }}>
-                    <Button key="system" type="primary" >
-                        系统默认指标
-                    </Button>
+                    <Tooltip
+                        placement="top"
+                        mouseEnterDelay={0.2}
+                        title={
+                            <div style={{ textAlign: 'left', lineHeight: 1.6 }}>
+                                <div>1、问题可回答率：表示测试的问题中，有多少能找到知识库的内容。</div>
+                                <div>2、问题回答准确率：表示找到的内容中，有多少是正确或相关的。</div>
+                            </div>
+                        }
+                    >
+                        <Button key="system" type="primary" >
+                            系统默认指标
+                        </Button>
+                    </Tooltip>
                 </div>
 
             </div>

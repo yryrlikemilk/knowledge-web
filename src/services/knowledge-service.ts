@@ -410,6 +410,7 @@ export const saveAiQuestions = (body?: {
     }>;
   }>;
   kb_id: string;
+  history_id: string;
 }) => {
   return request.post(api.save_ai_questions, { data: body });
 };

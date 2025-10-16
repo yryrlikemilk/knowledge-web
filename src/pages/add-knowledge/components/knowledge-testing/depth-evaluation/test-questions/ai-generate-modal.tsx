@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { Modal, Form, message, InputNumber, Table, Button, Space, Tooltip, Progress, List } from 'antd';
+import { Modal, Form, message, InputNumber, Table, Button, Space, Tooltip, Progress, List, Card } from 'antd';
 import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { useGenerateAiQuestion, useFetchFileUpdates, useFetchAiQuestionCount, useFetchCheckFirstGenerate, useFetchAiQuestionCountByDocIds, useOtherDocGenerateAiQuestion, useGenerateProgress, useSaveAiQuestions } from '@/hooks/knowledge-hooks';
 
@@ -42,6 +42,9 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
     const [fetchingCount, setFetchingCount] = useState<boolean>(false);
     const [historyId, setHistoryId] = useState<string | null>(null);
     const [showProgress, setShowProgress] = useState<boolean>(false);
+    const [lastGenerateType, setLastGenerateType] = useState<'all' | 'selected' | null>(null);
+    const [lastQuestionCount, setLastQuestionCount] = useState<number | null>(null);
+    const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
     
     const [questionNumber, setQuestionNumber] = useState<{
         value: number;
@@ -82,6 +85,8 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
             if (result?.history_id) {
                 setHistoryId(result.history_id);
                 setShowProgress(true);
+                setLastGenerateType('all');
+                setLastQuestionCount(qty);
                 message.info('开始生成问题，请稍候...');
             }
         } catch (error) {
@@ -104,6 +109,8 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
             if (result?.history_id) {
                 setHistoryId(result.history_id);
                 setShowProgress(true);
+                setLastGenerateType('selected');
+                setLastQuestionCount(qty);
                 message.info('开始生成问题，请稍候...');
             }
         } catch (error) {
@@ -221,11 +228,52 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                     {showProgress ? (
                         <div style={{ padding: '20px' }}>
                             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                {progressData.progress !== 1 ? (
+                                {progressData.progress === -1 ? (
                                     <>
-                                        <div style={{ marginBottom: '20px', fontSize: '16px', fontWeight: 'bold' }}>
-                                            AI正在生成问题...
+                                        <div style={{ marginBottom: '16px', color: '#faad14', fontSize: '14px' }}>
+                                            网络不好，请稍后再试
                                         </div>
+                                        <div>
+                                            <Button type='primary' onClick={async () => {
+                                                const qty = lastQuestionCount ?? form.getFieldValue('questionCount');
+                                                if (!qty) {
+                                                    message.warning('未获取到问题数量');
+                                                    return;
+                                                }
+                                                if (lastGenerateType === 'selected') {
+                                                    // 直接复用接口，避免再次验证表单
+                                                    try {
+                                                        const result = await otherDocGenerateAiQuestion({ doc_ids: selectedDocIds, question_count: Number(qty) });
+                                                        if (result?.history_id) {
+                                                            setHistoryId(result.history_id);
+                                                            setShowProgress(true);
+                                                            message.info('开始生成问题，请稍候...');
+                                                        }
+                                                    } catch (e) {
+                                                        message.error('生成失败，请重试');
+                                                    }
+                                                } else if (lastGenerateType === 'all') {
+                                                    try {
+                                                        const result = await generateAiQuestion(Number(qty));
+                                                        if (result?.history_id) {
+                                                            setHistoryId(result.history_id);
+                                                            setShowProgress(true);
+                                                            message.info('开始生成问题，请稍候...');
+                                                        }
+                                                    } catch (e) {
+                                                        message.error('生成失败，请重试');
+                                                    }
+                                                } else {
+                                                    message.warning('无法确定生成方式，请返回重试');
+                                                }
+                                            }}>重新生成</Button>
+                                        </div>
+                                    </>
+                                ) : progressData.progress !== 1 ? (
+                                    <>
+                                        {/* <div style={{ marginBottom: '20px', fontSize: '16px', fontWeight: 'bold' }}>
+                                            AI正在生成问题...
+                                        </div> */}
                                         <Progress 
                                             type="circle"
                                             percent={(progressData.progress || 0) * 100} 
@@ -250,23 +298,47 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                             {progressData.progress === 1 && progressData.aiQuestions?.length > 0 && (
                                 <div style={{ marginTop: '20px' }}>
                                     <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>生成的问题预览:</div>
-                                    <div style={{ maxHeight: '300px', overflow: 'auto' }}>
-                                        {progressData.aiQuestions.map((category: any, index: number) => (
-                                            <div key={index} style={{ marginBottom: '15px' }}>
-                                                <div style={{ fontWeight: 'bold', color: '#1890ff', marginBottom: '5px' }}>
-                                                    {category.category} (共 {category.question_count} 个问题)
-                                                </div>
-                                                <List
+                                    <div style={{ maxHeight: '420px', overflow: 'auto' }}>
+                                        {progressData.aiQuestions.map((item: any, index: number) => {
+                                            const key = `${item.category || '未分类'}-${index}`;
+                                            const expanded = !!expandedMap[key];
+                                            const shownQuestions = expanded ? item.questions : (item.questions || []).slice(0, 3);
+                                            return (
+                                                <Card
+                                                    key={key}
                                                     size="small"
-                                                    dataSource={category.questions}
-                                                    renderItem={(item: any) => (
-                                                        <List.Item style={{ padding: '5px 0', fontSize: '14px' }}>
-                                                            {item.question_text}
-                                                        </List.Item>
+                                                    style={{ marginBottom: 12 }}
+                                                    title={
+                                                        <div style={{ display: 'flex', gap:10, alignItems: 'center' }}>
+                                                            <span style={{ fontWeight: 600 }}>{item.category || '未分类'}</span>
+                                                            <span style={{ color: '#666', fontSize: 12 }}>
+                                                                ({item.doc_count}个文件，占{Math.round((item.question_ratio || 0) * 100)}%，共生成{item.question_count}个问题)
+                                                            </span>
+                                                        </div>
+                                                    }
+                                                    headStyle={{ padding: '8px 12px' }}
+                                                    bodyStyle={{ padding: '8px 12px' }}
+                                                >
+                                                    <div style={{ borderBottom: '1px solid #f0f0f0', marginBottom: 8 }} />
+                                                    <List
+                                                        size="small"
+                                                        dataSource={shownQuestions}
+                                                        renderItem={(q: any) => (
+                                                            <List.Item style={{ padding: '6px 0', fontSize: 14 }}>
+                                                                {q.question_text}
+                                                            </List.Item>
+                                                        )}
+                                                    />
+                                                    {(item.questions?.length || 0) > 3 && (
+                                                        <div style={{ textAlign: 'center', marginTop: 4 }}>
+                                                            <Button type="link" size="small" onClick={() => setExpandedMap(prev => ({ ...prev, [key]: !expanded }))}>
+                                                                {expanded ? '收起' : '查看更多'}
+                                                            </Button>
+                                                        </div>
                                                     )}
-                                                />
-                                            </div>
-                                        ))}
+                                                </Card>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
@@ -278,7 +350,10 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                         loading={saveLoading}
                                         onClick={async () => {
                                             try {
-                                                await saveAiQuestions(progressData.aiQuestions);
+                                                await saveAiQuestions({ 
+                                                    aiQuestions: progressData.aiQuestions, 
+                                                    historyId: historyId || '' 
+                                                });
                                                 setShowProgress(false);
                                                 setHistoryId(null);
                                                 onOk();
