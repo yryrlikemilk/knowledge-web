@@ -50,6 +50,8 @@ const {
   update_question,
   delete_questions,
   check_first_generate,
+  get_generate_progress,
+  save_ai_questions,
   retrieval_task_report,
   retrieval_task_question_list,
 } = api;
@@ -220,6 +222,14 @@ const methods = {
     url: check_first_generate,
     method: 'get',
   },
+  getGenerateProgress: {
+    url: get_generate_progress,
+    method: 'get',
+  },
+  saveAiQuestions: {
+    url: save_ai_questions,
+    method: 'post',
+  },
   retrievalTaskReport: {
     url: retrieval_task_report,
     method: 'post',
@@ -380,6 +390,28 @@ export const getRetrievalTaskQuestionList = (body?: {
   task_id?: string;
 }) => {
   return request.post(api.retrieval_task_question_list, { data: body });
+};
+
+export const getGenerateProgress = (historyId: string) => {
+  return request.get(api.get_generate_progress, { params: { historyId } });
+};
+
+export const saveAiQuestions = (body?: {
+  ai_generate_questions: Array<{
+    category: string;
+    doc_count: number;
+    question_count: number;
+    question_ratio: number;
+    questions: Array<{
+      chunk_id: string;
+      doc_id: string;
+      doc_name: string;
+      question_text: string;
+    }>;
+  }>;
+  kb_id: string;
+}) => {
+  return request.post(api.save_ai_questions, { data: body });
 };
 
 export default kbService;

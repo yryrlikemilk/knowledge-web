@@ -76,6 +76,8 @@ export default {
   update_question:`${api_rag_host}/retrievalQuestion/update`,
   delete_questions:`${api_rag_host}/retrievalQuestion/deleteQuestions`,
   check_first_generate:`${api_rag_host}/retrievalQuestion/checkFirstGenerate`,
+  get_generate_progress:`${api_rag_host}/aiGeneration/getGenerateProgress`,
+  save_ai_questions:`${api_rag_host}/aiGeneration/saveAiQuestions`,
   retrieval_task_report:`${api_rag_host}/retrievalTask/report`,
   retrieval_task_question_list:`${api_rag_host}/retrievalTask/questionList`,
   // document

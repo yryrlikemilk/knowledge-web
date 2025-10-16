@@ -728,7 +728,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
                                 <div style={{ flex: 1 }}>
                                   {x.content_ltks && (
                                     <div className={styles.highlightContent}>
-                                      123{renderHighlightedContentWithImages(x.content_ltks)}
+                                      {renderHighlightedContentWithImages(x.content_ltks)}
                                     </div>
                                   )}
                                 </div>

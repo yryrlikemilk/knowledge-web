@@ -28,6 +28,8 @@ import kbService, {
   updateQuestion,
   getRetrievalTaskReport,
   getRetrievalTaskQuestionList,
+  getGenerateProgress,
+  saveAiQuestions,
 } from '@/services/knowledge-service';
 import {
   useInfiniteQuery,
@@ -894,7 +896,6 @@ export const useAddQuestions = () => {
 // AI生成问题
 export const useGenerateAiQuestion = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
-  const queryClient = useQueryClient();
 
   const { mutateAsync, isPending: loading } = useMutation({
     mutationFn: async (questionCount: number) => {
@@ -905,10 +906,6 @@ export const useGenerateAiQuestion = () => {
       });
 
       if (response?.data?.code === 0) {
-        // 刷新问题列表
-        queryClient.invalidateQueries({
-          queryKey: ['fetchRetrievalQuestionPageList'],
-        });
         return response.data.data;
       }
       throw new Error(response?.data?.message || 'AI生成问题失败');
@@ -918,6 +915,71 @@ export const useGenerateAiQuestion = () => {
   return {
     loading,
     generateAiQuestion: mutateAsync,
+  };
+};
+
+// 轮询获取AI问题生成进度
+export const useGenerateProgress = (historyId: string | null) => {
+  const { data, isFetching: loading, refetch } = useQuery({
+    queryKey: ['fetchGenerateProgress', historyId],
+    enabled: !!historyId,
+    refetchInterval: (query) => {
+      // 如果进度为1（100%），停止轮询
+      if (query.state.data?.progress === 1) {
+        return false;
+      }
+      // 否则每2秒轮询一次
+      return 2000;
+    },
+    queryFn: async () => {
+      if (!historyId) return { progress: 0, aiQuestions: [], id: '' };
+      const response = await getGenerateProgress(historyId);
+      if (response?.data?.code === 0) {
+        return response.data.data;
+      }
+      return { progress: 0, aiQuestions: [], id: '' };
+    },
+  });
+
+  return {
+    progressData: data || { progress: 0, aiQuestions: [], id: '' },
+    loading,
+    refetch,
+  };
+};
+
+// 保存AI生成的问题
+export const useSaveAiQuestions = () => {
+  const knowledgeBaseId = useKnowledgeBaseId();
+  const queryClient = useQueryClient();
+
+  const { mutateAsync, isPending: loading } = useMutation({
+    mutationFn: async (aiQuestions: any[]) => {
+      if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
+      
+      const response = await saveAiQuestions({
+        ai_generate_questions: aiQuestions,
+        kb_id: knowledgeBaseId,
+      });
+
+      if (response?.data?.code === 0) {
+        message.success('问题保存成功');
+        // 刷新问题列表
+        queryClient.invalidateQueries({
+          queryKey: ['fetchRetrievalQuestionPageList'],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchAllQuestions'],
+        });
+        return response.data.data;
+      }
+      throw new Error(response?.data?.message || '保存问题失败');
+    },
+  });
+
+  return {
+    loading,
+    saveAiQuestions: mutateAsync,
   };
 };
 

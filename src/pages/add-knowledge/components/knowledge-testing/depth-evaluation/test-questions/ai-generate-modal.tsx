@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { Modal, Form, message, InputNumber, Table, Button, Space, Tooltip } from 'antd';
+import { Modal, Form, message, InputNumber, Table, Button, Space, Tooltip, Progress, List } from 'antd';
 import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
-import { useGenerateAiQuestion, useFetchFileUpdates, useFetchAiQuestionCount, useFetchCheckFirstGenerate, useFetchAiQuestionCountByDocIds, useOtherDocGenerateAiQuestion } from '@/hooks/knowledge-hooks';
+import { useGenerateAiQuestion, useFetchFileUpdates, useFetchAiQuestionCount, useFetchCheckFirstGenerate, useFetchAiQuestionCountByDocIds, useOtherDocGenerateAiQuestion, useGenerateProgress, useSaveAiQuestions } from '@/hooks/knowledge-hooks';
 
 interface AIGenerateModalProps {
     visible: boolean;
@@ -40,6 +40,20 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
 
     const [dynamicLimit, setDynamicLimit] = useState<number | undefined>(undefined);
     const [fetchingCount, setFetchingCount] = useState<boolean>(false);
+    const [historyId, setHistoryId] = useState<string | null>(null);
+    const [showProgress, setShowProgress] = useState<boolean>(false);
+    
+    const [questionNumber, setQuestionNumber] = useState<{
+        value: number;
+        validateStatus?: 'error' | 'success' | undefined;
+        errorMsg?: string | null;
+    }>({ value: questionCount?.recommendCount ?? 1 });
+    const manualEditedRef = useRef(false);
+    
+    // 轮询进度
+    const { progressData } = useGenerateProgress(historyId);
+    // 保存AI问题
+    const { saveAiQuestions, loading: saveLoading } = useSaveAiQuestions();
 
     useEffect(() => {
         if (visible) {
@@ -62,10 +76,39 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
             message.warning(`请输入大于1的数量`);
             return;
         }
-        await generateAiQuestion(qty);
-        message.success('问题生成成功');
-        form.resetFields();
-        onOk();
+        
+        try {
+            const result = await generateAiQuestion(qty);
+            if (result?.history_id) {
+                setHistoryId(result.history_id);
+                setShowProgress(true);
+                message.info('开始生成问题，请稍候...');
+            }
+        } catch (error) {
+            message.error('生成失败，请重试');
+        }
+    };
+
+    // 处理选中文档生成问题
+    const handleOtherDocGenerate = async () => {
+        const values = await form.validateFields();
+        const max = Number(dynamicLimit || 0);
+        const qty = Number(values.questionCount || 0);
+        if (!qty || qty < 1 || (max > 0 && qty > max)) {
+            message.warning(`请输入大于1的数量`);
+            return;
+        }
+        
+        try {
+            const result = await otherDocGenerateAiQuestion({ doc_ids: selectedDocIds, question_count: qty });
+            if (result?.history_id) {
+                setHistoryId(result.history_id);
+                setShowProgress(true);
+                message.info('开始生成问题，请稍候...');
+            }
+        } catch (error) {
+            message.error('生成失败，请重试');
+        }
     };
 
     // 点击重新生成：按选中文档获取题目数量限制
@@ -83,6 +126,16 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
             setDynamicLimit(res.limitCount || 0);
             // 同步本地状态（并标记为未手动修改，若希望覆盖用户输入可去掉 manualEditedRef）
             manualEditedRef.current = false;
+            const validateQuestionCount = (val: number | undefined, max?: number) => {
+                const value = Number(val || 0);
+                if (!value || value < 1) {
+                    return { value, validateStatus: 'error' as const, errorMsg: '请输入大于0的数量' };
+                }
+                if (max && max > 0 && value > max) {
+                    return { value, validateStatus: 'error' as const, errorMsg: `不能超过上限 ${max}` };
+                }
+                return { value, validateStatus: 'success' as const, errorMsg: null };
+            };
             setQuestionNumber(validateQuestionCount(rec, res.limitCount || 0));
         // try {
         //     const res = await fetchCount(ids);
@@ -100,16 +153,11 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
         setDynamicLimit(undefined);
         setSelectedDocIds([]);
         setActiveSource('new');
+        setHistoryId(null);
+        setShowProgress(false);
         onCancel();
     };
 
-
-    const [questionNumber, setQuestionNumber] = useState<{
-        value: number;
-        validateStatus?: 'error' | 'success' | undefined;
-        errorMsg?: string | null;
-    }>({ value: questionCount?.recommendCount ?? 1 });
-    const manualEditedRef = useRef(false);
 
     // 当弹窗打开或后端的 recommendCount 更新且用户未手动修改时，初始化本地值与表单
     useEffect(() => {
@@ -143,6 +191,14 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
         form.setFieldsValue({ questionCount: next.value });
     };
 
+    // 监听进度完成
+    useEffect(() => {
+        if (progressData.progress === 1 && showProgress) {
+            message.success('问题生成完成！');
+            // 不自动关闭弹窗，保持显示问题列表
+        }
+    }, [progressData.progress, showProgress]);
+
 
     return (
         <Modal
@@ -162,7 +218,81 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
         >
             <div style={{ overflow: 'auto' }}>
                 <Form form={form} layout="horizontal" >
-                    {updatesLoading || countLoading || firstGenerateLoading ? (
+                    {showProgress ? (
+                        <div style={{ padding: '20px' }}>
+                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                {progressData.progress !== 1 ? (
+                                    <>
+                                        <div style={{ marginBottom: '20px', fontSize: '16px', fontWeight: 'bold' }}>
+                                            AI正在生成问题...
+                                        </div>
+                                        <Progress 
+                                            type="circle"
+                                            percent={(progressData.progress || 0) * 100} 
+                                            status={progressData.progress === 1 ? 'success' : 'active'}
+                                            strokeColor={{
+                                                '0%': '#108ee9',
+                                                '100%': '#87d068',
+                                            }}
+                                            size={120}
+                                        />
+                                        <div style={{ marginTop: '15px', color: '#666', fontSize: '14px' }}>
+                                            进度: {(progressData.progress || 0) * 100}%
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div style={{ marginBottom: '10px', fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
+                                        ✅ 问题生成完成！
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {progressData.progress === 1 && progressData.aiQuestions?.length > 0 && (
+                                <div style={{ marginTop: '20px' }}>
+                                    <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>生成的问题预览:</div>
+                                    <div style={{ maxHeight: '300px', overflow: 'auto' }}>
+                                        {progressData.aiQuestions.map((category: any, index: number) => (
+                                            <div key={index} style={{ marginBottom: '15px' }}>
+                                                <div style={{ fontWeight: 'bold', color: '#1890ff', marginBottom: '5px' }}>
+                                                    {category.category} (共 {category.question_count} 个问题)
+                                                </div>
+                                                <List
+                                                    size="small"
+                                                    dataSource={category.questions}
+                                                    renderItem={(item: any) => (
+                                                        <List.Item style={{ padding: '5px 0', fontSize: '14px' }}>
+                                                            {item.question_text}
+                                                        </List.Item>
+                                                    )}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center', gap: 10 }}>
+                                <Button onClick={handleCancel}> 取消</Button>
+                                {progressData.progress === 1 && (
+                                    <Button 
+                                        type='primary' 
+                                        loading={saveLoading}
+                                        onClick={async () => {
+                                            try {
+                                                await saveAiQuestions(progressData.aiQuestions);
+                                                setShowProgress(false);
+                                                setHistoryId(null);
+                                                onOk();
+                                            } catch (error) {
+                                                message.error('保存失败，请重试');
+                                            }
+                                        }}
+                                    > 
+                                        添加到测试问题列表
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    ) : updatesLoading || countLoading || firstGenerateLoading ? (
                         <div style={{ marginTop: 40, textAlign: 'center' }}>
                             <div>加载中...</div>
                         </div>
@@ -333,18 +463,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                             <Button
                                                 type='primary'
                                                 loading={otherGenLoading}
-                                                onClick={async () => {
-                                                    const { questionCount } = await form.validateFields();
-                                                    const qty = Number(questionCount || 0);
-                                                    const max = Number(dynamicLimit || 0);
-                                                    if (!qty || qty < 1 || (max > 0 && qty > max)) {
-                                                        message.warning(`请输入大于1的数量`);
-                                                        return;
-                                                    }
-                                                    await otherDocGenerateAiQuestion({ doc_ids: selectedDocIds, question_count: qty });
-                                                    message.success('问题生成成功');
-                                                    handleCancel();
-                                                }}
+                                                onClick={handleOtherDocGenerate}
                                             > 确定生成</Button>
                                         </div>
                                     </>
