@@ -80,6 +80,7 @@ export default {
   save_ai_questions:`${api_rag_host}/aiGeneration/saveAiQuestions`,
   retrieval_task_report:`${api_rag_host}/retrievalTask/report`,
   retrieval_task_question_list:`${api_rag_host}/retrievalTask/questionList`,
+  export_question_category:`${api_rag_host}/retrievalTask/exportQuestionCategory`,
   // document
   get_document_list: `${api_rag_host}/file/docList`,
   get_run_status: (knowledgeId: string)=>`${api_rag_host}/dataset/getRunStatus?kbId=${knowledgeId}`,

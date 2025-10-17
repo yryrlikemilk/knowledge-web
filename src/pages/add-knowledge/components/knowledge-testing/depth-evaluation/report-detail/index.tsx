@@ -4,7 +4,7 @@ import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { useLocation, useNavigate } from 'umi';
 import request from '@/utils/request';
-import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList } from '@/hooks/knowledge-hooks';
+import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList, useExportQuestionCategory } from '@/hooks/knowledge-hooks';
 // import request from '@/utils/request';
 import RetrievalResultModal from './retrieval-result-modal';
 import styles from './index.less'; // 新增：引入样式模块
@@ -129,8 +129,23 @@ const ReportDetail: React.FC = () => {
     return { level: '差', color: '#fd5d5f' };
   };
 
-  const handleDownload = () => {
-    console.log(`下载`)
+  const { exportQuestionCategory } = useExportQuestionCategory();
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+       await exportQuestionCategory(reportId);
+      // if (res?.code === 0) {
+      //   message.success('下载成功');
+      // } else {
+      //   message.error('下载失败');
+      // }
+    } catch (e) {
+      message.error('下载失败');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const handleUploadFiles = () => {
@@ -342,7 +357,7 @@ const ReportDetail: React.FC = () => {
       }}
       onClick={() => handleSourceChange('manual')}
     >
-      手工输入({getSourceCount('manual')})
+      手动输入({getSourceCount('manual')})
     </span>
   ], [selectedSource, getSourceCount]);
 
@@ -592,7 +607,7 @@ const ReportDetail: React.FC = () => {
         </div>
 
         <div className='flex gap-2'>
-          <Button type='link' onClick={() => { handleDownload() }}>下载</Button>
+          <Button type='link' loading={downloading} onClick={handleDownload}>下载</Button>
           <Dropdown
             menu={resultMenu}
             trigger={['click']}
@@ -655,7 +670,7 @@ const ReportDetail: React.FC = () => {
                 <div style={{ marginTop: 8, color: '#666' }}>
                   <span style={{ marginRight: '16px' }}>检索结果数：{item.retrieval_count}</span>
                   <span style={{ marginRight: '16px' }}>文档数：{item.doc_count}</span>
-                  <span style={{ marginRight: '16px' }}>来源：{item.auto_generate ? 'AI生成' : '手工输入'}</span>
+                  <span style={{ marginRight: '16px' }}>来源：{item.auto_generate ? 'AI生成' : '手动输入'}</span>
                   {item.category_sub && <span>分类：{item.category_sub}</span>}
                 </div>
               </div>

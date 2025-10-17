@@ -234,6 +234,10 @@ const methods = {
     url: retrieval_task_report,
     method: 'post',
   },
+  exportQuestionCategory: {
+    url: api.export_question_category,
+    method: 'post',
+  },
   retrievalTaskQuestionList: {
     url: retrieval_task_question_list,
     method: 'post',
@@ -390,6 +394,11 @@ export const getRetrievalTaskQuestionList = (body?: {
   task_id?: string;
 }) => {
   return request.post(api.retrieval_task_question_list, { data: body });
+};
+
+export const exportQuestionCategory = (taskId: string) => {
+  // 请求类型 query：使用 params 携带 taskId
+  return request.post(api.export_question_category, { params: { taskId } });
 };
 
 export const getGenerateProgress = (historyId: string) => {

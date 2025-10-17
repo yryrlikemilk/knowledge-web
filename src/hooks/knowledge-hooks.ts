@@ -30,6 +30,7 @@ import kbService, {
   getRetrievalTaskQuestionList,
   getGenerateProgress,
   saveAiQuestions,
+  exportQuestionCategory,
 } from '@/services/knowledge-service';
 import {
   useInfiniteQuery,
@@ -558,6 +559,19 @@ export const useAllTestingResultWithStatus = () => {
   const error = useAllTestingError();
   return { result, status, isLoading, isSuccess, isError, error };
 };
+// 导出问题分类
+export const useExportQuestionCategory = () => {
+  const { mutateAsync, isPending: loading } = useMutation({
+    mutationFn: async (taskId: string) => {
+      if (!taskId) throw new Error('任务ID不能为空');
+      const response = await exportQuestionCategory(taskId);
+      return response?.data;
+    },
+  });
+
+  return { exportQuestionCategory: mutateAsync, loading };
+};
+
 //#endregion
 
 //#region tags
@@ -965,7 +979,7 @@ export const useSaveAiQuestions = () => {
       });
 
       if (response?.data?.code === 0) {
-        message.success('问题保存成功');
+        message.success('问题添加成功');
         // 刷新问题列表
         queryClient.invalidateQueries({
           queryKey: ['fetchRetrievalQuestionPageList'],

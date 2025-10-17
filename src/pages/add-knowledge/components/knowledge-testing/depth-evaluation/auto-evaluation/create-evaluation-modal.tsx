@@ -206,7 +206,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
             width: 100,
             render: (autoGenerate: boolean) => (
                 <Tag color={autoGenerate ? 'green' : 'blue'}>
-                    {autoGenerate ? 'AI生成' : '手工输入'}
+                    {autoGenerate ? 'AI生成' : '手动输入'}
                 </Tag>
             ),
         },
@@ -276,7 +276,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                                     onClick={() => handleSourceToggle('manual')}
                                     disabled={manualQuestions.length === 0}
                                 >
-                                    手工输入 ({manualQuestions.length})
+                                    手动输入 ({manualQuestions.length})
                                 </Button>
                                 <Button
                                     type={selectedSources.includes('ai') ? 'primary' : 'default'}

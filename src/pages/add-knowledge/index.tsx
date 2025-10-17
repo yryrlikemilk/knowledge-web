@@ -39,14 +39,15 @@ const KnowledgeAdding = () => {
 
     // 检查是否是深度评估页面
     const isDeepSearch = location.pathname.includes('/knowledge/testing/deep-search');
-    const isReportDetail = location.pathname.includes('/knowledge/testing/deep-search/report/');
+    const isReportDetail = location.pathname.includes('/knowledge/testing/deep-search/report');
     const isQuickTest = location.pathname.includes('/knowledge/testing/quick-test');
 
     if (isReportDetail) {
+      // 知识库 / 深度评估 / 评估详情
       items.push({
         title: (
           <Link to={`/knowledge/testing/deep-search?id=${knowledgeBaseId}`}>
-            <span className={styles.breadcrumbLink}>
+            <span style={{ color: '#00000073' }}>
               {t(`knowledgeDetails.${KnowledgeRouteKey.DepthEvaluation}`)}
             </span>
           </Link>
@@ -54,7 +55,7 @@ const KnowledgeAdding = () => {
       });
       items.push({
         title: (
-          <span style={{ color: '#306EFD' }}>报告详情</span>
+          <span style={{ color: '#306EFD' }}>评估详情</span>
         ),
       });
     } else if (isDeepSearch) {

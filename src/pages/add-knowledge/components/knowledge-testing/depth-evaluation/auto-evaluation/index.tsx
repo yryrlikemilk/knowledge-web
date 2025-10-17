@@ -147,7 +147,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             key: 'score',
             width: 100,
             align: 'center',
-            render: (score?: number) => score ? `${score}分` : '-',
+            render: (score?: number) => score ? `${score.toFixed(2)}分` : '-',
         },
         {
             title: '检索参数',

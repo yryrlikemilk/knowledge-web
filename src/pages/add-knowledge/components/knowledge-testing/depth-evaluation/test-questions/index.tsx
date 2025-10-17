@@ -132,7 +132,7 @@ const TestQuestions = () => {
             dataIndex: 'auto_generate',
             key: 'auto_generate',
             width: 100,
-            render: (autoGenerate: boolean) => autoGenerate ? 'AI生成' : '手工输入',
+            render: (autoGenerate: boolean) => autoGenerate ? 'AI生成' : '手动输入',
         },
         {
             title: '来源文件',
