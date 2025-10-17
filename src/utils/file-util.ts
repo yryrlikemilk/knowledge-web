@@ -142,6 +142,7 @@ export const downloadDocument = async ({
   filename?: string;
 }) => {
   const blob = await fetchDocumentBlob(id);
+  console.log(`11122222`,blob)
   downloadFileFromBlob(blob, filename);
 };
 

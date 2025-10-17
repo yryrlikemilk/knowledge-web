@@ -135,12 +135,33 @@ const ReportDetail: React.FC = () => {
   const handleDownload = async () => {
     try {
       setDownloading(true);
-       await exportQuestionCategory(reportId);
-      // if (res?.code === 0) {
-      //   message.success('下载成功');
-      // } else {
-      //   message.error('下载失败');
-      // }
+      const res: any = await exportQuestionCategory(reportId);
+      let blob: Blob = res?.data as Blob;
+      const srvFilename = res?.filename as string | undefined;
+     
+      // 若返回的是 JSON 错误，尝试解析并提示
+      if (blob && (blob as any).type && (blob as any).type.includes?.('application/json')) {
+        const text = await (blob as any).text();
+        try {
+          const json = JSON.parse(text);
+          message.error(json?.message || '下载失败');
+          return;
+        } catch {}
+      }
+      if (!(blob instanceof Blob)) {
+        blob = new Blob([res], { type: 'application/octet-stream' });
+      }
+      // 优先使用 service 解析的 filename
+      let filename = srvFilename || (blob instanceof File ? (blob as File).name : '') || 'question-category.xlsx';
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      message.success('下载成功');
     } catch (e) {
       message.error('下载失败');
     } finally {
@@ -613,9 +634,10 @@ const ReportDetail: React.FC = () => {
             trigger={['click']}
             onOpenChange={(open) => setResultOpen(open)}
             open={resultOpen}
+            tyle={{ lineHeight: '20px !important' }}
             className={styles.customDropdown} // 新增：应用自定义样式，设置每项高度为20px
           >
-            <Button type='link' style={{ lineHeight: 20 }}>
+            <Button type='link' style={{ lineHeight: '20px !important' }}>
               {resultOptions.find(option => option.value === selectedResult)?.label || '全部'}
               {/* 根据下拉打开状态切换图标 */}
               {resultOpen ? <UpOutlined style={{ marginLeft: 8 }} /> : <DownOutlined style={{ marginLeft: 8 }} />}

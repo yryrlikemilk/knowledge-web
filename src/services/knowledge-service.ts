@@ -4,6 +4,7 @@ import {
   IFetchKnowledgeListRequestParams,
 } from '@/interfaces/request/knowledge';
 import api from '@/utils/api';
+import { getAuthorization } from '@/utils/authorization-util';
 import registerServer from '@/utils/register-server';
 import request, { post } from '@/utils/request';
 
@@ -396,9 +397,32 @@ export const getRetrievalTaskQuestionList = (body?: {
   return request.post(api.retrieval_task_question_list, { data: body });
 };
 
-export const exportQuestionCategory = (taskId: string) => {
-  // 请求类型 query：使用 params 携带 taskId
-  return request.post(api.export_question_category, { params: { taskId } });
+export const exportQuestionCategory = async (taskId: string) => {
+  const url = `${api.export_question_category}?taskId=${encodeURIComponent(taskId)}`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/octet-stream',
+      Authorization: 'Bearer ragflow-' + getAuthorization(),
+      'Content-Type': 'application/json',
+    },
+  });
+  const blob = await resp.blob();
+  const cd = resp.headers.get('content-disposition') || '';
+  let filename = 'question-category.xlsx';
+  if (cd) {
+    const match =
+      /filename\*=(?:UTF-8|utf-8)''([^;]+)|filename="?([^";]+)"?/i.exec(cd);
+    const raw = (match?.[1] || match?.[2] || '').trim();
+    if (raw) {
+      try {
+        filename = decodeURIComponent(raw);
+      } catch {
+        filename = raw;
+      }
+    }
+  }
+  return { data: blob, filename };
 };
 
 export const getGenerateProgress = (historyId: string) => {

@@ -564,8 +564,8 @@ export const useExportQuestionCategory = () => {
   const { mutateAsync, isPending: loading } = useMutation({
     mutationFn: async (taskId: string) => {
       if (!taskId) throw new Error('任务ID不能为空');
-      const response = await exportQuestionCategory(taskId);
-      return response?.data;
+      // 返回 { data: Blob, filename: string }
+      return await exportQuestionCategory(taskId);
     },
   });
 
