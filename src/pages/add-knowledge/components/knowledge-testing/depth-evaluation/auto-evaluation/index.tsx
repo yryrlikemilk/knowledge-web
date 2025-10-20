@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Typography, Button, Steps, Table, Tag } from 'antd';
-import { FileText, Settings, BarChart3, Eye } from 'lucide-react';
+import { Typography, Button, Table, Tag, Input, Select, Space, Form, Spin } from 'antd';
+import { Eye, Search, RotateCcw } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import CreateEvaluationModal from './create-evaluation-modal';
 import ViewRetrievalParamsModal from './view-retrieval-params-modal';
 import { useNavigate, useLocation } from 'umi';
 import { useFetchPageList } from '@/hooks/knowledge-hooks';
 import depthEvaluationNoData from '@/assets/imgs/depth-evaluation-noData.png';
-const { Title, Paragraph } = Typography;
+const { Paragraph } = Typography;
 import set1 from '@/assets/imgs/set1.png';
 import set2 from '@/assets/imgs/set2.png';
 import set3 from '@/assets/imgs/set3.png';
@@ -34,28 +34,22 @@ interface AutoEvaluationProps {
 const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [currentStep] = useState(0);
+    const [form] = Form.useForm();
     const [modalVisible, setModalVisible] = useState(false);
     const [viewParamsVisible, setViewParamsVisible] = useState(false);
     const [viewParamsData, setViewParamsData] = useState<any>(null);
     const [current, setCurrent] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
-    const { pageList } = useFetchPageList(current, pageSize);
+    
+    // 筛选条件状态
+    const [filters, setFilters] = useState({
+        name: '',
+        auto_generate: '',
+        status: ''
+    });
+    
+    const { pageList, loading } = useFetchPageList(current, pageSize, filters);
 
-    const steps = [
-        {
-            title: '准备测试问题',
-            icon: <FileText size={20} />,
-        },
-        {
-            title: '设置检索参数&评估指标',
-            icon: <Settings size={20} />,
-        },
-        {
-            title: '自动生成评估报告',
-            icon: <BarChart3 size={20} />,
-        },
-    ];
 
     // 移除未使用的函数
 
@@ -80,8 +74,28 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
         console.log('选择的问题列表:', data.selectedQuestions);
         console.log('检索设置表单数据:', data.formData);
         console.log('=== 数据输出完成 ===', data);
+    };
 
+    // 搜索处理
+    const handleSearch = () => {
+        const values = form.getFieldsValue();
+        setFilters({
+            name: values.name || '',
+            auto_generate: values.auto_generate || '',
+            status: values.status || ''
+        });
+        setCurrent(1); // 重置到第一页
+    };
 
+    // 重置处理
+    const handleReset = () => {
+        form.resetFields();
+        setFilters({
+            name: '',
+            auto_generate: '',
+            status: ''
+        });
+        setCurrent(1); // 重置到第一页
     };
 
     const handleViewReport = (record: EvaluationTask) => {
@@ -91,10 +105,10 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
         navigate(`/knowledge/testing/deep-search/report?reportId=${record.id}${knowledgeId ? `&id=${knowledgeId}` : ''}`);
     };
 
-    const getStatusTag = (status: number) => {
+    const getStatusTag = (status: number,progress:any) => {
         const statusMap: Record<number, { color: string; text: string }> = {
             0: { color: 'default', text: '未开始' },
-            1: { color: 'processing', text: '正在评估中' },
+            1: { color: 'processing', text: `正在评估中${progress * 100}%` },
             2: { color: 'success', text: '成功' },
             3: { color: 'error', text: '失败' },
         };
@@ -139,7 +153,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             dataIndex: 'status',
             key: 'status',
             width: 100,
-            render: (status: number) => getStatusTag(status),
+            render: (_: any, record: any) => getStatusTag(record.status,record.progress),
         },
         {
             title: '结果分数',
@@ -165,8 +179,8 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             dataIndex: 'evaluationParams',
             key: 'evaluationParams',
             width: 150,
-            render: () => (
-                <Button type="link" onClick={() => setViewParamsVisible(true)}>
+            render: (_: any, record: any) => (
+                <Button type="link" onClick={() => openViewParams(record)}>
                     系统默认指标
                 </Button>
             ),
@@ -200,13 +214,77 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
         <>
 
             {/* 评估任务列表 - 根据pageList数据长度显示 */}
-            {pageList.records.length > 0 ? (
-                <div style={{ marginTop: '40px', width: '100%' }}>
-                    <Button type="primary" style={{ marginBottom: '20px' }} onClick={handleCreateTask}>新增评估任务</Button>
+            {loading ? (
+                <div style={{height:'100%', padding: '160px 0', display: 'flex', justifyContent: 'center' }}>
+                    <Spin tip="加载中..." />
+                </div>
+            ) : pageList.records.length > 0 ? (
+                <div style={{ marginTop: '36px', width: '100%' }}>
+                    <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Button type="primary" onClick={handleCreateTask}>新增评估任务</Button>
+                    </div>
+                    
+                    {/* 筛选表单 */}
+                    <div style={{ 
+                        marginBottom: '20px', 
+                        padding: '16px 0', 
+                    }}>
+                        <Form form={form} layout="inline" style={{ width: '100%' }}>
+                            <Form.Item label="任务名称" name="name" style={{ marginBottom: '16px' }}>
+                                <Input 
+                                    placeholder="请输入任务名称" 
+                                    style={{ width: 200 }}
+                                    allowClear
+                                />
+                            </Form.Item>
+                            
+                            <Form.Item label="问题来源" name="auto_generate" style={{ marginBottom: '16px' }}>
+                                <Select 
+                                    placeholder="请选择问题来源" 
+                                    style={{ width: 150 }}
+                                    allowClear
+                                >
+                                    <Select.Option value="false">手动输入</Select.Option>
+                                    <Select.Option value="true">AI生成</Select.Option>
+                                </Select>
+                            </Form.Item>
+                            
+                            <Form.Item label="状态" name="status" style={{ marginBottom: '16px' }}>
+                                <Select 
+                                    placeholder="请选择状态" 
+                                    style={{ width: 150 }}
+                                    allowClear
+                                >
+                                    <Select.Option value="1">正在评估中</Select.Option>
+                                    <Select.Option value="2">成功</Select.Option>
+                                    <Select.Option value="3">失败</Select.Option>
+                                </Select>
+                            </Form.Item>
+                            
+                            <Form.Item style={{ marginBottom: '16px' }}>
+                                <Space>
+                                    <Button 
+                                        type="primary" 
+                                        icon={<Search size={14} />} 
+                                        onClick={handleSearch}
+                                    >
+                                        搜索
+                                    </Button>
+                                    <Button 
+                                        icon={<RotateCcw size={14} />} 
+                                        onClick={handleReset}
+                                    >
+                                        重置
+                                    </Button>
+                                </Space>
+                            </Form.Item>
+                        </Form>
+                    </div>
                     <Table
                         columns={columns}
                         dataSource={pageList.records}
                         rowKey="id"
+                        loading={loading}
                         pagination={{
                             current,
                             pageSize,

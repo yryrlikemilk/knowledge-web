@@ -203,6 +203,10 @@ const methods = {
     url: retrieval_question_page_list,
     method: 'post',
   },
+  retrievalQuestionCategory: {
+    url: api.retrieval_question_category,
+    method: 'get',
+  },
   addQuestions: {
     url: add_questions,
     method: 'post',
@@ -397,6 +401,10 @@ export const getRetrievalTaskQuestionList = (body?: {
   return request.post(api.retrieval_task_question_list, { data: body });
 };
 
+export const getRetrievalQuestionCategory = (kbId: string) => {
+  return request.get(api.retrieval_question_category, { params: { kbId } });
+};
+
 export const exportQuestionCategory = async (taskId: string) => {
   const url = `${api.export_question_category}?taskId=${encodeURIComponent(taskId)}`;
   const resp = await fetch(url, {
@@ -446,6 +454,10 @@ export const saveAiQuestions = (body?: {
   history_id: string;
 }) => {
   return request.post(api.save_ai_questions, { data: body });
+};
+
+export const getRetrievalTaskInfo = (taskId: string) => {
+  return request.get('/api/retrievalTask/getInfo', { params: { id: taskId } });
 };
 
 export default kbService;

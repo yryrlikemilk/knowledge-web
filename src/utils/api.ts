@@ -71,6 +71,7 @@ export default {
   page_list:`${api_rag_host}/retrievalTask/pageList`,
   save_retrieval_task:`${api_rag_host}/retrievalTask/save`,
   retrieval_question_page_list:`${api_rag_host}/retrievalQuestion/pageList`,
+  retrieval_question_category:`${api_rag_host}/retrievalQuestion/questionCategory`,
   all_questions:`${api_rag_host}/retrievalQuestion/allQuestions`,
   add_questions:`${api_rag_host}/retrievalQuestion/addQuestions`,
   update_question:`${api_rag_host}/retrievalQuestion/update`,

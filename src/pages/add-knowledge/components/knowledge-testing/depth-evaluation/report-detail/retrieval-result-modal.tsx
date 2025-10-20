@@ -600,7 +600,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
         onCancel={onCancel}
         width="90%"
         footer={null}
-        destroyOnClose
+        destroyOnHidden
         styles={{
           header: {
             textAlign: 'center'
@@ -827,7 +827,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
         footer={null}
         width={600}
         title={`查看文件:${currentVideoInfo?.document_name}`}
-        destroyOnClose
+        destroyOnHidden
       >
         {currentVideoInfo && (
           <div style={{ textAlign: 'center', maxHeight: '80vh', overflow: 'auto' }}>

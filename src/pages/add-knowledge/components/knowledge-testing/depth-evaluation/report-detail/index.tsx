@@ -258,7 +258,7 @@ const ReportDetail: React.FC = () => {
       return {
         type: 'info',
         message: '问题可回答率高',
-        description: `，且大部分问题的回答准确率较高，但问题较少，建议添加问题继续测试。`,
+        description: `问题可回答率高，且大部分问题的回答准确率较高，但问题较少，建议添加问题继续测试。`,
       };
     }
 

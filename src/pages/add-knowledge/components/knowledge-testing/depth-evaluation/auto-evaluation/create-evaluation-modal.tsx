@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Modal, Form, Input, Button, Space, Table, Tag, InputNumber, message, Typography, Tooltip } from 'antd';
+import React, { useState, useCallback } from 'react';
+import { Modal, Form, Input, Button, Space, Table, Tag, InputNumber, message, Typography, Tooltip, Progress } from 'antd';
 import { CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import Rerank from '@/components/rerank';
-import { useFetchAllQuestions, useSaveRetrievalTask } from '@/hooks/knowledge-hooks';
+import { useFetchAllQuestions, useSaveRetrievalTask, useRetrievalTaskProgress } from '@/hooks/knowledge-hooks';
 
 const { Title, Paragraph } = Typography;
 
@@ -38,8 +38,11 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
     const [selectedSources, setSelectedSources] = useState<('manual' | 'ai')[]>([]);
     const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
     const [canAccessStep2, setCanAccessStep2] = useState(false);
+    const [taskId, setTaskId] = useState<string | null>(null);
+    const [showProgress, setShowProgress] = useState<boolean>(false);
     const { allQuestions: allQ, loading: allQuestionLoading } = useFetchAllQuestions();
     const { saveRetrievalTask, loading: saveLoading } = useSaveRetrievalTask();
+    const { taskData } = useRetrievalTaskProgress(taskId);
 
     // 根据接口数据生成问题列表
     const mapItem = (item: any): QuestionItem => ({
@@ -127,8 +130,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                     console.log(`formDataformDataformData`, formData)
                     const selectedQuestionsData = allQuestions.filter(q => selectedQuestions.includes(q.id));
 
-                    // // 调用保存接口
-                    await saveRetrievalTask({
+                    const result = await saveRetrievalTask({
                         task_name: formData.task_name,
                         test_ques_ids: selectedQuestions,
                         selectedQuestionsData: selectedQuestionsData,
@@ -136,24 +138,30 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                         vector_similarity_weight: formData.vector_similarity_weight,
                         rerank_id: formData.rerank_id,
                         top_k: formData.top_k
-
                     });
-
-                    message.success('评估任务创建成功');
-
-                    // 调用父组件的回调
-                    onOk({
-                        task_name: formData.task_name,
-                        selectedQuestions: selectedQuestionsData,
-                        formData
-                    });
-
-                    // 创建成功后清空所有数据
-                    setCurrentStep(0);
-                    setSelectedSources([]);
-                    setSelectedQuestions([]);
-                    setCanAccessStep2(false);
-                    form.resetFields();
+                    console.log(`1231312313123132`,result)
+                    if (result?.task_id) {
+                        setTaskId(result.task_id);
+                        setShowProgress(true);
+                        message.info('评估任务创建成功，正在处理中...');
+                    } else {
+                        message.success('评估任务创建成功');
+                        // 调用父组件的回调
+                        onOk({
+                            task_name: formData.task_name,
+                            selectedQuestions: selectedQuestionsData,
+                            formData
+                        });
+                        // 清空所有状态
+                        setCurrentStep(0);
+                        setSelectedSources([]);
+                        setSelectedQuestions([]);
+                        setCanAccessStep2(false);
+                        setTaskId(null);
+                        setShowProgress(false);
+                        form.resetFields();
+                        onCancel();
+                    }
                 } catch (error) {
                     console.error('创建评估任务失败:', error);
                     message.error(error instanceof Error ? error.message : '创建评估任务失败');
@@ -162,15 +170,17 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
         }
     };
 
-    const handleCancel = () => {
+    const handleCancel = useCallback(() => {
         // 清空所有状态
         setCurrentStep(0);
         setSelectedSources([]);
         setSelectedQuestions([]);
         setCanAccessStep2(false);
+        setTaskId(null);
+        setShowProgress(false);
         form.resetFields();
         onCancel();
-    };
+    }, [form, onCancel]);
 
 
     // 监听弹窗关闭，清空数据
@@ -181,9 +191,25 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
             setSelectedSources([]);
             setSelectedQuestions([]);
             setCanAccessStep2(false);
+            setTaskId(null);
+            setShowProgress(false);
             form.resetFields();
         }
     }, [visible, form]);
+
+    // 监听任务完成
+    React.useEffect(() => {
+        if (taskData.progress === 1 && showProgress) {
+            message.success('评估任务完成！');
+            // 调用父组件的回调
+            onOk({
+                task_name: form.getFieldValue('task_name'),
+                selectedQuestions: allQuestions.filter(q => selectedQuestions.includes(q.id)),
+                formData: form.getFieldsValue()
+            });
+            handleCancel();
+        }
+    }, [taskData.progress, showProgress, onOk, form, allQuestions, selectedQuestions, handleCancel]);
 
     const columns: ColumnsType<QuestionItem> = [
         {
@@ -429,6 +455,11 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
 
     // 根据是否有数据显示不同的底部按钮
     const renderFooter = () => {
+        // 如果正在显示进度，不显示底部按钮
+        if (showProgress) {
+            return null;
+        }
+
         const totalCount = (allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0);
         if (totalCount === 0) {
             return [
@@ -473,6 +504,27 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
         >
             {allQuestionLoading ? (
                 <div>加载中---</div>
+            ) : showProgress ? (
+                <div style={{ padding: '20px', textAlign: 'center' }}>
+                    <div style={{ marginBottom: '20px' }}>
+                        <Progress 
+                            type="circle"
+                            percent={(taskData.progress || 0) * 100} 
+                            status={taskData.progress === 1 ? 'success' : 'active'}
+                            strokeColor={{
+                                '0%': '#108ee9',
+                                '100%': '#87d068',
+                            }}
+                            size={120}
+                        />
+                        <div style={{ marginTop: '15px', color: '#666', fontSize: '14px' }}>
+                            进度: {(taskData.progress || 0) * 100}%
+                        </div>
+                    </div>
+                    <div style={{ marginTop: '20px' }}>
+                        <Button type="primary" onClick={() => window.location.reload()}>刷新</Button>
+                    </div>
+                </div>
             ) : (
                 <> {(allQ.manualQuestion?.length || 0) + (allQ.autoQuestion?.length || 0) > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', margin: '20px 0', }}>

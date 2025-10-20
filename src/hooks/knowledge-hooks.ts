@@ -31,6 +31,8 @@ import kbService, {
   getGenerateProgress,
   saveAiQuestions,
   exportQuestionCategory,
+  getRetrievalQuestionCategory,
+  getRetrievalTaskInfo,
 } from '@/services/knowledge-service';
 import {
   useInfiniteQuery,
@@ -784,11 +786,15 @@ export const useFetchFileUpdates = () => {
   };
 };
 
-export const useFetchPageList = (page: number = 1, pageSize: number = 10) => {
+export const useFetchPageList = (page: number = 1, pageSize: number = 10, filters: {
+  name?: string;
+  auto_generate?: string;
+  status?: string;
+} = {}) => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
   const { data, isFetching: loading } = useQuery({
-    queryKey: ['fetchPageList', knowledgeBaseId, page, pageSize],
+    queryKey: ['fetchPageList', knowledgeBaseId, page, pageSize, filters],
     enabled: !!knowledgeBaseId,
     queryFn: async () => {
       if (!knowledgeBaseId)
@@ -797,7 +803,9 @@ export const useFetchPageList = (page: number = 1, pageSize: number = 10) => {
         kb_id: knowledgeBaseId,
         page,
         page_size: pageSize,
-        auto_generate: '',
+        name: filters.name || '',
+        auto_generate: filters.auto_generate || '',
+        status: filters.status || '',
       });
       if (response?.data?.code === 0) {
         return response.data.data;
@@ -815,11 +823,17 @@ export const useFetchPageList = (page: number = 1, pageSize: number = 10) => {
 export const useFetchRetrievalQuestionPageList = (
   page: number = 1,
   pageSize: number = 10,
+  filters: {
+    question_text?: string;
+    auto_generate?: string;
+    status?: string;
+    category_sub?: string;
+  } = {},
 ) => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
   const { data, isFetching: loading } = useQuery({
-    queryKey: ['fetchRetrievalQuestionPageList', knowledgeBaseId, page, pageSize],
+    queryKey: ['fetchRetrievalQuestionPageList', knowledgeBaseId, page, pageSize, filters],
     enabled: !!knowledgeBaseId,
     queryFn: async () => {
       if (!knowledgeBaseId)
@@ -828,6 +842,10 @@ export const useFetchRetrievalQuestionPageList = (
         kb_id: knowledgeBaseId,
         page,
         page_size: pageSize,
+        question_text: filters.question_text || '',
+        auto_generate: filters.auto_generate || '',
+        status: filters.status || '',
+        category_sub: filters.category_sub || '',
       });
       if (response?.data?.code === 0) {
         return response.data.data;
@@ -846,6 +864,24 @@ export const useFetchRetrievalQuestionPageList = (
     },
     loading,
   };
+};
+
+// 获取问题分类（用于筛选）
+export const useFetchQuestionCategory = () => {
+  const knowledgeBaseId = useKnowledgeBaseId();
+  const { data, isFetching: loading } = useQuery({
+    queryKey: ['fetchRetrievalQuestionCategory', knowledgeBaseId],
+    enabled: !!knowledgeBaseId,
+    queryFn: async () => {
+      if (!knowledgeBaseId) return [] as string[];
+      const resp = await getRetrievalQuestionCategory(knowledgeBaseId);
+      if (resp?.data?.code === 0) {
+        return resp.data.data?.category || [];
+      }
+      return [] as string[];
+    },
+  });
+  return { categories: data || [], loading };
 };
 
 // 获取全部问题列表（AI与手工）
@@ -958,6 +994,38 @@ export const useGenerateProgress = (historyId: string | null) => {
 
   return {
     progressData: data || { progress: 0, aiQuestions: [], id: '' },
+    loading,
+    refetch,
+  };
+};
+
+// 轮询获取检索任务进度
+export const useRetrievalTaskProgress = (taskId: string | null) => {
+  const { data, isFetching: loading, refetch } = useQuery({
+    queryKey: ['fetchRetrievalTaskProgress', taskId],
+    enabled: !!taskId,
+    refetchInterval: (query) => {
+      // 如果进度为1（100%）或状态为完成，停止轮询
+      const progress = query.state.data?.progress;
+      // const status = query.state.data?.status;
+      if (progress === 1 ) {
+        return false;
+      }
+      // 否则每2秒轮询一次
+      return 2000;
+    },
+    queryFn: async () => {
+      if (!taskId) return { progress: 0, status: 0, id: '' };
+      const response = await getRetrievalTaskInfo(taskId);
+      if (response?.data?.code === 0) {
+        return response.data.data;
+      }
+      return { progress: 0, status: 0, id: '' };
+    },
+  });
+
+  return {
+    taskData: data || { progress: 0, status: 0, id: '' },
     loading,
     refetch,
   };

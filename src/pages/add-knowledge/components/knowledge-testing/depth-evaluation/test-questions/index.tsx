@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Typography, Space, Button, Table, Tag, Modal, message, Tooltip, Dropdown } from 'antd';
+import { Typography, Space, Button, Table, Tag, Modal, message, Tooltip, Dropdown, Form, Input, Select } from 'antd';
 import { Edit, Delete, Trash2, Plus, ChevronDown } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
-import { useFetchRetrievalQuestionPageList, useDeleteQuestions } from '@/hooks/knowledge-hooks';
+import { useFetchRetrievalQuestionPageList, useDeleteQuestions, useFetchQuestionCategory } from '@/hooks/knowledge-hooks';
 import ManualInputModal from './manual-input-modal';
 import AIGenerateModal from './ai-generate-modal';
 import EditQuestionModal from './edit-question-modal';
@@ -23,6 +23,7 @@ interface QuestionItem {
 }
 
 const TestQuestions = () => {
+    const [form] = Form.useForm();
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<QuestionItem | null>(null);
@@ -30,8 +31,16 @@ const TestQuestions = () => {
     const [isAIModalVisible, setIsAIModalVisible] = useState(false);
     const [current, setCurrent] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
-    const { questionPageList } = useFetchRetrievalQuestionPageList(current, pageSize);
-    const { deleteQuestions, loading: deleteLoading } = useDeleteQuestions();
+    const [filters, setFilters] = useState({
+        question_text: '',
+        auto_generate: '',
+        status: '',
+        category_sub: '',
+    });
+    const { questionPageList } = useFetchRetrievalQuestionPageList(current, pageSize, filters);
+
+    const { categories: categoryOptions } = useFetchQuestionCategory();
+    const { deleteQuestions } = useDeleteQuestions();
 
     const handleDelete = (questionId: string) => {
         Modal.confirm({
@@ -198,11 +207,27 @@ const TestQuestions = () => {
         },
     };
 
+    const handleSearch = () => {
+        const values = form.getFieldsValue();
+        setFilters({
+            question_text: values.question_text || '',
+            auto_generate: values.auto_generate || '',
+            status: values.status || '',
+            category_sub: values.category_sub || '',
+        });
+        setCurrent(1);
+    };
+
+    const handleReset = () => {
+        form.resetFields();
+        setFilters({ question_text: '', auto_generate: '', status: '', category_sub: '' });
+        setCurrent(1);
+    };
+
     return (
-        <div style={{ padding: '20px 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ marginTop:36 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
-                    <Title level={3}>测试问题列表</Title>
                     <Dropdown
                         menu={{
                             items: [
@@ -245,6 +270,44 @@ const TestQuestions = () => {
                 </Button>
             </div>
 
+            {/* 筛选表单 */}
+            <div style={{ marginBottom: 16 }}>
+                <Form form={form} layout="inline">
+                    <Form.Item label="问题" name="question_text" style={{ marginBottom: 12 }}>
+                        <Input allowClear placeholder="请输入问题" style={{ width: 160 }} />
+                    </Form.Item>
+                    {categoryOptions.length > 0 && (
+                        <Form.Item label="类型" name="category_sub" style={{ marginBottom: 12 }}>
+                            <Select allowClear placeholder="请选择类型" style={{ width: 160 }}>
+                            {categoryOptions.map((c: string) => (
+                                    <Select.Option key={c} value={c}>{c}</Select.Option>
+                                ))}
+                            </Select>
+                        </Form.Item>
+                    )}
+
+                    <Form.Item label="来源" name="auto_generate" style={{ marginBottom: 12 }}>
+                        <Select allowClear placeholder="请选择来源" style={{ width: 160 }}>
+                            <Select.Option value="false">手动输入</Select.Option>
+                            <Select.Option value="true">AI生成</Select.Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item label="状态" name="status" style={{ marginBottom: 12 }}>
+                        <Select allowClear placeholder="请选择状态" style={{ width: 160 }}>
+                            <Select.Option value="0">待测试</Select.Option>
+                            <Select.Option value="1">已测试</Select.Option>
+                        </Select>
+                    </Form.Item>
+
+                    <Form.Item style={{ marginBottom: 12 }}>
+                        <Space>
+                            <Button type="primary" onClick={handleSearch}>搜索</Button>
+                            <Button onClick={handleReset}>重置</Button>
+                        </Space>
+                    </Form.Item>
+                </Form>
+            </div>
+
             {questionPageList.records.length > 0 ? (
                 <Table
                     columns={columns}
@@ -257,7 +320,7 @@ const TestQuestions = () => {
                         total: questionPageList.total,
                         showSizeChanger: true,
                         showQuickJumper: true,
-                        showTotal: (total, range) => `共 ${total} 条`,
+                        showTotal: (total) => `共 ${total} 条`,
                         onChange: (page, size) => {
                             setCurrent(page);
                             setPageSize(size || 10);
