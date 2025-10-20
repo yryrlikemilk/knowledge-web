@@ -116,9 +116,9 @@ const ManualInputModal: React.FC<ManualInputModalProps> = ({ visible, onCancel, 
                 labelWrap
                 wrapperCol={{ flex: 1 }}
                 labelAlign="right"
-                style={{height:260}}
+                // style={{height:260}}
             >
-                <div style={{marginTop:40}}>
+                <div style={{marginTop:40,height:500,overflow:'auto'}}>
                     {/* 隐藏的 Form.Item 用于存储 question 数组 */}
                     <Form.Item name="question" hidden>
                         <Input />
@@ -129,6 +129,9 @@ const ManualInputModal: React.FC<ManualInputModalProps> = ({ visible, onCancel, 
                         required 
                         validateStatus={questionInputError ? 'error' : ''} 
                         help={questionInputError}
+                        // rules={[{ required: true, message: '请输入问题内容' },
+                        //     {max:200,message:'问题内容不能超过200个字符'}
+                        // ]}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <Input

@@ -244,7 +244,9 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                     <Form.Item
                         name="task_name"
                         label="任务名称"
-                        rules={[{ required: true, message: '请输入任务名称' }]}
+                        rules={[{ required: true, message: '请输入任务名称' },
+                            {max:200,message:'任务名称不能超过200个字符'}
+                        ]}
                     >
                         <Input placeholder="请输入任务名称" />
                     </Form.Item>
