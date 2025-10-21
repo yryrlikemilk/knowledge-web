@@ -40,14 +40,14 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
     const [viewParamsData, setViewParamsData] = useState<any>(null);
     const [current, setCurrent] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
-    
+
     // 筛选条件状态
     const [filters, setFilters] = useState({
         name: '',
         auto_generate: '',
         status: ''
     });
-    
+
     const { pageList, loading } = useFetchPageList(current, pageSize, filters);
 
 
@@ -105,10 +105,10 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
         navigate(`/knowledge/testing/deep-search/report?reportId=${record.id}${knowledgeId ? `&id=${knowledgeId}` : ''}`);
     };
 
-    const getStatusTag = (status: number,progress:any) => {
+    const getStatusTag = (status: number, progress: any) => {
         const statusMap: Record<number, { color: string; text: string }> = {
             0: { color: 'default', text: '未开始' },
-            1: { color: 'processing', text: `正在评估中${progress * 100}%` },
+            1: { color: 'processing', text: `评估中${progress * 100}%` },
             2: { color: 'success', text: '成功' },
             3: { color: 'error', text: '失败' },
         };
@@ -153,7 +153,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             dataIndex: 'status',
             key: 'status',
             width: 100,
-            render: (_: any, record: any) => getStatusTag(record.status,record.progress),
+            render: (_: any, record: any) => getStatusTag(record.status, record.progress),
         },
         {
             title: '结果分数',
@@ -215,32 +215,32 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
 
             {/* 评估任务列表 - 根据pageList数据长度显示 */}
             {loading ? (
-                <div style={{height:'100%', padding: '160px 0', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ height: '100%', padding: '160px 0', display: 'flex', justifyContent: 'center' }}>
                     <Spin tip="加载中..." />
                 </div>
-            ) : pageList.records.length > 0 ? (
+            ) : pageList.record.records.length > 0 || pageList.has_task ? (
                 <div style={{ marginTop: '36px', width: '100%' }}>
                     <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Button type="primary" onClick={handleCreateTask}>新增评估任务</Button>
                     </div>
-                    
+
                     {/* 筛选表单 */}
-                    <div style={{ 
-                        marginBottom: '20px', 
-                        padding: '16px 0', 
+                    <div style={{
+                        marginBottom: '20px',
+                        padding: '16px 0',
                     }}>
                         <Form form={form} layout="inline" style={{ width: '100%' }}>
                             <Form.Item label="任务名称" name="name" style={{ marginBottom: '16px' }}>
-                                <Input 
-                                    placeholder="请输入任务名称" 
+                                <Input
+                                    placeholder="请输入任务名称"
                                     style={{ width: 200 }}
                                     allowClear
                                 />
                             </Form.Item>
-                            
+
                             <Form.Item label="问题来源" name="auto_generate" style={{ marginBottom: '16px' }}>
-                                <Select 
-                                    placeholder="请选择问题来源" 
+                                <Select
+                                    placeholder="请选择问题来源"
                                     style={{ width: 150 }}
                                     allowClear
                                 >
@@ -248,10 +248,10 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                                     <Select.Option value="true">AI生成</Select.Option>
                                 </Select>
                             </Form.Item>
-                            
+
                             <Form.Item label="状态" name="status" style={{ marginBottom: '16px' }}>
-                                <Select 
-                                    placeholder="请选择状态" 
+                                <Select
+                                    placeholder="请选择状态"
                                     style={{ width: 150 }}
                                     allowClear
                                 >
@@ -260,18 +260,18 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                                     <Select.Option value="3">失败</Select.Option>
                                 </Select>
                             </Form.Item>
-                            
+
                             <Form.Item style={{ marginBottom: '16px' }}>
                                 <Space>
-                                    <Button 
-                                        type="primary" 
-                                        icon={<Search size={14} />} 
+                                    <Button
+                                        type="primary"
+                                        icon={<Search size={14} />}
                                         onClick={handleSearch}
                                     >
                                         搜索
                                     </Button>
-                                    <Button 
-                                        icon={<RotateCcw size={14} />} 
+                                    <Button
+                                        icon={<RotateCcw size={14} />}
                                         onClick={handleReset}
                                     >
                                         重置
@@ -282,7 +282,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                     </div>
                     <Table
                         columns={columns}
-                        dataSource={pageList.records}
+                        dataSource={pageList.record.records}
                         rowKey="id"
                         loading={loading}
                         pagination={{

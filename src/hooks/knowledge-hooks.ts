@@ -8,31 +8,31 @@ import {
 import i18n from '@/locales/config';
 import kbService, {
   batch_retrieval_test,
-  checkForFileUpdates,
   checkFirstGenerate,
+  checkForFileUpdates,
   deleteKnowledgeGraph,
   deleteQuestions,
+  exportQuestionCategory,
   generateAiQuestion,
   getAiQuestionCount,
   getAiQuestionCountByDocIds,
-  otherDocGenerateAiQuestion,
   getAllQuestions,
   getCount,
+  getGenerateProgress,
   getKnowledgeGraph,
   getKnowledgeRunStatus,
-  listDataset,
-  listTag,
-  removeTag,
-  renameTag,
-  saveRetrievalTask,
-  updateQuestion,
-  getRetrievalTaskReport,
-  getRetrievalTaskQuestionList,
-  getGenerateProgress,
-  saveAiQuestions,
-  exportQuestionCategory,
   getRetrievalQuestionCategory,
   getRetrievalTaskInfo,
+  getRetrievalTaskQuestionList,
+  getRetrievalTaskReport,
+  listDataset,
+  listTag,
+  otherDocGenerateAiQuestion,
+  removeTag,
+  renameTag,
+  saveAiQuestions,
+  saveRetrievalTask,
+  updateQuestion,
 } from '@/services/knowledge-service';
 import {
   useInfiniteQuery,
@@ -272,7 +272,7 @@ export const useTestChunkRetrieval = (): ResponsePostType<ITestingResult> & {
     mutationKey: ['testChunk'],
     gcTime: 0,
     mutationFn: async (values: any) => {
-        const questions = Array.isArray(values.question)
+      const questions = Array.isArray(values.question)
         ? values.question
         : [values.question];
       const { data } = await batch_retrieval_test({
@@ -378,12 +378,12 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
     gcTime: 0,
     mutationFn: async (values: any) => {
       console.log(`values222`, values, knowledgeBaseId);
-         const questions = Array.isArray(values.question)
+      const questions = Array.isArray(values.question)
         ? values.question
         : [values.question];
       const { data } = await batch_retrieval_test({
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
-       query: questions,
+        query: questions,
         keyword: false,
         document_ids: values.doc_ids,
         highlight: false,
@@ -760,11 +760,15 @@ export const useFetchKnowledgeRunStatus = () => {
 export const useFetchFileUpdates = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
-  const { data, isFetching: loading, refetch } = useQuery({
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['fetchFileUpdates', knowledgeBaseId],
     enabled: !!knowledgeBaseId,
     queryFn: async () => {
-      console.log(`knowledgeBaseId11111111`,knowledgeBaseId)
+      console.log(`knowledgeBaseId11111111`, knowledgeBaseId);
       if (!knowledgeBaseId)
         return { hasUpdates: false, modifiedDocuments: [], newDocuments: [] };
       const response = await checkForFileUpdates(knowledgeBaseId);
@@ -786,11 +790,15 @@ export const useFetchFileUpdates = () => {
   };
 };
 
-export const useFetchPageList = (page: number = 1, pageSize: number = 10, filters: {
-  name?: string;
-  auto_generate?: string;
-  status?: string;
-} = {}) => {
+export const useFetchPageList = (
+  page: number = 1,
+  pageSize: number = 10,
+  filters: {
+    name?: string;
+    auto_generate?: string;
+    status?: string;
+  } = {},
+) => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
   const { data, isFetching: loading } = useQuery({
@@ -810,7 +818,10 @@ export const useFetchPageList = (page: number = 1, pageSize: number = 10, filter
       if (response?.data?.code === 0) {
         return response.data.data;
       }
-      return { current: 0, pages: 0, records: [], size: 0, total: 0 };
+      return {
+        has_task: 'false',
+        record: { current: 0, pages: 0, records: [], size: 0, total: 0 },
+      };
     },
   });
 
@@ -833,7 +844,13 @@ export const useFetchRetrievalQuestionPageList = (
   const knowledgeBaseId = useKnowledgeBaseId();
 
   const { data, isFetching: loading } = useQuery({
-    queryKey: ['fetchRetrievalQuestionPageList', knowledgeBaseId, page, pageSize, filters],
+    queryKey: [
+      'fetchRetrievalQuestionPageList',
+      knowledgeBaseId,
+      page,
+      pageSize,
+      filters,
+    ],
     enabled: !!knowledgeBaseId,
     queryFn: async () => {
       if (!knowledgeBaseId)
@@ -888,7 +905,11 @@ export const useFetchQuestionCategory = () => {
 export const useFetchAllQuestions = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
-  const { data, isFetching: loading, refetch } = useQuery({
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['fetchAllQuestions', knowledgeBaseId],
     enabled: !!knowledgeBaseId,
     queryFn: async () => {
@@ -970,7 +991,11 @@ export const useGenerateAiQuestion = () => {
 
 // 轮询获取AI问题生成进度
 export const useGenerateProgress = (historyId: string | null) => {
-  const { data, isFetching: loading, refetch } = useQuery({
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['fetchGenerateProgress', historyId],
     enabled: !!historyId,
     refetchInterval: (query) => {
@@ -1001,14 +1026,18 @@ export const useGenerateProgress = (historyId: string | null) => {
 
 // 轮询获取检索任务进度
 export const useRetrievalTaskProgress = (taskId: string | null) => {
-  const { data, isFetching: loading, refetch } = useQuery({
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['fetchRetrievalTaskProgress', taskId],
     enabled: !!taskId,
     refetchInterval: (query) => {
       // 如果进度为1（100%）或状态为完成，停止轮询
       const progress = query.state.data?.progress;
       // const status = query.state.data?.status;
-      if (progress === 1 ) {
+      if (progress === 1) {
         return false;
       }
       // 否则每2秒轮询一次
@@ -1039,7 +1068,7 @@ export const useSaveAiQuestions = () => {
   const { mutateAsync, isPending: loading } = useMutation({
     mutationFn: async (params: { aiQuestions: any[]; historyId: string }) => {
       if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
-      
+
       const response = await saveAiQuestions({
         ai_generate_questions: params.aiQuestions,
         kb_id: knowledgeBaseId,
@@ -1077,10 +1106,10 @@ export const useSaveRetrievalTask = () => {
       task_name: string;
       test_ques_ids: string[];
       selectedQuestionsData?: Array<{ id: string; question_text: string }>;
-      similarity_threshold:number;
-      top_k:number;
-      rerank_id:string;
-      vector_similarity_weight:number;
+      similarity_threshold: number;
+      top_k: number;
+      rerank_id: string;
+      vector_similarity_weight: number;
     }) => {
       if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
 
@@ -1098,10 +1127,10 @@ export const useSaveRetrievalTask = () => {
         vector_similarity_weight: params.vector_similarity_weight,
         rerank_id: params.rerank_id,
         top_k: params.top_k,
-        questions: questions.map((q:any) => ({
+        questions: questions.map((q: any) => ({
           question_id: q.question_id || q.id,
-          question_text: q.question_text
-        }))
+          question_text: q.question_text,
+        })),
       });
 
       if (response?.data?.code === 0) {
@@ -1180,12 +1209,15 @@ export const useDeleteQuestions = () => {
 export const useFetchAiQuestionCount = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
-  const { data, isFetching: loading, refetch } = useQuery({
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['fetchAiQuestionCount', knowledgeBaseId],
     enabled: !!knowledgeBaseId,
     queryFn: async () => {
-      if (!knowledgeBaseId)
-        return { limitCount: 0, recommendCount: 0 };
+      if (!knowledgeBaseId) return { limitCount: 0, recommendCount: 0 };
       const response = await getAiQuestionCount({
         kb_id: knowledgeBaseId,
         doc_ids: [],
@@ -1208,7 +1240,11 @@ export const useFetchAiQuestionCount = () => {
 export const useFetchAiQuestionCountByDocIds = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
-  const { data, isFetching: loading, refetch } = useQuery({
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['fetchAiQuestionCountByDocIds', knowledgeBaseId],
     enabled: false,
     queryFn: async () => ({ limitCount: 0, recommendCount: 0 }),
@@ -1216,14 +1252,25 @@ export const useFetchAiQuestionCountByDocIds = () => {
 
   const fetchCount = async (docIds: string[]) => {
     if (!knowledgeBaseId) return { limitCount: 0, recommendCount: 0 };
-    const response = await getAiQuestionCountByDocIds({ kb_id: knowledgeBaseId, doc_ids: docIds  });
+    const response = await getAiQuestionCountByDocIds({
+      kb_id: knowledgeBaseId,
+      doc_ids: docIds,
+    });
     if (response?.data?.code === 0) {
-      return response.data.data as { limitCount: number; recommendCount: number };
+      return response.data.data as {
+        limitCount: number;
+        recommendCount: number;
+      };
     }
     return { limitCount: 0, recommendCount: 0 };
   };
 
-  return { data: data || { limitCount: 0, recommendCount: 0 }, loading, refetch, fetchCount };
+  return {
+    data: data || { limitCount: 0, recommendCount: 0 },
+    loading,
+    refetch,
+    fetchCount,
+  };
 };
 
 // 选中文档生成问题
@@ -1231,7 +1278,10 @@ export const useOtherDocGenerateAiQuestion = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
   const { mutateAsync, isPending: loading } = useMutation({
-    mutationFn: async (params: { doc_ids: string[]; question_count: number }) => {
+    mutationFn: async (params: {
+      doc_ids: string[];
+      question_count: number;
+    }) => {
       if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
       const response = await otherDocGenerateAiQuestion({
         kb_id: knowledgeBaseId,
@@ -1252,7 +1302,11 @@ export const useOtherDocGenerateAiQuestion = () => {
 export const useFetchCheckFirstGenerate = () => {
   const knowledgeBaseId = useKnowledgeBaseId();
 
-  const { data, isFetching: loading, refetch } = useQuery({
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['fetchCheckFirstGenerate', knowledgeBaseId],
     enabled: false, // 默认不自动执行，只在需要时手动调用
     queryFn: async () => {
@@ -1273,20 +1327,29 @@ export const useFetchCheckFirstGenerate = () => {
 };
 
 // 获取检索任务报告
-export const useFetchRetrievalTaskReport = (taskId?: string, page: number = 0, pageSize: number = 0) => {
-  const { data, isFetching: loading, refetch } = useQuery({
+export const useFetchRetrievalTaskReport = (
+  taskId?: string,
+  page: number = 0,
+  pageSize: number = 0,
+) => {
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
     queryKey: ['fetchRetrievalTaskReport', taskId, page, pageSize],
     enabled: !!taskId,
     queryFn: async () => {
-      if (!taskId) return {
-        accuracy_rate: 0,
-        answerable_rate: 0,
-        create_time: '',
-        question_count: 0,
-        score: 0,
-        task_id: '',
-        update_time: ''
-      };
+      if (!taskId)
+        return {
+          accuracy_rate: 0,
+          answerable_rate: 0,
+          create_time: '',
+          question_count: 0,
+          score: 0,
+          task_id: '',
+          update_time: '',
+        };
       const response = await getRetrievalTaskReport({
         task_id: taskId,
         ai_generate: true,
@@ -1305,7 +1368,7 @@ export const useFetchRetrievalTaskReport = (taskId?: string, page: number = 0, p
         question_count: 0,
         score: 0,
         task_id: '',
-        update_time: ''
+        update_time: '',
       };
     },
   });
@@ -1318,7 +1381,7 @@ export const useFetchRetrievalTaskReport = (taskId?: string, page: number = 0, p
       question_count: 0,
       score: 0,
       task_id: '',
-      update_time: ''
+      update_time: '',
     },
     loading,
     refetch,
@@ -1327,32 +1390,45 @@ export const useFetchRetrievalTaskReport = (taskId?: string, page: number = 0, p
 
 // 获取检索任务问题列表
 export const useFetchRetrievalTaskQuestionList = (
-  taskId?: string, 
-  page: number = 1, 
+  taskId?: string,
+  page: number = 1,
   pageSize: number = 10,
   aiGenerate?: boolean,
   category?: string,
-  result?: number
+  result?: number,
 ) => {
-  const { data, isFetching: loading, refetch } = useQuery({
-    queryKey: ['fetchRetrievalTaskQuestionList', taskId, page, pageSize, aiGenerate, category, result],
+  const {
+    data,
+    isFetching: loading,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      'fetchRetrievalTaskQuestionList',
+      taskId,
+      page,
+      pageSize,
+      aiGenerate,
+      category,
+      result,
+    ],
     enabled: !!taskId,
     queryFn: async () => {
-      if (!taskId) return {
-        page_result: {
-          current: 0,
-          pages: 0,
-          records: [],
-          size: 0,
-          total: 0
-        },
-        statistics: {
-          ai_generate_category: [],
-          ai_generate_count: 0,
-          manual_input_count: 0,
-          total_question_count: 0
-        }
-      };
+      if (!taskId)
+        return {
+          page_result: {
+            current: 0,
+            pages: 0,
+            records: [],
+            size: 0,
+            total: 0,
+          },
+          statistics: {
+            ai_generate_category: [],
+            ai_generate_count: 0,
+            manual_input_count: 0,
+            total_question_count: 0,
+          },
+        };
       const response = await getRetrievalTaskQuestionList({
         task_id: taskId,
         ai_generate: aiGenerate,
@@ -1370,14 +1446,14 @@ export const useFetchRetrievalTaskQuestionList = (
           pages: 0,
           records: [],
           size: 0,
-          total: 0
+          total: 0,
         },
         statistics: {
           ai_generate_category: [],
           ai_generate_count: 0,
           manual_input_count: 0,
-          total_question_count: 0
-        }
+          total_question_count: 0,
+        },
       };
     },
   });
@@ -1389,14 +1465,14 @@ export const useFetchRetrievalTaskQuestionList = (
         pages: 0,
         records: [],
         size: 0,
-        total: 0
+        total: 0,
       },
       statistics: {
         ai_generate_category: [],
         ai_generate_count: 0,
         manual_input_count: 0,
-        total_question_count: 0
-      }
+        total_question_count: 0,
+      },
     },
     loading,
     refetch,

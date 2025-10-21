@@ -9,7 +9,8 @@
     "prepare": "cd .. && husky web/.husky",
     "setup": "umi setup",
     "start": "npm run dev",
-    "test": "jest --no-cache --coverage"
+    "test": "jest --no-cache --coverage",
+    "count-lines": "npx line-count \"src/**/*.{js,jsx,ts,tsx,html,css,less,sass,scss}\" \"^!src/components/**/*\""
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,less,json}": [
