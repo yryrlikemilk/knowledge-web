@@ -11,8 +11,9 @@ import kbService, {
   documentRm,
   listDocument,
   getTaskList,
+  getKnowledgeRunStatus,
 } from '@/services/knowledge-service';
-import api, { api_host,api_rag_host } from '@/utils/api';
+import api, { api_rag_host } from '@/utils/api';
 import { buildChunkHighlights } from '@/utils/document-util';
 import { post } from '@/utils/request';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -84,45 +85,59 @@ export const useFetchNextDocumentList = () => {
   const queryResult = useQuery({
     queryKey: ['fetchDocumentAndTaskList', knowledgeId || id, searchFilters, pagination],
     enabled: !!knowledgeId || !!id,
-    refetchInterval: 60000,
+    refetchInterval: 30000,
     queryFn: async () => {
       const kbId = knowledgeId || id;
-      if (!kbId) return { docs: [], total: 0, taskList: [] };
-      // 1. 获取文档列表
-      const ret = await listDocument({
-        kbId,
-        name: searchFilters.name,
-        chunkMethod: searchFilters.chunkMethod,
-        status: searchFilters.status,
-        run: searchFilters.run || [],
-        metadataCondition: {
-          conditions: [
-            {
-              name: searchFilters.key,
-              value: searchFilters.value,
-              comparison_operator: 'eq',
-            },
-          ],
-          logical_operator: '',
-        },
-        startDate: searchFilters.startDate,
-        endDate: searchFilters.endDate,
-        pageSize: pagination.pageSize,
-        page: pagination.current,
-      } as any);
+      if (!kbId) return { docs: [], total: 0, taskList: [], runStatus: { doc_ids: [], run: 0, success_num: 0 } };
+      
+      // 并行调用三个接口
+      const [docResult, taskResult, runStatusResult] = await Promise.all([
+        // 1. 获取文档列表
+        listDocument({
+          kbId,
+          name: searchFilters.name,
+          chunkMethod: searchFilters.chunkMethod,
+          status: searchFilters.status,
+          run: searchFilters.run || [],
+          metadataCondition: {
+            conditions: [
+              {
+                name: searchFilters.key,
+                value: searchFilters.value,
+                comparison_operator: 'eq',
+              },
+            ],
+            logical_operator: '',
+          },
+          startDate: searchFilters.startDate,
+          endDate: searchFilters.endDate,
+          pageSize: pagination.pageSize,
+          page: pagination.current,
+        } as any),
+        // 2. 获取任务列表
+        getTaskList(kbId),
+        // 3. 获取知识库运行状态
+        getKnowledgeRunStatus(kbId)
+      ]);
+
       let docs: any[] = [];
       let total = 0;
-      if (ret.data.code === 0) {
-        docs = ret.data.data.records;
-        total = ret.data.data.total;
+      if (docResult.data.code === 0) {
+        docs = docResult.data.data.records;
+        total = docResult.data.data.total;
       }
-      // 2. 获取任务列表
-      const res = await getTaskList(kbId);
+
       let taskList: any[] = [];
-      if (res?.data?.code === 0 && Array.isArray(res.data.data)) {
-        taskList = res.data.data.filter((t: any) => t.status !== 'SUCCESS');
+      if (taskResult?.data?.code === 0 && Array.isArray(taskResult.data.data)) {
+        taskList = taskResult.data.data.filter((t: any) => t.status !== 'SUCCESS');
       }
-      return { docs, total, taskList };
+
+      let runStatus = { doc_ids: [], run: 0, success_num: 0 };
+      if (runStatusResult?.data?.code === 0) {
+        runStatus = runStatusResult.data.data;
+      }
+
+      return { docs, total, taskList, runStatus };
     },
   });
 
@@ -193,6 +208,7 @@ export const useFetchNextDocumentList = () => {
     docNames,
     setPagination,
     taskList: queryResult.data?.taskList || [],
+    runStatus: queryResult.data?.runStatus || { doc_ids: [], run: 0, success_num: 0 },
   };
 };
 

@@ -1,11 +1,9 @@
 import ChunkMethodModal from '@/components/chunk-method-modal';
 import SvgIcon from '@/components/svg-icon';
-import {
-  useFetchNextDocumentList,
+import { useFetchNextDocumentList,
   useSetNextDocumentStatus,
   // usePollingTaskList, // 移除未导出hook
 } from '@/hooks/document-hooks';
-import { useFetchKnowledgeRunStatus } from '@/hooks/knowledge-hooks';
 import { useSetSelectedRecord } from '@/hooks/logic-hooks';
 import { useSelectParserList } from '@/hooks/user-setting-hooks';
 import { getExtension } from '@/utils/document-util';
@@ -59,13 +57,12 @@ import { useNavigate } from 'umi';
 const { Text } = Typography;
 
 const KnowledgeFile = () => {
-  const { documents, pagination, handleSearch, handleReset, loading, taskList, isShowProgress, docNames } = useFetchNextDocumentList();
+  const { documents, pagination, handleSearch, handleReset, loading, taskList, isShowProgress, docNames, runStatus } = useFetchNextDocumentList();
   const [filteredDocuments, setFilteredDocuments] = useState<IDocumentInfo[]>([]);
   const parserList = useSelectParserList();
   const { setDocumentStatus } = useSetNextDocumentStatus();
   const { toChunk } = useNavigateToOtherPage();
   const { currentRecord, setRecord } = useSetSelectedRecord<IDocumentInfo>();
-  const { runStatus } = useFetchKnowledgeRunStatus();
     const navigate = useNavigate();
   const {
     renameLoading,
@@ -586,7 +583,9 @@ const KnowledgeFile = () => {
       <ChunkMethodModal
         documentId={currentRecord.id}
         parserId={currentRecord.parser_id as any}
-        parserConfig={currentRecord.parser_config}
+        parserConfig={typeof currentRecord.parser_config === 'string' 
+          ? JSON.parse(currentRecord.parser_config) 
+          : currentRecord.parser_config}
         documentExtension={getExtension(currentRecord.name)}
         onOk={onChangeParserOk as any}
         visible={changeParserVisible}
