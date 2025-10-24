@@ -317,7 +317,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                         maxWidth: '600px',
                         width: '100%'
                     }}>
-                        <div style={{ marginBottom: '24px' }}>
+                        <div style={{ marginBottom: '20px' }}>
                             <span style={{
                                 fontSize: 18,
                                 fontWeight: "normal",
@@ -352,12 +352,12 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                         width: '100%',
                         display: 'flex',
                         justifyContent: 'center',
-                        padding: '0 40px',
+                        padding: '0 110px',
                         alignItems: 'center'
 
                     }}>
                         <div style={{ zIndex: 3, textAlign: 'center' }}>
-                            <img style={{ width: 140 }} src={set1} alt="第一步" />
+                            <img style={{ width: 120 }} src={set1} alt="第一步" />
                         </div>
                         <div style={{
                             flex: 1,
@@ -383,7 +383,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                             </svg>
                         </div>
                         <div style={{ zIndex: 3, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <img style={{ width: 140 }} src={set2} alt="第二步" />
+                            <img style={{ width: 120 }} src={set2} alt="第二步" />
                         </div>
                         <div style={{
                             flex: 1,
@@ -410,7 +410,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                         </div>
 
                         <div style={{ zIndex: 3, textAlign: 'center' }}>
-                            <img style={{ width: 140 }} src={set3} alt="第三步" />
+                            <img style={{ width: 120 }} src={set3} alt="第三步" />
                         </div>
                     </div>
                     <div style={{
@@ -421,11 +421,37 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                         marginBottom: 10,
                         alignItems: 'center',
                         padding: '0 40px',
+                        textAlign: 'center'
 
                     }}>
-                        <span style={{ width: '140px', textAlign: 'center' }}>1.准备测试问题</span>
-                        <span style={{ width: '180px', textAlign: 'center' }}>2.设置检索参数&评估指标</span>
-                        <span style={{ width: '140px', textAlign: 'center' }}>3.自动生成评估报告</span>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center'
+                        }}>
+
+                            <span style={{ width: '140px', textAlign: 'center',marginBottom:12 }}>1.准备测试问题</span>
+                            <img src={set11} style={{ width: '265px', height: "170" }} alt="" />
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center'
+                        }}>
+
+                            <span style={{ width: '180px', textAlign: 'center',marginBottom:12  }}>2.设置检索参数&评估指标</span>
+                            <img src={set22} style={{ width: '265px', height: "170" }} alt="" />
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center'
+                        }}>
+
+                            <span style={{ width: '140px', textAlign: 'center',marginBottom:12  }}>3.自动生成评估报告</span>
+                            <img src={set33} style={{ width: '265px', height: "170" }} alt="" />
+
+                        </div>
                     </div>
                     <div style={{
                         width: '100%',
@@ -436,9 +462,9 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
 
                     }}>
 
-                        <img src={set11} style={{ width: '330px', height: "170" }} alt="" />
-                        <img src={set22} style={{ width: '330px', height: "170" }} alt="" />
-                        <img src={set33} style={{ width: '330px', height: "170" }} alt="" />
+
+
+
                     </div>
                 </div >
             )}
