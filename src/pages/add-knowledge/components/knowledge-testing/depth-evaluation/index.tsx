@@ -9,7 +9,7 @@ const DeepSearch = () => {
 
     return (
         <div className={styles.deepSearchWrapper}>
-            <div  style={{ width: '100%' ,height:'100%',flexDirection:'column',display:'flex',minWidth:1000}}>
+            <div  style={{ width: '100%' ,height:'100%',flexDirection:'column',display:'flex',minWidth:980}}>
                 <div style={{
                     display: 'flex', justifyContent: 'start',
                 }}>
