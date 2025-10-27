@@ -123,7 +123,7 @@ const TestingControl = ({
           // wrapperCol={{ span: 20 }}
           labelCol={{ flex: '160px' }}
           labelWrap
-          wrapperCol={{ flex: 1 }}
+          wrapperCol={{ flex: '1 1 0' }}
           labelAlign="right"
         >
           <div className={styles.formContent}>

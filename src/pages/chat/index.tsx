@@ -8,6 +8,7 @@ import {
   Dropdown,
   Flex,
   MenuProps,
+  message,
   Space,
   Spin,
   Typography,
@@ -197,14 +198,18 @@ const Chat = () => {
   );
 
   const handleCreateTemporaryConversation = useCallback(() => {
+    if (!(dialogList.length > 0)) {
+      message.warning('请先创建一个助理');
+      return;
+    }
     addTemporaryConversation();
-  }, [addTemporaryConversation]);
+  }, [addTemporaryConversation, dialogList]);
 
   useEffect(() => {
     // 只在没有选中会话 或 当前会话已被删除时自动跳转
     const exist = conversationList.some(item => item.id === conversationId);
     if (conversationList.length > 0 && (!conversationId || !exist)) {
-        handleConversationCardClick(conversationList[0].id, conversationList[0].is_new)();
+      handleConversationCardClick(conversationList[0].id, conversationList[0].is_new)();
     }
   }, [conversationList, conversationId, handleConversationCardClick]);
 
@@ -393,7 +398,7 @@ const Chat = () => {
             </Spin>
           </Flex>
         </Flex>
-         <Divider  className={styles.divider}></Divider>
+        <Divider className={styles.divider}></Divider>
         <Flex className={styles.chatTitleWrapper}>
           <Flex flex={1} vertical>
             {/* <Flex
@@ -480,7 +485,7 @@ const Chat = () => {
         </Flex>
       </Flex>
 
-     
+
       <ChatContainer controller={controller}></ChatContainer>
       {dialogEditVisible && (
         <ChatConfigurationModal

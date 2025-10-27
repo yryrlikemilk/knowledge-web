@@ -56,13 +56,17 @@ const PreviewModal = ({ visible, hideModal, docId }: IProps) => {
                             setWidthAndHeight={setWidthAndHeight}
                             docId={docId}
                         />
-                    ) : (
+                    ) :data.length>0? (
                         <div className={styles.textContent}>
                             {data.map((item) => (
                                 <div key={item.chunk_id} className={styles.textItem}>
                                     <div className={styles.textTitle}> {item.content_with_weight}</div>
                                 </div>
                             ))}
+                        </div>
+                    ):(
+                        <div className={styles.textContent} style={{textAlign:'center',fontSize:'20px'}}>
+                           没有分块
                         </div>
                     )}
                 </Spin>

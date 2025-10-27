@@ -195,7 +195,7 @@ const FileToolbar = ({
 
               />
             </Form.Item>
-            <Form.Item name="knowledgeName" label="知识库名称">
+            {/* <Form.Item name="knowledgeName" label="知识库名称">
               <Input
                 placeholder="请输入知识库名称"
                 style={{ width: 190 }}
@@ -212,7 +212,7 @@ const FileToolbar = ({
                 format="YYYY-MM-DD"
                 allowClear
               />
-            </Form.Item>
+            </Form.Item> */}
           </Space>
 
 
