@@ -118,7 +118,7 @@ const ManualInputModal: React.FC<ManualInputModalProps> = ({ visible, onCancel, 
                 labelAlign="right"
                 // style={{height:260}}
             >
-                <div style={{marginTop:40,height:500,overflow:'auto'}}>
+                <div style={{marginTop:40,overflow:'auto',minHeight:100,maxHeight:500}}>
                     {/* 隐藏的 Form.Item 用于存储 question 数组 */}
                     <Form.Item name="question" hidden>
                         <Input />

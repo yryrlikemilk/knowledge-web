@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Button, Pagination, Dropdown, message, Tooltip } from 'antd';
+import { Button, Pagination, Dropdown, message, Tooltip , Image } from 'antd';
 import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { useLocation, useNavigate } from 'umi';
@@ -7,6 +7,7 @@ import request from '@/utils/request';
 import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList, useExportQuestionCategory } from '@/hooks/knowledge-hooks';
 // import request from '@/utils/request';
 import RetrievalResultModal from './retrieval-result-modal';
+import OptimizationSuggestionModal from './optimization-suggestion-modal';
 import styles from './index.less'; // 新增：引入样式模块
 import cha from '@/assets/imgs/cha.png';
 import you from '@/assets/imgs/you.png';
@@ -54,6 +55,9 @@ const ReportDetail: React.FC = () => {
   // 检索结果弹窗状态
   const [retrievalModalVisible, setRetrievalModalVisible] = useState(false);
   const [itemQuestion, setItemQuestion] = useState<any>(null)
+
+  // 优化建议弹窗状态
+  const [optimizationModalVisible, setOptimizationModalVisible] = useState(false);
   // 获取报告数据
   const { reportData, loading: reportLoading } = useFetchRetrievalTaskReport(reportId, currentPage, pageSize);
 
@@ -427,7 +431,7 @@ const ReportDetail: React.FC = () => {
   }
 
   return (
-    <div style={{ height: '100%', width: '100%', backgroundColor: '#F2F3F5',minWidth: 1080,overflow: 'auto' }}>
+    <div style={{ height: '100%', width: '100%', backgroundColor: '#F2F3F5', minWidth: 1080, overflow: 'auto' }}>
       <div style={{ backgroundColor: '#fff', borderRadius: 4, marginBottom: 20 }}>
 
         <div style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -443,7 +447,7 @@ const ReportDetail: React.FC = () => {
         </div>
         <div style={{ padding: 16 }}>
           <div className='flex justify-between mb-4'>
-            <div className=' p-4 ' style={{ width: "25%",boxShadow: '0px 4px 12px 0px rgba(0, 0, 0, 0.12)',borderRadius: '16px' }}>
+            <div className=' p-4 ' style={{ width: "25%", boxShadow: '0px 4px 12px 0px rgba(0, 0, 0, 0.12)', borderRadius: '16px' }}>
               <div className='text-left w-full flex items-center gap-2'>
                 <span>评估分数</span>
                 <Tooltip title="0.4 x 可回答率子分数 + 0.4 x 准确率子分数 + 0.2 x 覆盖度子分数" placement="top">
@@ -454,9 +458,9 @@ const ReportDetail: React.FC = () => {
                     fill="none"
                     style={{ cursor: 'pointer', color: '#999' }}
                   >
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="12" cy="17" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="12" cy="17" r="1" fill="currentColor" />
                   </svg>
                 </Tooltip>
               </div>
@@ -476,12 +480,12 @@ const ReportDetail: React.FC = () => {
             </div>
 
 
-            <div className=' p-4 ' style={{ width: "73%" ,boxShadow: ' 0px 4px 12px 0px rgba(0, 0, 0, 0.12)',borderRadius: '16px'}}>
-              <div className='w-full text-left' style={{ color: '#1D2129' ,marginBottom:'16px'}}>单项情况</div>
+            <div className=' p-4 ' style={{ width: "73%", boxShadow: ' 0px 4px 12px 0px rgba(0, 0, 0, 0.12)', borderRadius: '16px' }}>
+              <div className='w-full text-left' style={{ color: '#1D2129', marginBottom: '16px' }}>单项情况</div>
               <div className='flex justify-center gap-4'>
                 <div className='p-4 ' style={{
                   width: "40%",
-                  height:110,
+                  height: 110,
                   backgroundImage: `url(${reportDetailTopBg})`,
                   backgroundRepeat: 'no-repeat',
                   backgroundSize: 'cover',
@@ -494,7 +498,7 @@ const ReportDetail: React.FC = () => {
 
                 </div>
                 <div className='p-4' style={{
-                  width: "40%", height:110,
+                  width: "40%", height: 110,
                   backgroundImage: `url(${reportDetailTopBg})`,
                   backgroundRepeat: 'no-repeat',
                   backgroundSize: 'cover',
@@ -511,7 +515,7 @@ const ReportDetail: React.FC = () => {
                   title={`根据知识库文件个数、大小建议需 ${reportData?.recommend_count} 个问题进行测试。`}
                 >
                   <div className='p-4' style={{
-                    width: "40%", height:110,
+                    width: "40%", height: 110,
                     backgroundImage: `url(${reportDetailTopBg})`,
                     backgroundRepeat: 'no-repeat',
                     backgroundSize: 'cover',
@@ -595,11 +599,20 @@ const ReportDetail: React.FC = () => {
                           问题可回答率高，但部分问题的答案准确率低,建议优化参数或者补充相关文档试试，
                         </span>
                         <Button type='link'
-                          style={{ color: '#1677ff', cursor: 'pointer', textDecoration: 'underline' }}
+                          style={{ color: '#1677ff', cursor: 'pointer' }}
                           onClick={() => handleResultChange(2)}
                         >
                           点击查看回答准确率较低的问题
                         </Button>
+                        <div>
+                          <Button
+                            type='link'
+                            style={{ color: '#1677ff', cursor: 'pointer', padding: 0 }}
+                            onClick={() => setOptimizationModalVisible(true)}
+                          >
+                            点击查看具体优化建议
+                          </Button>
+                        </div>
                       </div>
 
                     ) : (
@@ -756,6 +769,26 @@ const ReportDetail: React.FC = () => {
             onCancel={() => setRetrievalModalVisible(false)}
             itemQuestion={itemQuestion}
           />
+
+          {/* 优化建议弹窗 */}
+          <OptimizationSuggestionModal
+            visible={optimizationModalVisible}
+            onClose={() => setOptimizationModalVisible(false)}
+            title="具体优化方向"
+
+          >
+            {/* 在这里添加您的优化建议内容 */}
+            <div>
+              <p style={{ marginBottom: '16px' }}>1、调整混合检索的权重参数</p>
+              <Image src={require('@/assets/imgs/step1.png')} style={{ width: 500 }} alt="step1" />
+              <p style={{ margin: '16px 0' }}>2、添加重排序模型</p>
+              <Image src={require('@/assets/imgs/step2.png')} style={{ width: 500 }} alt="step1" />
+              <p style={{ margin: '16px 0' }}>3、检查并调整文件分片方法、分段大小等，确保分片合适且正确</p>
+              <Image src={require('@/assets/imgs/step3.png')} style={{ width: 500 }} alt="step1" />
+              <p style={{ margin: '16px 0' }}>4、选择合适领域的嵌入模型</p>
+              <Image src={require('@/assets/imgs/step4.png')} style={{ width: 500 }} alt="step1" />
+            </div>
+          </OptimizationSuggestionModal>
         </div>
       </div>
     </div>

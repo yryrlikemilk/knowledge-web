@@ -194,7 +194,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
         {
             title: '操作',
             key: 'action',
-            width: 100,
+            width: 120,
             fixed: 'right',
             render: (_, record) => (
                 <Button
@@ -311,19 +311,19 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                     // justifyContent: 'center',
                     alignItems: 'center'
                 }}>
-                    <img style={{ margin: "20px 0", height: 180, width: 180 }} src={depthEvaluationNoData} alt="图片" />
+                    <img style={{ margin: "20px 0", height: 200, width: 200 }} src={depthEvaluationNoData} alt="图片" />
                     <div style={{
                         textAlign: 'center',
                         maxWidth: '600px',
                         width: '100%'
                     }}>
-                        <div style={{ marginBottom: '20px' }}>
+                        <div style={{ margin: '20px 0' }}>
                             <span style={{
                                 fontSize: 18,
                                 fontWeight: "normal",
                                 color: '#1D2129'
                             }}>你还没有创建过深度评估任务</span>
-                            <Paragraph type="secondary" style={{ color: ' rgba(29, 33, 41, 0.55)' }}>
+                            <Paragraph type="secondary" style={{ color: ' rgba(29, 33, 41, 0.55)',margin:'20px 0' }}>
                                 点击创建，选择评估问题集，大模型自动打分，并生成评估报告
                             </Paragraph>
                         </div>

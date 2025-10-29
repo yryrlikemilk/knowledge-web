@@ -126,15 +126,15 @@ const KnowledgeSidebar = () => {
 
     ];
     console.log(`data?.graph,data`, data?.graph, data);
-    if (!isEmpty(data?.graph)) {
-      list.push(
-        getItem(
-          KnowledgeRouteKey.KnowledgeGraph,
-          KnowledgeRouteKey.KnowledgeGraph,
-          <GitGraph />,
-        ),
-      );
-    }
+    // if (!isEmpty(data?.graph)) {
+    //   list.push(
+    //     getItem(
+    //       KnowledgeRouteKey.KnowledgeGraph,
+    //       KnowledgeRouteKey.KnowledgeGraph,
+    //       <GitGraph />,
+    //     ),
+    //   );
+    // }
 
     return list;
   }, [data, getItem, t]);

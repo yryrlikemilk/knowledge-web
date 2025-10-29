@@ -12,7 +12,7 @@ import {
 import { IDocumentInfo } from '@/interfaces/database/document';
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { Button, DatePicker, Flex, Form, Input, Select, Space } from 'antd';
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { RunningStatus } from './constant';
 
@@ -55,10 +55,19 @@ const DocumentToolbar = ({
 
   const handleSearch = () => {
     const values = form.getFieldsValue();
-    const { dateRange, ...rest } = values;
+    const { dateRange, key, value, ...rest } = values;
     const [startDate, endDate] = dateRange || [];
+    
+    // 验证元数据名和值必须同时输入
+    if ((key && !value) || (!key && value)) {
+      toast.error('元数据名和元数据值需要同时输入才能搜索');
+      return;
+    }
+    
     onSearch({
       ...rest,
+      key: key || '',
+      value: value || '',
       startDate,
       endDate,
     });
@@ -128,73 +137,73 @@ const DocumentToolbar = ({
     onChangeStatus(false);
   }, [onChangeStatus]);
 
-  const disabled = selectedRowKeys.length === 0;
+  // const disabled = selectedRowKeys.length === 0;
 
-  const items: MenuProps['items'] = useMemo(() => {
-    return [
-      {
-        key: '0',
-        onClick: handleEnableClick,
-        label: (
-          <Flex gap={10}>
-            <EnableIcon></EnableIcon>
-            <b>{t('enabled')}</b>
-          </Flex>
-        ),
-      },
-      {
-        key: '1',
-        onClick: handleDisableClick,
-        label: (
-          <Flex gap={10}>
-            <DisableIcon></DisableIcon>
-            <b>{t('disabled')}</b>
-          </Flex>
-        ),
-      },
-      { type: 'divider' },
-      {
-        key: '2',
-        onClick: handleRunClick,
-        label: (
-          <Flex gap={10}>
-            <RunIcon></RunIcon>
-            <b>{t('run')}</b>
-          </Flex>
-        ),
-      },
-      {
-        key: '3',
-        onClick: handleCancelClick,
-        label: (
-          <Flex gap={10}>
-            <CancelIcon />
-            <b>{t('cancel')}</b>
-          </Flex>
-        ),
-      },
-      { type: 'divider' },
-      {
-        key: '4',
-        onClick: handleDelete,
-        label: (
-          <Flex gap={10}>
-            <span className={styles.deleteIconWrapper}>
-              <DeleteIcon width={18} />
-            </span>
-            <b>{t('delete', { keyPrefix: 'common' })}</b>
-          </Flex>
-        ),
-      },
-    ];
-  }, [
-    handleDelete,
-    handleRunClick,
-    handleCancelClick,
-    t,
-    handleDisableClick,
-    handleEnableClick,
-  ]);
+  // const items = useMemo(() => {
+  //   return [
+  //     {
+  //       key: '0',
+  //       onClick: handleEnableClick,
+  //       label: (
+  //         <Flex gap={10}>
+  //           <EnableIcon></EnableIcon>
+  //           <b>{t('enabled')}</b>
+  //         </Flex>
+  //       ),
+  //     },
+  //     {
+  //       key: '1',
+  //       onClick: handleDisableClick,
+  //       label: (
+  //         <Flex gap={10}>
+  //           <DisableIcon></DisableIcon>
+  //           <b>{t('disabled')}</b>
+  //         </Flex>
+  //       ),
+  //     },
+  //     { type: 'divider' },
+  //     {
+  //       key: '2',
+  //       onClick: handleRunClick,
+  //       label: (
+  //         <Flex gap={10}>
+  //           <RunIcon></RunIcon>
+  //           <b>{t('run')}</b>
+  //         </Flex>
+  //       ),
+  //     },
+  //     {
+  //       key: '3',
+  //       onClick: handleCancelClick,
+  //       label: (
+  //         <Flex gap={10}>
+  //           <CancelIcon />
+  //           <b>{t('cancel')}</b>
+  //         </Flex>
+  //       ),
+  //     },
+  //     { type: 'divider' },
+  //     {
+  //       key: '4',
+  //       onClick: handleDelete,
+  //       label: (
+  //         <Flex gap={10}>
+  //           <span className={styles.deleteIconWrapper}>
+  //             <DeleteIcon width={18} />
+  //           </span>
+  //           <b>{t('delete', { keyPrefix: 'common' })}</b>
+  //         </Flex>
+  //       ),
+  //     },
+  //   ];
+  // }, [
+  //   handleDelete,
+  //   handleRunClick,
+  //   handleCancelClick,
+  //   t,
+  //   handleDisableClick,
+  //   handleEnableClick,
+  // ]);
 
   return (
     <div className={styles.filter} style={{ height: 'fit-content' }}>
@@ -204,19 +213,20 @@ const DocumentToolbar = ({
           layout="inline"
           className="flex-wrap"
           labelCol={{ style: { width: 80, textAlign: 'right' } }}
+          wrapperCol={{ style: { height:50 }  }}
         >
           <Space size="middle" align="center" wrap style={{ columnGap: '0' }}>
             <Form.Item name="name" label={t('fileName')}>
               <Input
                 placeholder={t('pleaseInputFileName')}
-                style={{ width: 190 }}
+                style={{ width: 200 }}
                 allowClear
               />
             </Form.Item>
             <Form.Item name="chunkMethod" label={t('chunkMethod')}>
               <Select
                 placeholder={"请选择切片方法"}
-                style={{ width: 190 }}
+                style={{ width: 200 }}
                 allowClear
                 options={parserList}
               />
@@ -224,7 +234,7 @@ const DocumentToolbar = ({
             <Form.Item name="status" label='启用状态'>
               <Select
                 placeholder={"请选择启用状态"}
-                style={{ width: 190 }}
+                style={{ width: 200 }}
                 allowClear
                 options={[
                   { label: t('enabled'), value: '1' },
@@ -236,7 +246,7 @@ const DocumentToolbar = ({
               <Select
                 mode="multiple"
                 placeholder="请选择解析状态"
-                style={{ width: 190 }}
+                style={{ width: 200 }}
                 allowClear
                 options={Object.entries(RunningStatus).map(([, value]) => ({
                   label: t(`runningStatus${value}`),
@@ -244,36 +254,64 @@ const DocumentToolbar = ({
                 }))}
               />
             </Form.Item>
-            <Form.Item name="key" label="元数据名">
+            <Form.Item 
+              name="key" 
+              label="元数据名"
+              dependencies={['value']}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, val) {
+                    const value = getFieldValue('value');
+                    if ((val && !value) || (!val && value)) {
+                      return Promise.reject(new Error('元数据名和元数据值需同时输入'));
+                    }
+                    return Promise.resolve();
+                  },
+                }),
+              ]}
+            >
               <Input
                 placeholder="请输入元数据字段名"
-                style={{ width: 190 }}
+                style={{ width: 200 }}
                 allowClear
               />
             </Form.Item>
-            <Form.Item name="value" label="元数据值">
+            <Form.Item 
+              name="value" 
+              label="元数据值"
+              dependencies={['key']}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, val) {
+                    const key = getFieldValue('key');
+                    if ((key && !val) || (!key && val)) {
+                      return Promise.reject(new Error('元数据名和元数据值需同时输入'));
+                    }
+                    return Promise.resolve();
+                  },
+                }),
+              ]}
+            >
               <Input
                 placeholder="请输入元数据值"
-                style={{ width: 190 }}
+                style={{ width: 200 }}
                 allowClear
               />
             </Form.Item>
             <Form.Item name="dateRange" label="创建时间">
               <DatePicker.RangePicker
-                style={{ width: 190 }}
+                style={{ width: 200 }}
                 format="YYYY-MM-DD"
                 allowClear
               />
             </Form.Item>
-            <div style={{ width: 160, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-              <Space>
+            <div style={{ width: 160,  height:50}}>
                 <Button style={{ padding: '0 10px' }} type="primary" onClick={handleSearch} icon={<SearchOutlined />}>
                   {t('search')}
                 </Button>
-                <Button style={{ padding: '0 10px' }} onClick={handleReset} icon={<ReloadOutlined />}>
+                <Button style={{ padding: '0 10px',marginLeft:10 }} onClick={handleReset} icon={<ReloadOutlined />}>
                   {t('reset')}
                 </Button>
-              </Space>
             </div>
           </Space>
 

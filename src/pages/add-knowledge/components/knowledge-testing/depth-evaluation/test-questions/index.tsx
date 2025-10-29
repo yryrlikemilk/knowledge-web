@@ -145,13 +145,13 @@ const TestQuestions = () => {
         },
         {
             title: '来源文件',
-            dataIndex: 'doc_id',
-            key: 'doc_id',
+            dataIndex: 'doc_name',
+            key: 'doc_name',
             width: 150,
             ellipsis: true,
-            render: (docId: string) => (
-                <Tooltip title={docId} placement="topLeft">
-                    <span style={{ cursor: 'help' }}>{docId || '-'}</span>
+            render: (doc_name: string) => (
+                <Tooltip title={doc_name} placement="topLeft">
+                    <span style={{ cursor: 'help' }}>{doc_name || '-'}</span>
                 </Tooltip>
             ),
         },
@@ -172,7 +172,7 @@ const TestQuestions = () => {
         {
             title: '操作',
             key: 'action',
-            width: 120,
+            width: 160,
             fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
