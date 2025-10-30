@@ -29,14 +29,14 @@ const ViewRetrievalParamsModal: React.FC<ViewRetrievalParamsModalProps> = ({ vis
 
     return (
         <Modal
-            title={<div style={{ textAlign: 'center' }}><span>检索参数 & 评估指标</span></div>}
+            title={<div style={{ textAlign: 'center' }}><span>检索参数</span></div>}
             open={visible}
             onCancel={onClose}
             width={600}
             footer={null}
         >
             <div>
-                <div style={{ paddingLeft: 20 }}>1、检索设置</div>
+                {/* <div style={{ paddingLeft: 20 }}>1、检索设置</div> */}
                 <div className='flex justify-center w-full'>
                     <Form layout="vertical" style={{ width: 500, margin: 20 }} form={form} disabled>
                         <Form.Item label="相似度阈值">
@@ -73,14 +73,12 @@ const ViewRetrievalParamsModal: React.FC<ViewRetrievalParamsModalProps> = ({ vis
                                 <Rerank />
                             </div>
                         ) : (
-                            <Form.Item label="Top K">
-                                <div style={{ width: '100%', lineHeight: '32px' }}>-</div>
-                            </Form.Item>
+                            <div></div>
                         )}
                     </Form>
                 </div>
 
-                <div style={{ paddingLeft: 20 }}>2、设定评估指标</div>
+                {/* <div style={{ paddingLeft: 20 }}>2、设定评估指标</div>
                 <div className='flex justify-center w-full'>
                     <div style={{ width: 500, margin: 20 }}>
                         <Tooltip
@@ -98,7 +96,7 @@ const ViewRetrievalParamsModal: React.FC<ViewRetrievalParamsModalProps> = ({ vis
                             </Button>
                         </Tooltip>
                     </div>
-                </div>
+                </div> */}
             </div>
         </Modal>
     );

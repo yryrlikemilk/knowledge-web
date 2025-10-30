@@ -139,7 +139,6 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                         rerank_id: formData.rerank_id,
                         top_k: formData.top_k
                     });
-                    console.log(`1231312313123132`,result)
                     if (result?.task_id) {
                         setTaskId(result.task_id);
                         setShowProgress(true);
@@ -434,10 +433,13 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                         placement="top"
                         mouseEnterDelay={0.2}
                         title={
-                            <div style={{ textAlign: 'left', lineHeight: 1.6 }}>
-                                <div>1、问题可回答率：表示测试的问题中，有多少能找到知识库的内容。</div>
-                                <div>2、问题回答准确率：表示找到的内容中，有多少是正确或相关的。</div>
-                            </div>
+                            <div style={{textAlign: 'left', lineHeight: 1.6}} >
+                            <div>回答率:系统能回答的问题比例</div>
+                            <div>答准确率:系统回答中正确的比例</div>
+                            <div>关性:答案内容与问题的匹配程度</div>
+                            <div>排序合理性:系统能否优先展示最相关答案</div>
+                            
+                        </div>
                         }
                     >
                         <Button key="system" type="primary" >
@@ -509,7 +511,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                     <div style={{ marginBottom: '20px' }}>
                         <Progress 
                             type="circle"
-                            percent={(taskData.progress || 0) * 100} 
+                            percent={((taskData.progress || 0) * 100).toFixed(2)} 
                             status={taskData.progress === 1 ? 'success' : 'active'}
                             strokeColor={{
                                 '0%': '#108ee9',
@@ -518,7 +520,7 @@ const CreateEvaluationModal: React.FC<CreateEvaluationModalProps> = ({ visible, 
                             size={120}
                         />
                         <div style={{ marginTop: '15px', color: '#666', fontSize: '14px' }}>
-                            进度: {(taskData.progress || 0) * 100}%
+                            进度: {((taskData.progress || 0) * 100).toFixed(2)}%
                         </div>
                     </div>
                     <div style={{ marginTop: '20px' }}>

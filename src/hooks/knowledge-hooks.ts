@@ -804,6 +804,7 @@ export const useFetchPageList = (
   const { data, isFetching: loading } = useQuery({
     queryKey: ['fetchPageList', knowledgeBaseId, page, pageSize, filters],
     enabled: !!knowledgeBaseId,
+    refetchInterval: 30000,
     queryFn: async () => {
       if (!knowledgeBaseId)
         return { current: 0, pages: 0, records: [], size: 0, total: 0 };

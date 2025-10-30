@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Typography, Button, Table, Tag, Input, Select, Space, Form, Spin } from 'antd';
+import { Typography, Button, Table, Tag, Input, Select, Space, Form, Spin, Tooltip } from 'antd';
 import { Eye, Search, RotateCcw } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import CreateEvaluationModal from './create-evaluation-modal';
@@ -169,7 +169,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             key: 'retrievalParams',
             width: 200,
             render: (_: any, record: any) => (
-                <Button type="link" onClick={() => openViewParams(record)}>
+                <Button type="link" style={{padding:0}} onClick={() => openViewParams(record)}>
                     相似度阈值{typeof record.similarity_threshold === 'number' ? record.similarity_threshold : '0'}
                 </Button>
             ),
@@ -179,10 +179,22 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             dataIndex: 'evaluationParams',
             key: 'evaluationParams',
             width: 150,
-            render: (_: any, record: any) => (
-                <Button type="link" onClick={() => openViewParams(record)}>
-                    系统默认指标
-                </Button>
+            render: () => (
+                <Tooltip placement="top"
+                    mouseEnterDelay={0.2}
+                    title={
+                        <div style={{ textAlign: 'left', lineHeight: 1.6 }}>
+                            <div>回答率:系统能回答的问题比例</div>
+                            <div>答准确率:系统回答中正确的比例</div>
+                            <div>关性:答案内容与问题的匹配程度</div>
+                            <div>排序合理性:系统能否优先展示最相关答案</div>
+                            
+                        </div>
+                    }>
+                    <Button key="system" type="link" style={{padding:0}}>
+                        系统默认指标
+                    </Button>
+                </Tooltip>
             ),
         },
         {
@@ -323,7 +335,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                                 fontWeight: "normal",
                                 color: '#1D2129'
                             }}>你还没有创建过深度评估任务</span>
-                            <Paragraph type="secondary" style={{ color: ' rgba(29, 33, 41, 0.55)',margin:'20px 0' }}>
+                            <Paragraph type="secondary" style={{ color: ' rgba(29, 33, 41, 0.55)', margin: '20px 0' }}>
                                 点击创建，选择评估问题集，大模型自动打分，并生成评估报告
                             </Paragraph>
                         </div>
@@ -430,7 +442,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                             alignItems: 'center'
                         }}>
 
-                            <span style={{ width: '140px', textAlign: 'center',marginBottom:12 }}>1.准备测试问题</span>
+                            <span style={{ width: '140px', textAlign: 'center', marginBottom: 12 }}>1.准备测试问题</span>
                             <img src={set11} style={{ width: '265px', height: "170" }} alt="" />
                         </div>
                         <div style={{
@@ -439,7 +451,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                             alignItems: 'center'
                         }}>
 
-                            <span style={{ width: '180px', textAlign: 'center',marginBottom:12  }}>2.设置检索参数&评估指标</span>
+                            <span style={{ width: '180px', textAlign: 'center', marginBottom: 12 }}>2.设置检索参数&评估指标</span>
                             <img src={set22} style={{ width: '265px', height: "170" }} alt="" />
                         </div>
                         <div style={{
@@ -448,7 +460,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                             alignItems: 'center'
                         }}>
 
-                            <span style={{ width: '140px', textAlign: 'center',marginBottom:12  }}>3.自动生成评估报告</span>
+                            <span style={{ width: '140px', textAlign: 'center', marginBottom: 12 }}>3.自动生成评估报告</span>
                             <img src={set33} style={{ width: '265px', height: "170" }} alt="" />
 
                         </div>
