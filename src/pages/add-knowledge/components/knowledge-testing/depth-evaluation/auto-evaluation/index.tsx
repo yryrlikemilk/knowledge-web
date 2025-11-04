@@ -233,7 +233,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             ) : pageList.record.records.length > 0 || pageList.has_task ? (
                 <div style={{ marginTop: '36px', width: '100%' }}>
                     <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Button type="primary" onClick={handleCreateTask}>新增评估任务</Button>
+                        <Button type="primary" disabled={pageList.has_running_task} onClick={handleCreateTask}>新增评估任务</Button>
                     </div>
 
                     {/* 筛选表单 */}

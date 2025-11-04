@@ -19,7 +19,7 @@ import request from '@/utils/request';
 interface RetrievalResultModalProps {
   visible: boolean;
   onCancel: () => void;
-  itemQuestion:any
+  itemQuestion: any
 }
 
 const similarityList: Array<{ field: keyof ITestingChunk; label: string }> = [
@@ -36,7 +36,7 @@ const ChunkTitle = ({ item }: { item: ITestingChunk }) => {
         typeof item[x.field] === 'number' ? (
           <Space key={x.field}>
             <span style={{ color: '#306EFD', fontSize: 20 }} className={styles.similarityCircle}>
-             { x.field === 'similarity' ? (item[x.field] as number).toFixed(2) : ((item[x.field] as number) * 100).toFixed(2)}
+              {x.field === 'similarity' ? (item[x.field] as number).toFixed(2) : ((item[x.field] as number) * 100).toFixed(2)}
             </span>
             <span className={styles.similarityText}>{t(camelCase(x.field))}</span>
           </Space>
@@ -53,7 +53,7 @@ const SelectFiles = ({ documents, selectedDocumentIds = [], setSelectedDocumentI
   onTesting: (ids: string[]) => void;
 }) => {
 
-    const { t } = useTranslate('fileManager');
+  const { t } = useTranslate('fileManager');
   const columns: any[] = [
     {
       title: 'Name',
@@ -135,20 +135,21 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
-  // fetchRetrieval：根据 question_id、page、page_size 和可选 doc_id 拉取检索结果
+  // fetchRetrieval：根据 question_id、page、page_size 和可选 doc_ids 拉取检索结果
   const fetchRetrieval = useCallback(
-    async (opts?: { page?: number; page_size?: number; doc_id?: string }) => {
+    async (opts?: { page?: number; page_size?: number; doc_ids?: string[] }) => {
       const p = opts?.page ?? page;
       const ps = opts?.page_size ?? pageSize;
-      const docId = opts?.doc_id;
+      const docIds = opts?.doc_ids || [];
       if (!visible || !itemQuestion?.id) return;
       setLoading(true);
       try {
-        const body: any = { question_id: itemQuestion.id, page: p, page_size: ps };
-        // 仅当传入单个 doc id 时带上 doc_id
-        if (typeof docId === 'string' && docId.trim() !== '') {
-          body.doc_id = docId;
-        }
+        const body: any = {
+          question_id: itemQuestion.id,
+          page: p,
+          page_size: ps,
+          doc_ids: Array.isArray(docIds) && docIds.length > 0 ? docIds : []
+        };
         const resp = await request.post('/api/retrievalTask/retrievalResult', { data: body });
         setRetrievalData(resp?.data || null);
       } catch (e) {
@@ -165,8 +166,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
   useEffect(() => {
     // 只有在弹窗可见且有 question id 时才请求
     if (!visible || !itemQuestion?.id) return;
-    const docIdToSend = selectedDocumentIds.length === 1 ? selectedDocumentIds[0] : undefined;
-    fetchRetrieval({ page, page_size: pageSize, doc_id: docIdToSend });
+    fetchRetrieval({ page, page_size: pageSize, doc_ids: selectedDocumentIds });
   }, [visible, itemQuestion?.id, page, pageSize, selectedDocumentIds, fetchRetrieval]);
 
   // 关闭时重置分页和数据
@@ -181,7 +181,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
 
   // 从API数据中提取chunks和documents
   const chunks = useMemo(() => {
-    console.log(`retrievalData.data`,retrievalData?.data)
+    console.log(`retrievalData.data`, retrievalData?.data)
     if (!retrievalData?.data?.records) return [];
     return retrievalData?.data?.records?.records.map((chunk: any): ITestingChunk => ({
       id: chunk.id || chunk.chunk_id,
@@ -190,7 +190,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
       content_with_weight: chunk.content_with_weight || chunk.content,
       doc_id: chunk.doc_id,
       doc_name: chunk.doc_name || chunk.title,
-      title: chunk.title,   
+      title: chunk.title,
       img_id: chunk.img_id || '',
       image_id: chunk.image_id || chunk.img_id || '',
       important_kwd: chunk.important_kwd || [],
@@ -220,7 +220,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
   const timeStrToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
     const parts = timeStr.split(':').map(Number);
-    
+
     if (parts.length === 4) {
       const [hours, minutes, seconds, milliseconds] = parts;
       return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
@@ -546,7 +546,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
     const regex = /\[IMG::([a-zA-Z0-9]+)\]/g;
     let match: RegExpExecArray | null;
     let key = 0;
-    console.log(`cleaned,regex`,cleaned,regex)
+    console.log(`cleaned,regex`, cleaned, regex)
     while ((match = regex.exec(cleaned)) !== null) {
       if (match.index > lastIndex) {
         const textHtml = cleaned.slice(lastIndex, match.index);
@@ -588,9 +588,8 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
   const onTesting = (ids: string[]) => {
     setSelectedDocumentIds(ids);
     setPage(1);
-    const docIdToSend = ids.length === 1 ? ids[0] : undefined;
-    fetchRetrieval({ page: 1, page_size: pageSize, doc_id: docIdToSend });
-   };
+    fetchRetrieval({ page: 1, page_size: pageSize, doc_ids: ids });
+  };
 
   return (
     <>
@@ -607,44 +606,40 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
           }
         }}
       >
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <Spin size="large" />
-          </div>
-        ) : (
-          <div className={styles.testingResultWrapper}>
-            <div style={{ display: 'flex', gap: '20px', height: '70vh',paddingTop:20 }}>
-          <div style={{
-            width: '250px',
-            borderRight: '1px solid #e8e8e8',
-            paddingRight: '16px',
-            maxHeight: '70vh',
-            overflowY: 'auto'
-          }}>
-            <h3 style={{
-              margin: '0 0 16px 0', fontSize: '16px', fontWeight: 'bold',
-              position: 'sticky', top: 0, backgroundColor: "#fff", overflow: 'hidden', zIndex: 99
+
+        <div className={styles.testingResultWrapper}>
+          <div style={{ display: 'flex', gap: '20px', height: '70vh', paddingTop: 20 }}>
+            <div style={{
+              width: '250px',
+              borderRight: '1px solid #e8e8e8',
+              paddingRight: '16px',
+              maxHeight: '70vh',
+              overflowY: 'auto'
             }}>
-              测试问题 
-            </h3>
+              <h3 style={{
+                margin: '0 0 16px 0', fontSize: '16px', fontWeight: 'bold',
+                position: 'sticky', top: 0, backgroundColor: "#fff", overflow: 'hidden', zIndex: 99
+              }}>
+                测试问题
+              </h3>
               <div
                 style={{
                   padding: '12px',
                   marginBottom: '8px',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  backgroundColor:  '#e6f7ff',
-                  border:  '1px solid #1890ff',
+                  backgroundColor: '#e6f7ff',
+                  border: '1px solid #1890ff',
                   transition: 'all 0.2s'
                 }}
               >
                 <div style={{
                   fontSize: '14px',
-                  fontWeight: 'bold' ,
+                  fontWeight: 'bold',
                   marginBottom: '4px',
-                  color: '#1890ff' 
+                  color: '#1890ff'
                 }}>
-                 {itemQuestion?.question_text } 
+                  {itemQuestion?.question_text}
                 </div>
                 <div style={{
                   fontSize: '12px',
@@ -657,52 +652,58 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
                   <span>文档数: {itemQuestion?.doc_count}</span>
                 </div>
               </div>
-          </div>
-              {/* 右边：结果显示 */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', position: 'relative', height: '100%' }}>
-                <div style={{ flex: 1, overflow: 'auto' }}>
-                  <h3 style={{
-                    margin: '0 0 16px 0', fontSize: '16px',
-                    fontWeight: 'bold', position: 'sticky', top: 0, backgroundColor: "#fff", overflow: 'hidden', zIndex: 99
-                  }}>
-                    检索结果
-                  </h3>
-                  <Collapse
-                    expandIcon={() => (
-                      <SelectedFilesCollapseIcon></SelectedFilesCollapseIcon>
-                    )}
-                    className={styles.selectFilesCollapse}
-                    items={[
-                      {
-                        key: '1',
-                        label: (
-                          <Flex
-                            justify={'space-between'}
-                            align="center"
-                            className={styles.selectFilesTitle}
-                          >
-                            <Space>
-                              <span>
-                                {selectedDocumentIds?.length ?? 0}/
-                                {documents?.length || 0}
-                              </span>
-                              {t('filesSelected')}
-                            </Space>
-                          </Flex>
-                        ),
-                        children: (
-                          <div key={documents.id}>
-                            <SelectFiles
-                              setSelectedDocumentIds={setSelectedDocumentIds}
-                              onTesting={onTesting}
-                              documents={documents}
-                              selectedDocumentIds={selectedDocumentIds}
-                            />
-                          </div>
-                        ),
-                      },
-                    ]}
-                  />
+            </div>
+            {/* 右边：结果显示 */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', position: 'relative', height: '100%' }}>
+              <div style={{ flex: 1, overflow: 'auto' }}>
+                <h3 style={{
+                  margin: '0 0 16px 0', fontSize: '16px',
+                  fontWeight: 'bold', position: 'sticky', top: 0, backgroundColor: "#fff", overflow: 'hidden', zIndex: 99
+                }}>
+                  检索结果
+                </h3>
+                <Collapse
+                  expandIcon={() => (
+                    <SelectedFilesCollapseIcon></SelectedFilesCollapseIcon>
+                  )}
+                  className={styles.selectFilesCollapse}
+                  defaultActiveKey={['1']}
+                  items={[
+                    {
+                      key: '1',
+                      label: (
+                        <Flex
+                          justify={'space-between'}
+                          align="center"
+                          className={styles.selectFilesTitle}
+                        >
+                          <Space>
+                            <span>
+                              {selectedDocumentIds?.length ?? 0}/
+                              {documents?.length || 0}
+                            </span>
+                            {t('filesSelected')}
+                          </Space>
+                        </Flex>
+                      ),
+                      children: (
+                        <div key={documents.id}>
+                          <SelectFiles
+                            setSelectedDocumentIds={setSelectedDocumentIds}
+                            onTesting={onTesting}
+                            documents={documents}
+                            selectedDocumentIds={selectedDocumentIds}
+                          />
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: 40 }}>
+                    <Spin size="large" />
+                  </div>
+                ) : (
                   <div className={styles.resultContent}>
                     <Flex
                       gap={'large'}
@@ -714,7 +715,9 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
                         chunks?.map((x: ITestingChunk) => {
                           const videoInfo = Array.isArray(videoChunkInfo) ? videoChunkInfo.find((v) => v.id === x.chunk_id) : null;
                           return (
-                            <Card key={String(x.chunk_id)} title={<ChunkTitle item={x} />}>
+                            <Card
+
+                              key={String(x.chunk_id)} title={<ChunkTitle item={x} />}>
                               <div className="flex justify-center flex-col">
                                 {showImage(x.doc_type_kwd) && (
                                   <Image
@@ -724,7 +727,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
                                   />
                                 )}
                               </div>
-                              <div className="pt-4" style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexDirection: 'column' }}>
+                              <div className="pt-2" style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexDirection: 'column' }}>
                                 <div style={{ flex: 1 }}>
                                   {x.content_ltks && (
                                     <div className={styles.highlightContent}>
@@ -732,6 +735,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
                                     </div>
                                   )}
                                 </div>
+
                                 {videoInfo && videoInfo.doc_id && (
                                   <div
                                     style={{
@@ -781,6 +785,8 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
                                   </div>
                                 )}
                               </div>
+                              <div style={{ color: '#6666', marginTop: 6 }}>源文件：{x.doc_name}</div>
+
                             </Card>
                           );
                         })
@@ -807,11 +813,12 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
                       />
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
-        )}
+        </div>
+
       </Modal>
 
       {/* 视频弹窗 */}

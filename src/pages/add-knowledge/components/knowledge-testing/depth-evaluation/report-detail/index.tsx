@@ -14,6 +14,7 @@ import you from '@/assets/imgs/you.png';
 import liang from '@/assets/imgs/liang.png';
 import reportDetailTopBg from '@/assets/imgs/report-detail-top-bg.png';
 interface QuestionItem {
+  doc_name: string;
   id: string;
   auto_generate: boolean;
   category_sub: string;
@@ -714,7 +715,7 @@ const ReportDetail: React.FC = () => {
           </div>
         </div>
         {questionListLoading ? (
-          <div style={{ padding: 40, textAlign: 'center',height:200}}>
+          <div style={{ padding: 40, textAlign: 'center', height: 200 }}>
             <div>加载中...</div>
           </div>
         ) : (
@@ -775,7 +776,8 @@ const ReportDetail: React.FC = () => {
                             <span style={{ marginRight: '16px' }}>检索结果数：{item.retrieval_count}</span>
                             <span style={{ marginRight: '16px' }}>最高分数:{item.max_score || 0}</span>
                             <span style={{ marginRight: '16px' }}>来源：{item.auto_generate ? 'AI生成' : '手动输入'}</span>
-                            {item.category_sub && <span>分类：{item.category_sub}</span>}
+                            {item.category_sub && <span style={{ marginRight: '16px' }}>分类：{item.category_sub}</span>}
+                            {item.auto_generate && <span >源文件：{item.doc_name}</span>}
                           </div>
                         </div>
 
