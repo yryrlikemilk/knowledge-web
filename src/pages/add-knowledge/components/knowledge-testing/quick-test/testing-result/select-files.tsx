@@ -9,10 +9,18 @@ interface IProps {
   setSelectedDocumentIds: (ids: string[]) => void;
   documents?: ITestingDocument[];
   selectedDocumentIds?: string[];
+  onPreviewPdf: (documentId: string, chunk: any) => void;
 }
 
-const SelectFiles = ({ setSelectedDocumentIds, handleTesting, documents, selectedDocumentIds = [] }: IProps) => {
+const SelectFiles = ({ setSelectedDocumentIds,
+  handleTesting,
+  documents,
+  selectedDocumentIds = [],
+  onPreviewPdf }: IProps) => {
+
   const { t } = useTranslate('fileManager');
+
+
   const columns: TableProps<ITestingDocument>['columns'] = [
     {
       title: 'Name',
@@ -36,6 +44,7 @@ const SelectFiles = ({ setSelectedDocumentIds, handleTesting, documents, selecte
           documentName={doc_name}
           documentId={doc_id}
           prefix="document"
+          clickDocumentButton={(documentId: string, chunk: any) => onPreviewPdf(documentId, chunk)}
         >
           <Tooltip title={t('preview')}>
             <Button type="text">

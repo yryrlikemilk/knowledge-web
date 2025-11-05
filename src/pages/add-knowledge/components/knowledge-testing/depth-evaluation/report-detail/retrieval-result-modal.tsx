@@ -48,13 +48,14 @@ const ChunkTitle = ({ item }: { item: ITestingChunk }) => {
   );
 };
 
-const SelectFiles = ({ documents, selectedDocumentIds = [], setSelectedDocumentIds, onTesting, onPreviewPdf }: {
-  documents?: ITestingDocument[];
-  selectedDocumentIds?: string[];
-  setSelectedDocumentIds: (ids: string[]) => void;
-  onTesting: (ids: string[]) => void;
-  onPreviewPdf: (documentId: string, chunk: any) => void;
-}) => {
+const SelectFiles = ({ documents, selectedDocumentIds = [],
+  setSelectedDocumentIds, onTesting, onPreviewPdf }: {
+    documents?: ITestingDocument[];
+    selectedDocumentIds?: string[];
+    setSelectedDocumentIds: (ids: string[]) => void;
+    onTesting: (ids: string[]) => void;
+    onPreviewPdf: (documentId: string, chunk: any) => void;
+  }) => {
 
   const { t } = useTranslate('fileManager');
   const columns: any[] = [
@@ -600,7 +601,6 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
   };
 
   const handlePreviewPdf = useCallback((documentId: string, _chunk: any) => {
-    console.log(`11123131231`, _chunk)
     setPdfChunk(_chunk || {});
     setPdfDocumentId(documentId);
     // 名称可从聚合列表里取一次（若需要更友好名称展示）

@@ -1,6 +1,6 @@
 import { ReactComponent as SelectedFilesCollapseIcon } from '@/assets/svg/selected-files-collapse.svg';
 import { useTranslate } from '@/hooks/common-hooks';
-import { ITestingChunk } from '@/interfaces/database/knowledge';
+import { ITestingChunk, ITestingDocument } from '@/interfaces/database/knowledge';
 import {
   Card,
   Collapse,
@@ -34,6 +34,9 @@ import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import useTestingStore from '../../store';
 import DOMPurify from 'dompurify';
+import PdfDrawer from '@/components/pdf-drawer';
+
+
 const similarityList: Array<{ field: keyof ITestingChunk; label: string }> = [
   { field: 'similarity', label: 'Hybrid Similarity' },
   { field: 'term_similarity', label: 'Term Similarity' },
@@ -75,6 +78,10 @@ const TestingResult = ({
   const { pagination, setPagination } = useGetPaginationWithRouter();
   const isSuccess = useAllTestingSuccess();
   const isLoadingAll = useAllTestingLoading();
+  const [pdfVisible, setPdfVisible] = useState<boolean>(false);
+  const [pdfDocumentId, setPdfDocumentId] = useState<string>('');
+  const [pdfDocumentName, setPdfDocumentName] = useState<string>('');
+  const [pdfChunk, setPdfChunk] = useState<any>({});
   // 使用 Zustand store 管理状态
   const {
     savedQuestionList,
@@ -693,6 +700,16 @@ const TestingResult = ({
     }
     return parts;
   }
+  const handlePreviewPdf = useCallback((documentId: string, _chunk: any) => {
+    setPdfChunk(_chunk || {});
+    setPdfDocumentId(documentId);
+    // 名称可从聚合列表里取一次（若需要更友好名称展示）
+    try {
+      const doc = currentDocuments?.find?.((d: ITestingDocument) => d.doc_id === documentId);
+      setPdfDocumentName(doc?.doc_name || '');
+    } catch { }
+    setPdfVisible(true);
+  }, [currentDocuments]);
   return (
     <section className={styles.testingResultWrapper}>
       <div style={{ position: 'relative', height: '100%' }}>
@@ -808,6 +825,7 @@ const TestingResult = ({
                           handleTesting={onTesting}
                           documents={currentDocuments}
                           selectedDocumentIds={selectedDocumentIds}
+                          onPreviewPdf={handlePreviewPdf}
                         ></SelectFiles>
                       </div>
                     ),
@@ -931,6 +949,14 @@ const TestingResult = ({
         <Empty description="暂无测试结果"></Empty>
       ) : null} */}
         {/* 视频弹窗 */}
+        {/* PDF预览抽屉 */}
+        <PdfDrawer
+          visible={pdfVisible}
+          hideModal={() => setPdfVisible(false)}
+          documentId={pdfDocumentId}
+          chunk={pdfChunk}
+          documentName={pdfDocumentName ? pdfDocumentName.replace('_modified', '') : ''}
+        />
         <Modal
           open={modalVisible}
           onCancel={() => {
