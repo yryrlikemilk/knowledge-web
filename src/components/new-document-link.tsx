@@ -3,7 +3,8 @@ import {
   isSupportedPreviewDocumentType,
 } from '@/utils/document-util';
 import React, { useState, useRef, useEffect } from 'react';
-import { Modal, Image } from 'antd';
+import { Modal, Image, Alert } from 'antd';
+import Docx from '@/pages/document-viewer/docx';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 // import { getMinioDownloadUrl } from '@/services/knowledge-service';
@@ -38,6 +39,8 @@ const NewDocumentLink = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
+  const [docUrl, setDocUrl] = useState<string | undefined>(undefined);
+  const [docxPath, setDocxPath] = useState<string | undefined>(undefined);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<any>(null);
@@ -59,6 +62,12 @@ const NewDocumentLink = ({
   const isPdfFile = (filename: string) => {
     const lowerFilename = filename.toLowerCase();
     return lowerFilename.endsWith('.pdf');
+  };
+
+  // 检查是否为Word文档
+  const isDocFile = (filename: string) => {
+    const lowerFilename = filename.toLowerCase();
+    return lowerFilename.endsWith('.doc') || lowerFilename.endsWith('.docx');
   };
 
   // 初始化 Video.js 播放器
@@ -117,27 +126,27 @@ const NewDocumentLink = ({
 
       player.ready(() => {
         console.log('NewDocumentLink Video.js 播放器准备就绪');
-        
+
         // 监听数据加载完成事件
         player.on('loadeddata', () => {
           console.log('视频数据加载完成');
         });
-        
+
         // 监听可以播放事件
         player.on('canplay', () => {
           console.log('视频可以播放，当前时间:', player.currentTime());
         });
-        
+
         // 监听进度事件
         player.on('progress', () => {
           console.log('视频加载进度，当前时间:', player.currentTime());
         });
-        
+
         // 监听等待事件
         player.on('waiting', () => {
           console.log('视频等待数据加载...');
         });
-        
+
         // 确保控制栏可见
         setTimeout(() => {
           const videoElement = player.el() as HTMLElement;
@@ -146,11 +155,11 @@ const NewDocumentLink = ({
             videoElement.style.position = 'relative';
             videoElement.style.width = '100%';
             videoElement.style.height = '100%';
-            
+
             const controlBar = videoElement.querySelector('.vjs-control-bar');
             const progressBar = videoElement.querySelector('.vjs-progress-control');
             const playButton = videoElement.querySelector('.vjs-play-control');
-            
+
             if (controlBar) {
               (controlBar as HTMLElement).style.display = 'flex';
               (controlBar as HTMLElement).style.visibility = 'visible';
@@ -187,12 +196,32 @@ const NewDocumentLink = ({
   }, [modalVisible, videoUrl, documentName]);
 
   const handleClick = async (e: React.MouseEvent) => {
-    if (documentId && (isVideoFile(documentName) || isImageFile(documentName) || isPdfFile(documentName))) {
+    console.log(`1111111111111111111`, e)
+    if (documentId && (isVideoFile(documentName) || isImageFile(documentName) || isPdfFile(documentName) || isDocFile(documentName))) {
       e.preventDefault();
 
       // PDF文件使用clickDocumentButton
       if (isPdfFile(documentName)) {
+        console.log(`22222222222`, isPdfFile(documentName))
         clickDocumentButton?.(documentId, {} as any);
+        return;
+      }
+
+      // DOC/DOCX 预览
+      if (isDocFile(documentName)) {
+        setModalVisible(true);
+        setLoading(true);
+        try {
+          const lower = documentName.toLowerCase();
+          if (lower.endsWith('.docx')) {
+            setDocxPath(`/api/file/download/${documentId}`);
+          } else {
+            setDocxPath(undefined);
+            setDocUrl(undefined);
+          }
+        } finally {
+          setLoading(false);
+        }
         return;
       }
 
@@ -222,12 +251,67 @@ const NewDocumentLink = ({
     }
   };
 
+  const renderPreview = () => {
+    if (loading) {
+      return <div style={{ textAlign: 'center', padding: '40px' }}>加载中...</div>;
+    }
+    if (docxPath) {
+      return <Docx filePath={docxPath} />;
+    }
+    if (docUrl) {
+      return (
+        <iframe
+          title={`preview-${documentName}`}
+          src={docUrl}
+          style={{ width: '100%', height: '400px', border: 'none' }}
+        />
+      );
+    }
+    if (videoUrl) {
+      if (isImageFile(documentName)) {
+        return (
+          <Image
+            src={videoUrl}
+            alt={documentName}
+            style={{ width: '100%', height: 'auto' }}
+          />
+        );
+      }
+      return (
+        <div style={{
+          borderRadius: 8,
+          overflow: 'hidden',
+          backgroundColor: '#000',
+          maxHeight: '600px',
+          width: '100%',
+          position: 'relative'
+        }}>
+          <video
+            ref={videoRef}
+            className="video-js vjs-default-skin vjs-big-play-centered"
+            data-setup="{}"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain'
+            }}
+          />
+        </div>
+      );
+    }
+    return (
+      <div style={{ padding: '16px' }}>
+        <Alert type="warning" message="暂不支持 .doc 在线预览，请转换为 .docx 后查看" showIcon />
+      </div>
+    );
+  };
+
   return (
     <>
       <a
         target="_blank"
         onClick={
-          documentName && (isVideoFile(documentName) || isImageFile(documentName) || isPdfFile(documentName))
+          documentName && (isVideoFile(documentName) || isImageFile(documentName) || isPdfFile(documentName) || isDocFile(documentName))
             ? handleClick
             : (!preventDefault || isSupportedPreviewDocumentType(extension)
               ? undefined
@@ -245,6 +329,8 @@ const NewDocumentLink = ({
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
+          setDocUrl(undefined);
+          setDocxPath(undefined);
           // 销毁播放器
           if (playerRef.current) {
             playerRef.current.dispose();
@@ -252,7 +338,7 @@ const NewDocumentLink = ({
           }
         }}
         footer={null}
-        width={600}
+        width={800}
         destroyOnHidden
         styles={{
           header: {
@@ -260,39 +346,7 @@ const NewDocumentLink = ({
           }
         }}
       >
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>加载中...</div>
-        ) : videoUrl ? (
-          isImageFile(documentName) ? (
-            <Image
-              src={videoUrl}
-              alt={documentName}
-              style={{ width: '100%', height: 'auto' }}
-            />
-          ) : (
-            <div style={{ 
-              borderRadius: 8, 
-              overflow: 'hidden',
-              backgroundColor: '#000',
-              height: '400px',
-              width: '100%',
-              position: 'relative'
-            }}>
-              <video
-                ref={videoRef}
-                className="video-js vjs-default-skin vjs-big-play-centered"
-                data-setup="{}"
-                style={{ 
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
-          )
-        ) : (
-          <div style={{ textAlign: 'center', padding: '40px' }}>加载失败</div>
-        )}
+        {renderPreview()}
       </Modal>
     </>
   );

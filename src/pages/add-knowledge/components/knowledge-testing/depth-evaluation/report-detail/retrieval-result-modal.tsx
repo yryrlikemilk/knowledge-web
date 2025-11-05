@@ -12,6 +12,7 @@ import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import DOMPurify from 'dompurify';
 import NewDocumentLink from '@/components/new-document-link';
+import PdfDrawer from '@/components/pdf-drawer';
 import camelCase from 'lodash/camelCase';
 import styles from './retrieval-result-modal.less';
 import request from '@/utils/request';
@@ -21,6 +22,7 @@ interface RetrievalResultModalProps {
   onCancel: () => void;
   itemQuestion: any
 }
+
 
 const similarityList: Array<{ field: keyof ITestingChunk; label: string }> = [
   { field: 'similarity', label: 'Hybrid Similarity' },
@@ -46,11 +48,12 @@ const ChunkTitle = ({ item }: { item: ITestingChunk }) => {
   );
 };
 
-const SelectFiles = ({ documents, selectedDocumentIds = [], setSelectedDocumentIds, onTesting }: {
+const SelectFiles = ({ documents, selectedDocumentIds = [], setSelectedDocumentIds, onTesting, onPreviewPdf }: {
   documents?: ITestingDocument[];
   selectedDocumentIds?: string[];
   setSelectedDocumentIds: (ids: string[]) => void;
   onTesting: (ids: string[]) => void;
+  onPreviewPdf: (documentId: string, chunk: any) => void;
 }) => {
 
   const { t } = useTranslate('fileManager');
@@ -76,6 +79,7 @@ const SelectFiles = ({ documents, selectedDocumentIds = [], setSelectedDocumentI
           documentName={doc_name}
           documentId={doc_id}
           prefix="document"
+          clickDocumentButton={(documentId: string, chunk: any) => onPreviewPdf(documentId, chunk)}
         >
           <Tooltip title={t('preview')}>
             <Button type="text">
@@ -134,6 +138,10 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
   const [retrievalData, setRetrievalData] = useState<any>(null);
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
+  const [pdfVisible, setPdfVisible] = useState<boolean>(false);
+  const [pdfDocumentId, setPdfDocumentId] = useState<string>('');
+  const [pdfDocumentName, setPdfDocumentName] = useState<string>('');
+  const [pdfChunk, setPdfChunk] = useState<any>({});
 
   // fetchRetrieval：根据 question_id、page、page_size 和可选 doc_ids 拉取检索结果
   const fetchRetrieval = useCallback(
@@ -591,6 +599,18 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
     fetchRetrieval({ page: 1, page_size: pageSize, doc_ids: ids });
   };
 
+  const handlePreviewPdf = useCallback((documentId: string, _chunk: any) => {
+    console.log(`11123131231`, _chunk)
+    setPdfChunk(_chunk || {});
+    setPdfDocumentId(documentId);
+    // 名称可从聚合列表里取一次（若需要更友好名称展示）
+    try {
+      const doc = documents?.find?.((d: ITestingDocument) => d.doc_id === documentId);
+      setPdfDocumentName(doc?.doc_name || '');
+    } catch { }
+    setPdfVisible(true);
+  }, [documents]);
+
   return (
     <>
       <Modal
@@ -693,6 +713,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
                             onTesting={onTesting}
                             documents={documents}
                             selectedDocumentIds={selectedDocumentIds}
+                            onPreviewPdf={handlePreviewPdf}
                           />
                         </div>
                       ),
@@ -820,6 +841,15 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
         </div>
 
       </Modal>
+
+      {/* PDF预览抽屉 */}
+      <PdfDrawer
+        visible={pdfVisible}
+        hideModal={() => setPdfVisible(false)}
+        documentId={pdfDocumentId}
+        chunk={pdfChunk}
+        documentName={pdfDocumentName ? pdfDocumentName.replace('_modified', '') : ''}
+      />
 
       {/* 视频弹窗 */}
       <Modal
