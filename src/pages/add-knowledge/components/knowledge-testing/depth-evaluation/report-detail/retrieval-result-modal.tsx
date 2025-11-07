@@ -687,7 +687,6 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
                     <SelectedFilesCollapseIcon></SelectedFilesCollapseIcon>
                   )}
                   className={styles.selectFilesCollapse}
-                  defaultActiveKey={['1']}
                   items={[
                     {
                       key: '1',

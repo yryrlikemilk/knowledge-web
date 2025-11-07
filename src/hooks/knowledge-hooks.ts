@@ -740,7 +740,7 @@ export const useFetchKnowledgeRunStatus = () => {
   const { data, isFetching: loading } = useQuery({
     queryKey: ['fetchKnowledgeRunStatus', knowledgeBaseId],
     enabled: !!knowledgeBaseId,
-    refetchInterval: 30000, // 30秒轮询一次
+    refetchInterval: 60000, // 30秒轮询一次
     queryFn: async () => {
       if (!knowledgeBaseId) return { doc_ids: [], run: 0 };
       const response = await getKnowledgeRunStatus(knowledgeBaseId);
@@ -804,7 +804,7 @@ export const useFetchPageList = (
   const { data, isFetching: loading } = useQuery({
     queryKey: ['fetchPageList', knowledgeBaseId, page, pageSize, filters],
     enabled: !!knowledgeBaseId,
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     queryFn: async () => {
       if (!knowledgeBaseId)
         return { current: 0, pages: 0, records: [], size: 0, total: 0 };

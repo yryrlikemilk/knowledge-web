@@ -9,9 +9,9 @@ import i18n from '@/locales/config';
 import chatService from '@/services/chat-service';
 import kbService, {
   documentRm,
-  listDocument,
-  getTaskList,
   getKnowledgeRunStatus,
+  getTaskList,
+  listDocument,
 } from '@/services/knowledge-service';
 import api, { api_rag_host } from '@/utils/api';
 import { buildChunkHighlights } from '@/utils/document-util';
@@ -19,8 +19,7 @@ import { post } from '@/utils/request';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { UploadFile, message } from 'antd';
 import { get } from 'lodash';
-import { useCallback, useMemo, useState } from 'react';
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { IHighlight } from 'react-pdf-highlighter';
 import { useParams } from 'umi';
 import { useGetPaginationWithRouter } from './logic-hooks';
@@ -74,22 +73,35 @@ export const useFetchNextDocumentList = () => {
     endDate: '',
   });
   const { pagination, setPagination } = useGetPaginationWithRouter();
-  const [isShowProgress, setIsShowProgress] = useState<boolean>(false); 
-  const [docNames, setDocNames] = useState<{
-    docName: string;
-    status: string;
-    percent: number;
-  }[]>([]);
+  const [isShowProgress, setIsShowProgress] = useState<boolean>(false);
+  const [docNames, setDocNames] = useState<
+    {
+      docName: string;
+      status: string;
+      percent: number;
+    }[]
+  >([]);
   const { id } = useParams();
 
   const queryResult = useQuery({
-    queryKey: ['fetchDocumentAndTaskList', knowledgeId || id, searchFilters, pagination],
+    queryKey: [
+      'fetchDocumentAndTaskList',
+      knowledgeId || id,
+      searchFilters,
+      pagination,
+    ],
     enabled: !!knowledgeId || !!id,
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     queryFn: async () => {
       const kbId = knowledgeId || id;
-      if (!kbId) return { docs: [], total: 0, taskList: [], runStatus: { doc_ids: [], run: 0, success_num: 0 } };
-      
+      if (!kbId)
+        return {
+          docs: [],
+          total: 0,
+          taskList: [],
+          runStatus: { doc_ids: [], run: 0, success_num: 0 },
+        };
+
       // 并行调用三个接口
       const [docResult, taskResult, runStatusResult] = await Promise.all([
         // 1. 获取文档列表
@@ -117,7 +129,7 @@ export const useFetchNextDocumentList = () => {
         // 2. 获取任务列表
         getTaskList(kbId),
         // 3. 获取知识库运行状态
-        getKnowledgeRunStatus(kbId)
+        getKnowledgeRunStatus(kbId),
       ]);
 
       let docs: any[] = [];
@@ -129,7 +141,9 @@ export const useFetchNextDocumentList = () => {
 
       let taskList: any[] = [];
       if (taskResult?.data?.code === 0 && Array.isArray(taskResult.data.data)) {
-        taskList = taskResult.data.data.filter((t: any) => t.status !== 'SUCCESS');
+        taskList = taskResult.data.data.filter(
+          (t: any) => t.status !== 'SUCCESS',
+        );
       }
 
       let runStatus = { doc_ids: [], run: 0, success_num: 0 };
@@ -147,21 +161,23 @@ export const useFetchNextDocumentList = () => {
     const data = queryResult.data;
     if (!data) return;
     const docIds = new Set((data.docs || []).map((d: any) => d.id));
-    const needTipTasks = (data.taskList || []).filter((t: any) => !docIds.has(t.dto?.documentId));
+    const needTipTasks = (data.taskList || []).filter(
+      (t: any) => !docIds.has(t.dto?.documentId),
+    );
     if (needTipTasks.length > 0) {
       setIsShowProgress(true);
       const msg = needTipTasks
-      .filter((t: any) => t.status !== 'SUCCESS')
-      .map((t: any) => {
-        const docName = t.dto?.documentName || '';
-        const status = t.status || '';
-        const percent = t.progress * 100 || 0;
-        return {
-          docName,
-          status,
-          percent,
-        };
-      });
+        .filter((t: any) => t.status !== 'SUCCESS')
+        .map((t: any) => {
+          const docName = t.dto?.documentName || '';
+          const status = t.status || '';
+          const percent = t.progress * 100 || 0;
+          return {
+            docName,
+            status,
+            percent,
+          };
+        });
       setDocNames(msg);
       // const msg = needTipTasks.map((t: any) => {
       //   const docName = t.dto?.documentName || '';
@@ -208,7 +224,11 @@ export const useFetchNextDocumentList = () => {
     docNames,
     setPagination,
     taskList: queryResult.data?.taskList || [],
-    runStatus: queryResult.data?.runStatus || { doc_ids: [], run: 0, success_num: 0 },
+    runStatus: queryResult.data?.runStatus || {
+      doc_ids: [],
+      run: 0,
+      success_num: 0,
+    },
   };
 };
 
@@ -221,7 +241,11 @@ export const useSetNextDocumentStatus = () => {
     mutateAsync,
   } = useMutation({
     mutationKey: ['updateDocumentStatus'],
-    mutationFn: async (params: { kb_id?: string; status: boolean; documentId: string }) => {
+    mutationFn: async (params: {
+      kb_id?: string;
+      status: boolean;
+      documentId: string;
+    }) => {
       const { kb_id, status, documentId } = params;
       const { data } = await kbService.document_change_status({
         datasetId: kb_id,
@@ -230,7 +254,9 @@ export const useSetNextDocumentStatus = () => {
       });
       if (data.code === 0) {
         message.success(i18n.t('message.modified'));
-        queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'] });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchDocumentAndTaskList'],
+        });
       }
       return data;
     },
@@ -261,7 +287,9 @@ export const useSaveNextDocumentName = () => {
       });
       if (data.code === 0) {
         message.success(i18n.t('message.renamed'));
-        queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'] });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchDocumentAndTaskList'],
+        });
       }
       return data.code;
     },
@@ -288,7 +316,9 @@ export const useCreateNextDocument = () => {
       });
       if (data.code === 0) {
         if (page === 1) {
-          queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'] });
+          queryClient.invalidateQueries({
+            queryKey: ['fetchDocumentAndTaskList'],
+          });
         } else {
           setPaginationParams(); // fetch document list
         }
@@ -320,18 +350,20 @@ export const useSetNextDocumentParser = () => {
       documentId: string;
       parserConfig: IChangeParserConfigRequestBody;
     }) => {
-      const res  = await kbService.document_change_parser({
+      const res = await kbService.document_change_parser({
         parser_id: parserId,
         doc_id: documentId,
         parser_config: parserConfig,
       });
-      console.log(`123123qeq4`,res)
+      console.log(`123123qeq4`, res);
       if (res.data?.code === 0) {
-        queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'] });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchDocumentAndTaskList'],
+        });
 
         message.success(i18n.t('message.modified'));
-      }else{
-        message.error(res.statusText + res.status)
+      } else {
+        message.error(res.statusText + res.status);
       }
       return res.data?.code;
     },
@@ -362,7 +394,10 @@ export const useUploadNextDocument = () => {
         const code = get(ret, 'data.code');
 
         if (code === 0 || code === 500) {
-          queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'], exact: false });
+          queryClient.invalidateQueries({
+            queryKey: ['fetchDocumentAndTaskList'],
+            exact: false,
+          });
         }
         return ret?.data;
       } catch (error) {
@@ -439,7 +474,9 @@ export const useRunNextDocument = () => {
       });
       const code = get(ret, 'data.code');
       if (code === 0) {
-        queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'] });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchDocumentAndTaskList'],
+        });
         message.success(i18n.t('message.operated'));
       }
 
@@ -504,7 +541,9 @@ export const useRemoveNextDocument = () => {
       const { data } = await kbService.document_rm({ doc_id: documentIds });
       if (data.code === 0) {
         message.success(i18n.t('message.deleted'));
-        queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'] });
+        queryClient.invalidateQueries({
+          queryKey: ['fetchDocumentAndTaskList'],
+        });
       }
       return data.code;
     },
@@ -533,8 +572,10 @@ export const useRemoveNextDocumentKb = () => {
       } as any);
       if (data.code === 0) {
         message.success(i18n.t('message.deleted'));
-        queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'] });
-      }else{
+        queryClient.invalidateQueries({
+          queryKey: ['fetchDocumentAndTaskList'],
+        });
+      } else {
         message.error(data.message);
       }
       return data.code;
@@ -633,7 +674,9 @@ export const useSetDocumentMeta = () => {
         });
 
         if (data?.code === 0) {
-          queryClient.invalidateQueries({ queryKey: ['fetchDocumentAndTaskList'] });
+          queryClient.invalidateQueries({
+            queryKey: ['fetchDocumentAndTaskList'],
+          });
 
           message.success(i18n.t('message.modified'));
         }

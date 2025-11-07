@@ -169,7 +169,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             key: 'retrievalParams',
             width: 200,
             render: (_: any, record: any) => (
-                <Button type="link" style={{padding:0}} onClick={() => openViewParams(record)}>
+                <Button type="link" style={{ padding: 0 }} onClick={() => openViewParams(record)}>
                     相似度阈值{typeof record.similarity_threshold === 'number' ? record.similarity_threshold : '0'}
                 </Button>
             ),
@@ -184,14 +184,14 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
                     mouseEnterDelay={0.2}
                     title={
                         <div style={{ textAlign: 'left', lineHeight: 1.6 }}>
-                            <div>回答率:系统能回答的问题比例</div>
-                            <div>答准确率:系统回答中正确的比例</div>
-                            <div>关性:答案内容与问题的匹配程度</div>
+                            <div>可回答率:系统能回答的问题比例</div>
+                            <div>回答准确率:系统回答中正确的比例</div>
+                            <div>相关性:答案内容与问题的匹配程度</div>
                             <div>排序合理性:系统能否优先展示最相关答案</div>
-                            
+
                         </div>
                     }>
-                    <Button key="system" type="link" style={{padding:0}}>
+                    <Button key="system" type="link" style={{ padding: 0 }}>
                         系统默认指标
                     </Button>
                 </Tooltip>

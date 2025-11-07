@@ -430,7 +430,14 @@ const ReportDetail: React.FC = () => {
       </div>
     );
   }
-
+  const answerableRate = Math.round(reportData.answerable_rate * 100);
+  const getTooltipTitle = () => {
+    if (answerableRate === 100) {
+      return `可回答率 ${answerableRate}%：${answerableRate}%的问题知识库能回答`;
+    } else {
+      return `可回答率 ${answerableRate}%：${answerableRate}%的问题知识库能回答，${100 - answerableRate}%的问题暂时没有检索结果`;
+    }
+  };
   return (
     <div style={{ height: '100%', width: '100%', backgroundColor: '#F2F3F5', minWidth: 1080, overflow: 'auto' }}>
       <div style={{ backgroundColor: '#fff', borderRadius: 4, marginBottom: 20 }}>
@@ -499,10 +506,7 @@ const ReportDetail: React.FC = () => {
               <div className='flex justify-center gap-4'>
 
                 <Tooltip
-                  title={`可回答率 ${Math.round(reportData.answerable_rate * 100)}%:
-                    ${Math.round(reportData.answerable_rate * 100)}%的问题知识库能回答，
-                    ${100 - Math.round(reportData.answerable_rate * 100)}%的问题暂时没有检索结果 
-                    `}
+                  title={getTooltipTitle()}
                 >
 
 
