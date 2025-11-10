@@ -50,14 +50,14 @@ const ParseConfiguration = () => {
         initialValue={false}
         valuePropName="checked"
         tooltip={t('useRaptorTip')}
-         layout="horizontal"
+        layout="horizontal"
       >
         <Switch />
       </Form.Item>
       <Form.Item
         shouldUpdate={(prevValues, curValues) =>
           prevValues.parser_config.raptor.use_raptor !==
-          curValues.parser_config.raptor.use_raptor
+          curValues.parser_config.raptor?.use_raptor
         }
       >
         {({ getFieldValue }) => {
