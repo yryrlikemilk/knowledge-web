@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'umi';
 import '../locales/config';
 import Header from './components/header';
 import { useEffect } from 'react';
+import GlobalProgressIndicator from '@/components/global-progress-indicator';
 
 import styles from './index.less';
 
@@ -21,7 +22,7 @@ const DEFAULT_TITLE = '赛迪知源';
 
 const App: React.FC = () => {
   const {
-    token: { colorBgContainer, borderRadiusLG },
+    token: { borderRadiusLG },
   } = theme.useToken();
   const location = useLocation();
 
@@ -44,7 +45,7 @@ const App: React.FC = () => {
         <Content
           style={{
             minHeight: 280,
-            background:'#F2F3F5',
+            background: '#F2F3F5',
             borderRadius: borderRadiusLG,
             overflow: 'auto',
           }}
@@ -52,6 +53,7 @@ const App: React.FC = () => {
           <Outlet />
         </Content>
       </Layout>
+      <GlobalProgressIndicator />
     </Layout>
   );
 };

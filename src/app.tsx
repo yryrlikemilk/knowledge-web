@@ -2,7 +2,6 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
 import i18n from '@/locales/config';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { App, ConfigProvider, ConfigProviderProps, theme } from 'antd';
 import pt_BR from 'antd/lib/locale/pt_BR';
 import deDE from 'antd/locale/de_DE';
@@ -22,6 +21,7 @@ import { ThemeProvider, useTheme } from './components/theme-provider';
 import { SidebarProvider } from './components/ui/sidebar';
 import { TooltipProvider } from './components/ui/tooltip';
 import storage from './utils/authorization-util';
+import { GenerateProgressProvider } from './contexts/generate-progress-context';
 
 dayjs.extend(customParseFormat);
 dayjs.extend(advancedFormat);
@@ -102,7 +102,9 @@ const RootProvider = ({ children }: React.PropsWithChildren) => {
     <TooltipProvider>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="flow-ui-theme">
-          <Root>{children}</Root>
+          <GenerateProgressProvider>
+            <Root>{children}</Root>
+          </GenerateProgressProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </TooltipProvider>

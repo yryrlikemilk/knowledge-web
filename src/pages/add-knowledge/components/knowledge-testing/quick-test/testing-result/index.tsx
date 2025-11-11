@@ -924,6 +924,9 @@ const TestingResult = ({
                                 </div>
                               </div>
                             )}
+                            <div style={{ color: '#6666', marginTop: 6 }}>
+                              源文件:{x.title}
+                            </div>
                           </div>
                         </Card>
                       );

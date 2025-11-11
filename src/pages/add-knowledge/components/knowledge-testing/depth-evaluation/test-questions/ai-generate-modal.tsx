@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Modal, Form, message, InputNumber, Table, Button, Space, Tooltip, Progress, List, Card } from 'antd';
 import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
-import { useGenerateAiQuestion, useFetchFileUpdates, useFetchAiQuestionCount, useFetchCheckFirstGenerate, useFetchAiQuestionCountByDocIds, useOtherDocGenerateAiQuestion, useGenerateProgress, useSaveAiQuestions } from '@/hooks/knowledge-hooks';
+import { useGenerateAiQuestion, useFetchFileUpdates, useFetchAiQuestionCount, useFetchCheckFirstGenerate, useFetchAiQuestionCountByDocIds, useOtherDocGenerateAiQuestion, useGenerateProgress, useSaveAiQuestions, useKnowledgeBaseId } from '@/hooks/knowledge-hooks';
+import { useGenerateProgressContext } from '@/contexts/generate-progress-context';
 
 interface AIGenerateModalProps {
     visible: boolean;
@@ -17,6 +18,8 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
     const { firstGenerateStatus, loading: firstGenerateLoading, refetch: refetchFirstGenerate } = useFetchCheckFirstGenerate();
     const { fetchCount } = useFetchAiQuestionCountByDocIds();
     const { otherDocGenerateAiQuestion, loading: otherGenLoading } = useOtherDocGenerateAiQuestion();
+    const { startProgress, progressState, clearProgress } = useGenerateProgressContext();
+    const kbId = useKnowledgeBaseId();
 
     // 左侧面板选中：'new' | 'edited'
     const [activeSource, setActiveSource] = useState<'new' | 'edited'>('new');
@@ -45,16 +48,17 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
     const [lastGenerateType, setLastGenerateType] = useState<'all' | 'selected' | null>(null);
     const [lastQuestionCount, setLastQuestionCount] = useState<number | null>(null);
     const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
-    
+
     const [questionNumber, setQuestionNumber] = useState<{
         value: number;
         validateStatus?: 'error' | 'success' | undefined;
         errorMsg?: string | null;
     }>({ value: questionCount?.recommendCount ?? 1 });
     const manualEditedRef = useRef(false);
-    
-    // 轮询进度
-    const { progressData } = useGenerateProgress(historyId);
+
+    // 轮询进度 - 使用全局状态中的 historyId 或本地 historyId
+    const activeHistoryId = progressState?.historyId || historyId;
+    const { progressData } = useGenerateProgress(activeHistoryId);
     // 保存AI问题
     const { saveAiQuestions, loading: saveLoading } = useSaveAiQuestions();
 
@@ -63,13 +67,16 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
             refetch();
             refetchCount();
             refetchFirstGenerate();
-        } else {
-            // 弹窗关闭时重置内部状态，确保下次打开先显示文件列表
-            setDynamicLimit(undefined);
-            setSelectedDocIds([]);
-            setActiveSource('new');
+            // 如果全局状态中有正在进行的任务，同步到本地状态
+            if (progressState?.historyId) {
+                setHistoryId(progressState.historyId);
+                setShowProgress(true);
+                setLastGenerateType(progressState.lastGenerateType);
+                setLastQuestionCount(progressState.lastQuestionCount);
+            }
         }
-    }, [visible, refetch, refetchCount, refetchFirstGenerate]);
+        // 注意：弹窗关闭时的逻辑在 handleCancel 中处理，这里不做处理
+    }, [visible, refetch, refetchCount, refetchFirstGenerate, progressState]);
 
     const handleOk = async () => {
         const values = await form.validateFields();
@@ -79,7 +86,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
             message.warning(`请输入大于1的数量`);
             return;
         }
-        
+
         try {
             const result = await generateAiQuestion(qty);
             if (result?.history_id) {
@@ -87,6 +94,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                 setShowProgress(true);
                 setLastGenerateType('all');
                 setLastQuestionCount(qty);
+                // 不立即启动全局进度跟踪，等弹窗关闭后再启动
                 message.info('开始生成问题，请稍候...');
             }
         } catch (error) {
@@ -103,7 +111,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
             message.warning(`请输入大于1的数量`);
             return;
         }
-        
+
         try {
             const result = await otherDocGenerateAiQuestion({ doc_ids: selectedDocIds, question_count: qty });
             if (result?.history_id) {
@@ -111,6 +119,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                 setShowProgress(true);
                 setLastGenerateType('selected');
                 setLastQuestionCount(qty);
+                // 不立即启动全局进度跟踪，等弹窗关闭后再启动
                 message.info('开始生成问题，请稍候...');
             }
         } catch (error) {
@@ -144,11 +153,11 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                 return { value, validateStatus: 'success' as const, errorMsg: null };
             };
             setQuestionNumber(validateQuestionCount(rec, res.limitCount || 0));
-        // try {
-        //     const res = await fetchCount(ids);
-        //     form.setFieldsValue({ questionCount: res.recommendCount || 0 });
-        //     setDynamicLimit(res.limitCount || 0);
-        } 
+            // try {
+            //     const res = await fetchCount(ids);
+            //     form.setFieldsValue({ questionCount: res.recommendCount || 0 });
+            //     setDynamicLimit(res.limitCount || 0);
+        }
         finally {
             setFetchingCount(false);
         }
@@ -160,8 +169,35 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
         setDynamicLimit(undefined);
         setSelectedDocIds([]);
         setActiveSource('new');
-        setHistoryId(null);
-        setShowProgress(false);
+
+        // 检查是否有正在进行的任务（本地状态）
+        const hasActiveTask = historyId && showProgress;
+        // 获取当前进度值，优先使用全局状态，其次使用轮询数据
+        const currentProgressValue = progressState?.progress ?? progressData?.progress ?? 0;
+        // 判断任务是否正在进行中（有任务且进度不是1（完成）也不是-1（失败））
+        const isTaskInProgress = hasActiveTask && currentProgressValue !== 1 && currentProgressValue !== -1;
+
+        if (isTaskInProgress && !progressState?.historyId) {
+            // 如果正在生成中且全局状态还没有启动，关闭弹窗后启动全局进度跟踪（显示左下角提示）
+            if (lastGenerateType && lastQuestionCount !== null && historyId) {
+                startProgress(
+                    historyId,
+                    lastGenerateType,
+                    lastQuestionCount,
+                    lastGenerateType === 'selected' ? selectedDocIds : [],
+                    kbId || null
+                );
+            }
+            setShowProgress(false);
+        } else {
+            // 如果任务已完成、失败、没有任务，或者全局状态已经启动，清除本地状态
+            setHistoryId(null);
+            setShowProgress(false);
+            // 如果全局状态存在且任务已完成或失败，清除全局状态
+            if (progressState && (progressState.progress === 1 || progressState.error)) {
+                clearProgress();
+            }
+        }
         onCancel();
     };
 
@@ -198,13 +234,14 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
         form.setFieldsValue({ questionCount: next.value });
     };
 
-    // 监听进度完成
+    // 监听进度完成 - 使用全局状态或本地进度数据
+    const currentProgress = progressState?.progress ?? progressData.progress;
     useEffect(() => {
-        if (progressData.progress === 1 && showProgress) {
+        if (currentProgress === 1 && showProgress) {
             message.success('问题生成完成！');
             // 不自动关闭弹窗，保持显示问题列表
         }
-    }, [progressData.progress, showProgress]);
+    }, [currentProgress, showProgress]);
 
 
     return (
@@ -228,7 +265,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                     {showProgress ? (
                         <div style={{ padding: '20px' }}>
                             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                {progressData.progress === -1 ? (
+                                {(currentProgress === -1 || progressState?.error) ? (
                                     <>
                                         <div style={{ marginBottom: '16px', color: '#faad14', fontSize: '14px' }}>
                                             网络不好，请稍后再试
@@ -247,6 +284,8 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                                         if (result?.history_id) {
                                                             setHistoryId(result.history_id);
                                                             setShowProgress(true);
+                                                            setLastQuestionCount(Number(qty));
+                                                            // 不立即启动全局进度跟踪，等弹窗关闭后再启动
                                                             message.info('开始生成问题，请稍候...');
                                                         }
                                                     } catch (e) {
@@ -258,6 +297,8 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                                         if (result?.history_id) {
                                                             setHistoryId(result.history_id);
                                                             setShowProgress(true);
+                                                            setLastQuestionCount(Number(qty));
+                                                            // 不立即启动全局进度跟踪，等弹窗关闭后再启动
                                                             message.info('开始生成问题，请稍候...');
                                                         }
                                                     } catch (e) {
@@ -269,15 +310,15 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                             }}>重新生成</Button>
                                         </div>
                                     </>
-                                ) : progressData.progress !== 1 ? (
+                                ) : currentProgress !== 1 ? (
                                     <>
                                         {/* <div style={{ marginBottom: '20px', fontSize: '16px', fontWeight: 'bold' }}>
                                             AI正在生成问题...
                                         </div> */}
-                                        <Progress 
+                                        <Progress
                                             type="circle"
-                                            percent={(progressData.progress || 0) * 100} 
-                                            status={progressData.progress === 1 ? 'success' : 'active'}
+                                            percent={(currentProgress || 0) * 100}
+                                            status={currentProgress === 1 ? 'success' : 'active'}
                                             strokeColor={{
                                                 '0%': '#108ee9',
                                                 '100%': '#87d068',
@@ -285,7 +326,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                             size={120}
                                         />
                                         <div style={{ marginTop: '15px', color: '#666', fontSize: '14px' }}>
-                                            进度: {(progressData.progress || 0) * 100}%
+                                            进度: {(currentProgress || 0) * 100}%
                                         </div>
                                     </>
                                 ) : (
@@ -294,12 +335,12 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                     </div>
                                 )}
                             </div>
-                            
-                            {progressData.progress === 1 && progressData.aiQuestions?.length > 0 && (
+
+                            {currentProgress === 1 && (progressState?.aiQuestions || progressData.aiQuestions)?.length > 0 && (
                                 <div style={{ marginTop: '20px' }}>
                                     <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>生成的问题预览:</div>
                                     <div style={{ maxHeight: '420px', overflow: 'auto' }}>
-                                        {progressData.aiQuestions.map((item: any, index: number) => {
+                                        {(progressState?.aiQuestions || progressData.aiQuestions || []).map((item: any, index: number) => {
                                             const key = `${item.category || '未分类'}-${index}`;
                                             const expanded = !!expandedMap[key];
                                             const shownQuestions = expanded ? item.questions : (item.questions || []).slice(0, 3);
@@ -309,7 +350,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                                     size="small"
                                                     style={{ marginBottom: 12 }}
                                                     title={
-                                                        <div style={{ display: 'flex', gap:10, alignItems: 'center' }}>
+                                                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                                                             <span style={{ fontWeight: 600 }}>{item.category || '未分类'}</span>
                                                             <span style={{ color: '#666', fontSize: 12 }}>
                                                                 ({item.doc_count}个文件，占{Math.round((item.question_ratio || 0) * 100)}%，共生成{item.question_count}个问题)
@@ -344,24 +385,30 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                             )}
                             <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center', gap: 10 }}>
                                 <Button onClick={handleCancel}> 取消</Button>
-                                {progressData.progress === 1 && (
-                                    <Button 
-                                        type='primary' 
+                                {currentProgress === 1 && (
+                                    <Button
+                                        type='primary'
                                         loading={saveLoading}
                                         onClick={async () => {
                                             try {
-                                                await saveAiQuestions({ 
-                                                    aiQuestions: progressData.aiQuestions, 
-                                                    historyId: historyId || '' 
+                                                const questions = progressState?.aiQuestions || progressData.aiQuestions || [];
+                                                const activeId = progressState?.historyId || historyId || '';
+                                                console.log(`questions, activeId`, questions, activeId)
+
+                                                await saveAiQuestions({
+                                                    aiQuestions: questions,
+                                                    historyId: activeId
                                                 });
                                                 setShowProgress(false);
                                                 setHistoryId(null);
+                                                clearProgress();
                                                 onOk();
                                             } catch (error) {
                                                 message.error('保存失败，请重试');
+                                                console.log(`error`, error)
                                             }
                                         }}
-                                    > 
+                                    >
                                         添加到测试问题列表
                                     </Button>
                                 )}
@@ -516,7 +563,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                                                     value={questionNumber.value}
                                                     style={{ width: '100%' }}
                                                     placeholder="请输入要生成的问题数量"
-                                                     onChange={onNumberChange}
+                                                    onChange={onNumberChange}
                                                 />
                                                 <Tooltip
                                                     title={

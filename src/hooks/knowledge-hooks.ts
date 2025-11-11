@@ -1010,11 +1010,17 @@ export const useGenerateProgress = (historyId: string | null) => {
     },
     queryFn: async () => {
       if (!historyId) return { progress: 0, aiQuestions: [], id: '' };
-      const response = await getGenerateProgress(historyId);
-      if (response?.data?.code === 0) {
-        return response.data.data;
+      try {
+        const response = await getGenerateProgress(historyId);
+        if (response?.data?.code === 0) {
+          return response.data.data;
+        }
+        // 如果接口返回错误，返回 progress: -1 表示失败
+        return { progress: -1, aiQuestions: [], id: historyId };
+      } catch (error) {
+        // 网络错误或其他异常，返回 progress: -1
+        return { progress: -1, aiQuestions: [], id: historyId };
       }
-      return { progress: 0, aiQuestions: [], id: '' };
     },
   });
 
@@ -1067,12 +1073,17 @@ export const useSaveAiQuestions = () => {
   const queryClient = useQueryClient();
 
   const { mutateAsync, isPending: loading } = useMutation({
-    mutationFn: async (params: { aiQuestions: any[]; historyId: string }) => {
-      if (!knowledgeBaseId) throw new Error('知识库ID不能为空');
+    mutationFn: async (params: {
+      aiQuestions: any[];
+      historyId: string;
+      kbIdOverride?: string;
+    }) => {
+      const kbId = params.kbIdOverride || knowledgeBaseId;
+      if (!kbId) throw new Error('知识库ID不能为空');
 
       const response = await saveAiQuestions({
         ai_generate_questions: params.aiQuestions,
-        kb_id: knowledgeBaseId,
+        kb_id: kbId,
         history_id: params.historyId,
       });
 
