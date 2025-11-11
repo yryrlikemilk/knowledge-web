@@ -63,13 +63,11 @@ const NewDocumentLink = ({
     const lowerFilename = filename.toLowerCase();
     return lowerFilename.endsWith('.pdf');
   };
-
   // 检查是否为Word文档
   const isDocFile = (filename: string) => {
     const lowerFilename = filename.toLowerCase();
     return lowerFilename.endsWith('.doc') || lowerFilename.endsWith('.docx');
   };
-
   // 初始化 Video.js 播放器
   useEffect(() => {
     console.log(`modalVisible: ${modalVisible}, videoUrl: ${videoUrl}, isVideoFile: ${isVideoFile(documentName)}`);
@@ -196,17 +194,14 @@ const NewDocumentLink = ({
   }, [modalVisible, videoUrl, documentName]);
 
   const handleClick = async (e: React.MouseEvent) => {
-    console.log(`1111111111111111111`, e)
     if (documentId && (isVideoFile(documentName) || isImageFile(documentName) || isPdfFile(documentName) || isDocFile(documentName))) {
       e.preventDefault();
 
       // PDF文件使用clickDocumentButton
       if (isPdfFile(documentName)) {
-        console.log(`22222222222`, isPdfFile(documentName))
         clickDocumentButton?.(documentId, {} as any);
         return;
       }
-
       // DOC/DOCX 预览
       if (isDocFile(documentName)) {
         setModalVisible(true);
@@ -224,7 +219,6 @@ const NewDocumentLink = ({
         }
         return;
       }
-
       // 图片和视频文件使用弹窗
       setModalVisible(true);
       setLoading(true);
@@ -251,61 +245,6 @@ const NewDocumentLink = ({
     }
   };
 
-  const renderPreview = () => {
-    if (loading) {
-      return <div style={{ textAlign: 'center', padding: '40px' }}>加载中...</div>;
-    }
-    if (docxPath) {
-      return <Docx filePath={docxPath} />;
-    }
-    if (docUrl) {
-      return (
-        <iframe
-          title={`preview-${documentName}`}
-          src={docUrl}
-          style={{ width: '100%', height: '400px', border: 'none' }}
-        />
-      );
-    }
-    if (videoUrl) {
-      if (isImageFile(documentName)) {
-        return (
-          <Image
-            src={videoUrl}
-            alt={documentName}
-            style={{ width: '100%', height: 'auto' }}
-          />
-        );
-      }
-      return (
-        <div style={{
-          borderRadius: 8,
-          overflow: 'hidden',
-          backgroundColor: '#000',
-          maxHeight: '600px',
-          width: '100%',
-          position: 'relative'
-        }}>
-          <video
-            ref={videoRef}
-            className="video-js vjs-default-skin vjs-big-play-centered"
-            data-setup="{}"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain'
-            }}
-          />
-        </div>
-      );
-    }
-    return (
-      <div style={{ padding: '16px' }}>
-        <Alert type="warning" message="暂不支持 .doc 在线预览，请转换为 .docx 后查看" showIcon />
-      </div>
-    );
-  };
-
   return (
     <>
       <a
@@ -329,8 +268,6 @@ const NewDocumentLink = ({
         open={modalVisible}
         onCancel={() => {
           setModalVisible(false);
-          setDocUrl(undefined);
-          setDocxPath(undefined);
           // 销毁播放器
           if (playerRef.current) {
             playerRef.current.dispose();
@@ -346,7 +283,44 @@ const NewDocumentLink = ({
           }
         }}
       >
-        {renderPreview()}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>加载中...</div>
+        ) :
+          isDocFile(documentName) ?
+            (
+              <Docx filePath={docxPath || ''} />
+            )
+            : videoUrl ? (
+              isImageFile(documentName) ? (
+                <Image
+                  src={videoUrl}
+                  alt={documentName}
+                  style={{ width: '100%', height: 'auto' }}
+                />
+              ) : (
+                <div style={{
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  backgroundColor: '#000',
+                  height: '400px',
+                  width: '100%',
+                  position: 'relative'
+                }}>
+                  <video
+                    ref={videoRef}
+                    className="video-js vjs-default-skin vjs-big-play-centered"
+                    data-setup="{}"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </div>
+              )
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px' }}>加载失败</div>
+            )}
       </Modal>
     </>
   );
