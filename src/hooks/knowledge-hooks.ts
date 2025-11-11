@@ -385,7 +385,7 @@ export const useTestChunkAllRetrieval = (): ResponsePostType<ITestingResult> & {
         knowledge_ids: values.kb_id ? values.kb_id : [knowledgeBaseId],
         query: questions,
         keyword: false,
-        document_ids: values.doc_ids,
+        filter_document_ids: values.doc_ids,
         highlight: false,
         //joinRule:'or',
         rerank_id: values.rerank_id,
