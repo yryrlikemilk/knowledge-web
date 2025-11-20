@@ -336,7 +336,7 @@ const MessageInput = ({
             width: fileList.length > 0 ? '50%' : '100%',
           }}
         >
-          {showUploadIcon && (
+          {showUploadIcon ? (
             <Upload
               onPreview={handlePreview}
               onChange={handleChange}
@@ -360,10 +360,10 @@ const MessageInput = ({
                     </g>
                   </g>
                 </svg>
-              
+
               </Button>
             </Upload>
-          )}
+          ) : (<div></div>)}
           {sendLoading ? (
             <Button onClick={handleStopOutputMessage}>
               <CircleStop className="size-5" />
@@ -385,6 +385,7 @@ const MessageInput = ({
                 justifyContent: 'center',
               }}
             >
+
               <svg className="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" version="1.1" width="16" height="16" viewBox="0 0 16 16">
                 <defs>
                   <clipPath id="master_svg0_76_06085">

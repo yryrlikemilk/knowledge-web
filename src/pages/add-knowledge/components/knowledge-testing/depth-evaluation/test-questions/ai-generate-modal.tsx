@@ -385,8 +385,7 @@ const AIGenerateModal: React.FC<AIGenerateModalProps> = ({ visible, onCancel, on
                             )}
                             <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center', gap: 10 }}>
                                 {(showProgress && currentProgress !== 1) ? (
-                                    <>
-                                    </>) : (<Button onClick={handleCancel}> 取消</Button>)}
+                                    <Button onClick={handleCancel}> 后台生成</Button>) : (<Button onClick={handleCancel}> 取消</Button>)}
                                 {currentProgress === 1 && (
                                     <Button
                                         type='primary'

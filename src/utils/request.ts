@@ -88,19 +88,22 @@ request.interceptors.request.use((url: string, options: any) => {
     ? options.params
     : convertTheKeysOfTheObjectToSnake(options.params);
   const token = getAuthorization();
+
   if (url.includes('user/login') || url.includes('user/register')) {
     delete options.headers.Authorization;
   } else if (url.includes('/api/')) {
     options.headers.Authorization = 'Bearer ragflow-' + token;
+  } else if (url.includes('v1/conversation/getsse/')) {
+    options.headers.Authorization = token;
   } else {
     options.headers.Authorization = 'Bearer ' + token;
   }
-  
+
   // 为文件下载请求设置5分钟超时时间
   if (options.responseType === 'blob') {
     options.timeout = 600000; // 5分钟
   }
-  
+
   const headers = {
     ...options.headers,
   };
@@ -131,7 +134,7 @@ request.interceptors.response.use(async (response: Response, options) => {
       };
     } catch (error) {
       console.error('处理 blob 响应时出错:', error);
-    return response;
+      return response;
     }
   }
 
@@ -147,9 +150,9 @@ request.interceptors.response.use(async (response: Response, options) => {
     authorizationUtil.removeAll();
     redirectToLogin();
   } else if (data?.code !== 0) {
-    console.log(data)
+    console.log(data);
     notification.error({
-      message: `${i18n.t('message.hint')} : ${data?.code?data?.code:data?.status?data?.status:''}`,
+      message: `${i18n.t('message.hint')} : ${data?.code ? data?.code : data?.status ? data?.status : ''}`,
       description: data?.message,
       duration: 3,
     });

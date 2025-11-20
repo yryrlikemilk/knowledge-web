@@ -183,10 +183,13 @@ export const useSendMessageWithSse = (
       initializeSseRef();
       try {
         setDone(false);
+        const authHeader = url.includes('/api/v1/chatbots/')
+          ? `${getAuthorization()}`
+          : `Bearer ragflow-${getAuthorization()}`;
         const response = await fetch(url, {
           method: 'POST',
           headers: {
-            [Authorization]: 'Bearer ragflow-'+getAuthorization(),
+            [Authorization]: authHeader,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(body),
