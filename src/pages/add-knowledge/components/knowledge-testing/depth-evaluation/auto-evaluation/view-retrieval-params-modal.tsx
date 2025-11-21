@@ -15,7 +15,7 @@ interface ViewRetrievalParamsModalProps {
 const ViewRetrievalParamsModal: React.FC<ViewRetrievalParamsModalProps> = ({ visible, onClose, params }) => {
     const [form] = Form.useForm();
     const similarityThreshold = Number(params?.similarity_threshold ?? 0);
-    const vectorWeight = Number(params?.vector_similarity_weight ?? 0);
+    const vectorWeight = 100 - Number(params?.vector_similarity_weight ?? 0) * 100;
     const hasRerank = !!params?.rerank_id;
 
     React.useEffect(() => {
@@ -47,7 +47,7 @@ const ViewRetrievalParamsModal: React.FC<ViewRetrievalParamsModalProps> = ({ vis
                                     step={1}
                                     precision={0}
                                     style={{ width: '100%' }}
-                                    value={similarityThreshold}
+                                    value={similarityThreshold * 100}
                                     disabled
                                 />
                                 <span style={{ width: 32 }}>分</span>

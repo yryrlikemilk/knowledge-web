@@ -1132,11 +1132,16 @@ export const useSaveRetrievalTask = () => {
           question_id: id,
           question_text: '',
         }));
+
       const response = await saveRetrievalTask({
         kb_id: knowledgeBaseId,
         task_name: params.task_name,
-        similarity_threshold: params.similarity_threshold,
-        vector_similarity_weight: params.vector_similarity_weight,
+        similarity_threshold: params.similarity_threshold / 100,
+        vector_similarity_weight:
+          params.vector_similarity_weight !== null &&
+          params.vector_similarity_weight !== undefined
+            ? 1 - params.vector_similarity_weight / 100
+            : 0,
         rerank_id: params.rerank_id,
         top_k: params.top_k,
         questions: questions.map((q: any) => ({

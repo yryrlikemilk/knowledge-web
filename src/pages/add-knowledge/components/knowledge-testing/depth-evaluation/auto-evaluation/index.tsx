@@ -170,7 +170,7 @@ const AutoEvaluation: React.FC<AutoEvaluationProps> = ({ onSwitchToQuestions }) 
             width: 200,
             render: (_: any, record: any) => (
                 <Button type="link" style={{ padding: 0 }} onClick={() => openViewParams(record)}>
-                    相似度阈值{typeof record.similarity_threshold === 'number' ? record.similarity_threshold : '0'}
+                    相似度阈值{typeof record.similarity_threshold === 'number' ? record.similarity_threshold * 100 : '0'}
                 </Button>
             ),
         },
