@@ -204,7 +204,7 @@ const RetrievalResultModal: React.FC<RetrievalResultModalProps> = ({
       image_id: chunk.image_id || chunk.img_id || '',
       important_kwd: chunk.important_kwd || [],
       kb_id: chunk.kb_id || '',
-      similarity: chunk.score || 0,
+      similarity: chunk.score * 100 || 0,
       term_similarity: chunk.term_similarity || 0,
       vector: chunk.vector || [],
       vector_similarity: chunk.vector_similarity || 0,

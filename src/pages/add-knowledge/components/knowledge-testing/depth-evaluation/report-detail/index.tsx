@@ -778,7 +778,7 @@ const ReportDetail: React.FC = () => {
                           <div style={{ fontSize: '16px', fontWeight: '500', color: '#1D2129' }}>{item.question_text}</div>
                           <div style={{ marginTop: 8, color: 'rgba(29, 33, 41, 0.55)' }}>
                             <span style={{ marginRight: '16px' }}>检索结果数：{item.retrieval_count}</span>
-                            <span style={{ marginRight: '16px' }}>最高分数:{item.max_score || 0}</span>
+                            <span style={{ marginRight: '16px' }}>最高分数:{item.max_score * 100 || 0}</span>
                             <span style={{ marginRight: '16px' }}>来源：{item.auto_generate ? 'AI生成' : '手动输入'}</span>
                             {item.category_sub && <span style={{ marginRight: '16px' }}>分类：{item.category_sub}</span>}
                             {item.auto_generate && <span >源文件：{item.doc_name}</span>}

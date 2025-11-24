@@ -5,6 +5,7 @@ import {
 import React, { useState, useRef, useEffect } from 'react';
 import { Modal, Image, Alert } from 'antd';
 import Docx from '@/pages/document-viewer/docx';
+import MyImage from '@/pages/document-viewer/image';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 // import { getMinioDownloadUrl } from '@/services/knowledge-service';
@@ -33,7 +34,7 @@ const NewDocumentLink = ({
   let nextLink = link;
   const extension = getExtension(documentName);
   if (!link) {
-    nextLink = `/api/file/download//${documentId}?ext=${extension}&prefix=${prefix}`;
+    nextLink = `/document/${documentId}?ext=${extension}&prefix=${prefix}`;
   }
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -209,7 +210,7 @@ const NewDocumentLink = ({
         try {
           const lower = documentName.toLowerCase();
           if (lower.endsWith('.docx')) {
-            setDocxPath(`/api/file/download/${documentId}`);
+            setDocxPath(`/v1/file/get/${documentId}`);
           } else {
             setDocxPath(undefined);
             setDocUrl(undefined);
@@ -238,7 +239,8 @@ const NewDocumentLink = ({
         setLoading(false);
       } else {
         // 图片文件直接使用documentId构建URL
-        const imageUrl = `/api/file/download/${documentId}`;
+
+        const imageUrl = `v1/${prefix || 'file'}/get/${documentId}`;
         setVideoUrl(imageUrl);
         setLoading(false);
       }
@@ -250,7 +252,7 @@ const NewDocumentLink = ({
       <a
         target="_blank"
         onClick={
-          documentName && (isVideoFile(documentName) || isImageFile(documentName) || isPdfFile(documentName) || isDocFile(documentName))
+          documentName && (isVideoFile(documentName) || isImageFile(documentName) || isDocFile(documentName))
             ? handleClick
             : (!preventDefault || isSupportedPreviewDocumentType(extension)
               ? undefined
@@ -292,11 +294,12 @@ const NewDocumentLink = ({
             )
             : videoUrl ? (
               isImageFile(documentName) ? (
-                <Image
-                  src={videoUrl}
-                  alt={documentName}
-                  style={{ width: '100%', height: 'auto' }}
-                />
+                <div className='flex justify-center py-4'>
+                  <MyImage
+                    src={videoUrl}
+                  />
+                </div>
+
               ) : (
                 <div style={{
                   borderRadius: 8,
