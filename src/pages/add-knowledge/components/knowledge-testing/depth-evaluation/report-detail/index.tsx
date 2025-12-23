@@ -1,18 +1,22 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { Button, Pagination, Dropdown, message, Tooltip, Image } from 'antd';
-import { DownOutlined, UpOutlined } from '@ant-design/icons';
-import ReactECharts from 'echarts-for-react';
-import { useLocation, useNavigate } from 'umi';
+import {
+  useExportQuestionCategory,
+  useFetchRetrievalTaskQuestionList,
+  useFetchRetrievalTaskReport,
+} from '@/hooks/knowledge-hooks';
 import request from '@/utils/request';
-import { useFetchRetrievalTaskReport, useFetchRetrievalTaskQuestionList, useExportQuestionCategory } from '@/hooks/knowledge-hooks';
+import { DownOutlined, UpOutlined } from '@ant-design/icons';
+import { Button, Dropdown, Image, message, Pagination, Tooltip } from 'antd';
+import ReactECharts from 'echarts-for-react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'umi';
 // import request from '@/utils/request';
-import RetrievalResultModal from './retrieval-result-modal';
-import OptimizationSuggestionModal from './optimization-suggestion-modal';
-import styles from './index.less'; // 新增：引入样式模块
 import cha from '@/assets/imgs/cha.png';
-import you from '@/assets/imgs/you.png';
 import liang from '@/assets/imgs/liang.png';
 import reportDetailTopBg from '@/assets/imgs/report-detail-top-bg.png';
+import you from '@/assets/imgs/you.png';
+import styles from './index.less'; // 新增：引入样式模块
+import OptimizationSuggestionModal from './optimization-suggestion-modal';
+import RetrievalResultModal from './retrieval-result-modal';
 interface QuestionItem {
   doc_name: string;
   id: string;
@@ -34,11 +38,12 @@ interface CategoryItem {
 }
 
 const ReportDetail: React.FC = () => {
-
   // 从查询参数读取 reportId 和 知识库 id（id）
   const location = useLocation();
   const query = new URLSearchParams(location.search);
-  const reportId = (query.get('reportId') || query.get('report_id') || '') as string;
+  const reportId = (query.get('reportId') ||
+    query.get('report_id') ||
+    '') as string;
   const knowledgeId = (query.get('id') || query.get('kb_id') || '') as string;
 
   const navigate = useNavigate(); // 新增：用于页面跳转
@@ -48,68 +53,91 @@ const ReportDetail: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
 
   // 筛选状态
-  const [selectedSource, setSelectedSource] = useState<'all' | 'ai' | 'manual'>('all');
+  const [selectedSource, setSelectedSource] = useState<'all' | 'ai' | 'manual'>(
+    'all',
+  );
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedResult, setSelectedResult] = useState<number>(0); // 默认选中第一个选项
   const [resultOpen, setResultOpen] = useState<boolean>(false); // 新增：下拉打开状态
 
   // 检索结果弹窗状态
   const [retrievalModalVisible, setRetrievalModalVisible] = useState(false);
-  const [itemQuestion, setItemQuestion] = useState<any>(null)
+  const [itemQuestion, setItemQuestion] = useState<any>(null);
 
   // 优化建议弹窗状态
-  const [optimizationModalVisible, setOptimizationModalVisible] = useState(false);
+  const [optimizationModalVisible, setOptimizationModalVisible] =
+    useState(false);
   // 获取报告数据
-  const { reportData, loading: reportLoading } = useFetchRetrievalTaskReport(reportId, currentPage, pageSize);
-
-  // 获取问题列表数据
-  const { questionListData, loading: questionListLoading } = useFetchRetrievalTaskQuestionList(
+  const { reportData, loading: reportLoading } = useFetchRetrievalTaskReport(
     reportId,
     currentPage,
     pageSize,
-    selectedSource === 'all' ? undefined : selectedSource === 'ai',
-    selectedCategory === 'all' ? undefined : selectedCategory,
-    selectedResult
   );
+
+  // 获取问题列表数据
+  const { questionListData, loading: questionListLoading } =
+    useFetchRetrievalTaskQuestionList(
+      reportId,
+      currentPage,
+      pageSize,
+      selectedSource === 'all' ? undefined : selectedSource === 'ai',
+      selectedCategory === 'all' ? undefined : selectedCategory,
+      selectedResult,
+    );
 
   // 从API数据获取问题列表
   const questionData = questionListData.page_result.records || [];
-  const statistics = useMemo(() => questionListData.statistics || {
-    ai_generate_category: [],
-    ai_generate_count: 0,
-    manual_input_count: 0,
-    total_question_count: 0
-  }, [questionListData.statistics]);
+  const statistics = useMemo(
+    () =>
+      questionListData.statistics || {
+        ai_generate_category: [],
+        ai_generate_count: 0,
+        manual_input_count: 0,
+        total_question_count: 0,
+      },
+    [questionListData.statistics],
+  );
 
   // 缓存下拉选项
-  const resultOptions = useMemo(() => [
-    { value: 0, label: '全部' },
-    { value: 1, label: '无检索结果' },
-    { value: 2, label: '检索结果分数不足80分' }
-  ], []);
+  const resultOptions = useMemo(
+    () => [
+      { value: 0, label: '全部' },
+      { value: 1, label: '无检索结果' },
+      { value: 2, label: '检索结果分数不足80分' },
+    ],
+    [],
+  );
 
   // 计算每个分类的数量
-  const getCategoryCount = useCallback((category: string) => {
-    if (category === 'all') {
-      return statistics.category_count;
-    }
-    const categoryData = statistics.ai_generate_category.find((item: CategoryItem) => item.category === category);
-    return categoryData ? categoryData.count : 0;
-  }, [statistics]);
+  const getCategoryCount = useCallback(
+    (category: string) => {
+      if (category === 'all') {
+        return statistics.category_count;
+      }
+      const categoryData = statistics.ai_generate_category.find(
+        (item: CategoryItem) => item.category === category,
+      );
+      return categoryData ? categoryData.count : 0;
+    },
+    [statistics],
+  );
 
   // 计算每个来源的数量
-  const getSourceCount = useCallback((source: string) => {
-    if (source === 'all') {
-      return statistics.total_question_count;
-    }
-    if (source === 'ai') {
-      return statistics.ai_generate_count;
-    }
-    if (source === 'manual') {
-      return statistics.manual_input_count;
-    }
-    return 0;
-  }, [statistics]);
+  const getSourceCount = useCallback(
+    (source: string) => {
+      if (source === 'all') {
+        return statistics.total_question_count;
+      }
+      if (source === 'ai') {
+        return statistics.ai_generate_count;
+      }
+      if (source === 'manual') {
+        return statistics.manual_input_count;
+      }
+      return 0;
+    },
+    [statistics],
+  );
 
   // 处理筛选变化，重置分页
   const handleSourceChange = (source: 'all' | 'ai' | 'manual') => {
@@ -145,19 +173,26 @@ const ReportDetail: React.FC = () => {
       const srvFilename = res?.filename as string | undefined;
 
       // 若返回的是 JSON 错误，尝试解析并提示
-      if (blob && (blob as any).type && (blob as any).type.includes?.('application/json')) {
+      if (
+        blob &&
+        (blob as any).type &&
+        (blob as any).type.includes?.('application/json')
+      ) {
         const text = await (blob as any).text();
         try {
           const json = JSON.parse(text);
           message.error(json?.message || '下载失败');
           return;
-        } catch { }
+        } catch {}
       }
       if (!(blob instanceof Blob)) {
         blob = new Blob([res], { type: 'application/octet-stream' });
       }
       // 优先使用 service 解析的 filename
-      let filename = srvFilename || (blob instanceof File ? (blob as File).name : '') || 'question-category.xlsx';
+      let filename =
+        srvFilename ||
+        (blob instanceof File ? (blob as File).name : '') ||
+        'question-category.xlsx';
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -195,6 +230,10 @@ const ReportDetail: React.FC = () => {
         frequency_penalty: 0.7,
       },
       prompt_config: {
+        prologue: '你好！ 我是你的助理，有什么可以帮到你的吗？',
+        quote: true,
+        keyword: false,
+        tts: false,
         system: `你是一个智能助手，请总结知识库的内容来回答问题，请列举知识库中的数据详细回答。当所有知识库内容都与问题无关时，你的回答必须包括“知识库中未找到您要的答案！”这句话。回答需要考虑聊天历史。
         以下是知识库：
         {knowledge}
@@ -204,6 +243,7 @@ const ReportDetail: React.FC = () => {
         reasoning: false,
         parameters: [],
         empty_response: '',
+        toc_enhance: false,
       },
       similarity_threshold: 0.2,
       vector_similarity_weight: 0.7,
@@ -212,7 +252,7 @@ const ReportDetail: React.FC = () => {
 
     try {
       const { data } = await request.post('/v1/dialog/set', { data: payload });
-      console.log(`resprespresp`, data)
+      console.log(`resprespresp`, data);
       if (data && data.code === 0) {
         message.success('助手创建成功');
         navigate(`/chat`);
@@ -245,12 +285,17 @@ const ReportDetail: React.FC = () => {
       return {
         type: 'warning',
         message: '问题可回答率高，但部分问题的答案准确率低',
-        description: '建议优化参数或者补充相关文档试试，点击查看回答准确率较低的问题',
+        description:
+          '建议优化参数或者补充相关文档试试，点击查看回答准确率较低的问题',
       };
     }
 
     // 可回答率 = 100 且 回答准确率 >= 85 且 N >= 推荐问题数
-    if (answerableRate >= 100 && accuracyRate >= 85 && N >= reportData?.recommend_count) {
+    if (
+      answerableRate >= 100 &&
+      accuracyRate >= 85 &&
+      N >= reportData?.recommend_count
+    ) {
       return {
         type: 'success',
         message: '问题可回答率高',
@@ -259,7 +304,11 @@ const ReportDetail: React.FC = () => {
     }
 
     // 可回答率 = 100 且 回答准确率 >= 85 且 N < 推荐问题数
-    if (answerableRate >= 100 && accuracyRate >= 85 && N < reportData?.recommend_count) {
+    if (
+      answerableRate >= 100 &&
+      accuracyRate >= 85 &&
+      N < reportData?.recommend_count
+    ) {
       return {
         type: 'info',
         message: '问题可回答率高',
@@ -293,24 +342,24 @@ const ReportDetail: React.FC = () => {
             width: 16,
             color: [
               [reportData.score / 100, scoreLevel.color], // 动态颜色
-              [1, '#f0f0f0']     // 灰色背景
-            ]
-          }
+              [1, '#f0f0f0'], // 灰色背景
+            ],
+          },
         },
         pointer: {
-          show: false
+          show: false,
         },
         axisTick: {
-          show: false
+          show: false,
         },
         splitLine: {
-          show: false
+          show: false,
         },
         axisLabel: {
-          show: false
+          show: false,
         },
         title: {
-          show: false
+          show: false,
         },
         detail: {
           fontSize: 20,
@@ -322,73 +371,91 @@ const ReportDetail: React.FC = () => {
         },
         data: [
           {
-            value: reportData.score
-          }
-        ]
-      }
-    ]
+            value: reportData.score,
+          },
+        ],
+      },
+    ],
   };
 
   // 缓存分类选项
   const categoryOptions = useMemo(() => {
-    const aiCategories: CategoryItem[] = Array.isArray(statistics.ai_generate_category)
+    const aiCategories: CategoryItem[] = Array.isArray(
+      statistics.ai_generate_category,
+    )
       ? statistics.ai_generate_category
       : [];
     return [
-      { key: "all", value: "all", label: `全部(${getCategoryCount('all') || 0})` },
+      {
+        key: 'all',
+        value: 'all',
+        label: `全部(${getCategoryCount('all') || 0})`,
+      },
       ...aiCategories.map((categoryItem: CategoryItem) => ({
         key: categoryItem.category,
         value: categoryItem.category,
-        label: `${categoryItem.category}(${categoryItem.count})`
-      }))
+        label: `${categoryItem.category}(${categoryItem.count})`,
+      })),
     ];
   }, [statistics, getCategoryCount]);
 
   // 缓存来源选项
-  const sourceOptions = useMemo(() => [
-    <span
-      key="all"
-      style={{
-        padding: '8px 16px',
-        marginRight: '16px',
-        cursor: 'pointer',
-        borderBottom: selectedSource === 'all' ? '2px solid #1890ff' : '2px solid transparent',
-        color: selectedSource === 'all' ? '#1890ff' : '#666'
-      }}
-      onClick={() => handleSourceChange('all')}
-    >
-      所有问题({getSourceCount('all')})
-    </span>,
-    <span
-      key="ai"
-      style={{
-        padding: '8px 16px',
-        marginRight: '16px',
-        cursor: 'pointer',
-        borderBottom: selectedSource === 'ai' ? '2px solid #1890ff' : '2px solid transparent',
-        color: selectedSource === 'ai' ? '#1890ff' : '#666'
-      }}
-      onClick={() => handleSourceChange('ai')}
-    >
-      AI生成({getSourceCount('ai')})
-    </span>,
-    <span
-      key="manual"
-      style={{
-        padding: '8px 16px',
-        marginRight: '16px',
-        cursor: 'pointer',
-        borderBottom: selectedSource === 'manual' ? '2px solid #1890ff' : '2px solid transparent',
-        color: selectedSource === 'manual' ? '#1890ff' : '#666'
-      }}
-      onClick={() => handleSourceChange('manual')}
-    >
-      手动输入({getSourceCount('manual')})
-    </span>
-  ], [selectedSource, getSourceCount]);
+  const sourceOptions = useMemo(
+    () => [
+      <span
+        key="all"
+        style={{
+          padding: '8px 16px',
+          marginRight: '16px',
+          cursor: 'pointer',
+          borderBottom:
+            selectedSource === 'all'
+              ? '2px solid #1890ff'
+              : '2px solid transparent',
+          color: selectedSource === 'all' ? '#1890ff' : '#666',
+        }}
+        onClick={() => handleSourceChange('all')}
+      >
+        所有问题({getSourceCount('all')})
+      </span>,
+      <span
+        key="ai"
+        style={{
+          padding: '8px 16px',
+          marginRight: '16px',
+          cursor: 'pointer',
+          borderBottom:
+            selectedSource === 'ai'
+              ? '2px solid #1890ff'
+              : '2px solid transparent',
+          color: selectedSource === 'ai' ? '#1890ff' : '#666',
+        }}
+        onClick={() => handleSourceChange('ai')}
+      >
+        AI生成({getSourceCount('ai')})
+      </span>,
+      <span
+        key="manual"
+        style={{
+          padding: '8px 16px',
+          marginRight: '16px',
+          cursor: 'pointer',
+          borderBottom:
+            selectedSource === 'manual'
+              ? '2px solid #1890ff'
+              : '2px solid transparent',
+          color: selectedSource === 'manual' ? '#1890ff' : '#666',
+        }}
+        onClick={() => handleSourceChange('manual')}
+      >
+        手动输入({getSourceCount('manual')})
+      </span>,
+    ],
+    [selectedSource, getSourceCount],
+  );
 
   // 检索结果下拉菜单（antd v5：使用 menu 配置而非 overlay/Menu 组件）
-  const resultMenuItems = resultOptions.map(option => ({
+  const resultMenuItems = resultOptions.map((option) => ({
     key: option.value.toString(),
     label: option.label,
   }));
@@ -419,7 +486,7 @@ const ReportDetail: React.FC = () => {
 
   // 打开弹窗（由弹窗内部拉取检索结果）
   const handleViewRetrieval = async (item: QuestionItem) => {
-    setItemQuestion(item)
+    setItemQuestion(item);
     setRetrievalModalVisible(true);
   };
 
@@ -439,36 +506,76 @@ const ReportDetail: React.FC = () => {
     }
   };
   return (
-    <div style={{ height: '100%', width: '100%', backgroundColor: '#F2F3F5', minWidth: 1080, overflow: 'auto' }}>
-      <div style={{ backgroundColor: '#fff', borderRadius: 4, marginBottom: 20 }}>
-
-        <div style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div
+      style={{
+        height: '100%',
+        width: '100%',
+        backgroundColor: '#F2F3F5',
+        minWidth: 1080,
+        overflow: 'auto',
+      }}
+    >
+      <div
+        style={{ backgroundColor: '#fff', borderRadius: 4, marginBottom: 20 }}
+      >
+        <div
+          style={{
+            padding: 16,
+            borderBottom: '1px solid #eee',
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+          }}
+        >
           <div>
-            <i style={{ height: '100%', borderLeft: "4px solid #0C7CFF", borderRadius: '4px' }}></i>
-            <span className='pl-2 text-[16px] font-bold '>评估报告概览</span>
+            <i
+              style={{
+                height: '100%',
+                borderLeft: '4px solid #0C7CFF',
+                borderRadius: '4px',
+              }}
+            ></i>
+            <span className="pl-2 text-[16px] font-bold ">评估报告概览</span>
           </div>
-          <div className='pl-2  flex'>
-            <span className='flex'>（评估分数：<img style={{ height: 22 }} src={you} alt="优" /> 90-100 <img style={{ height: 22 }} src={liang} alt="良" /> 70-90
+          <div className="pl-2  flex">
+            <span className="flex">
+              （评估分数：
+              <img style={{ height: 22 }} src={you} alt="优" /> 90-100{' '}
+              <img style={{ height: 22 }} src={liang} alt="良" /> 70-90
               <img src={cha} style={{ height: 22 }} alt="差" />
-              0-70）</span>
+              0-70）
+            </span>
           </div>
         </div>
         <div style={{ padding: 16 }}>
-          <div className='flex justify-between mb-4'>
-            <div className=' p-4 ' style={{ width: "25%", boxShadow: '0px 4px 12px 0px rgba(0, 0, 0, 0.12)', borderRadius: '16px' }}>
-              <div className='text-left w-full flex items-center gap-2'>
+          <div className="flex justify-between mb-4">
+            <div
+              className=" p-4 "
+              style={{
+                width: '25%',
+                boxShadow: '0px 4px 12px 0px rgba(0, 0, 0, 0.12)',
+                borderRadius: '16px',
+              }}
+            >
+              <div className="text-left w-full flex items-center gap-2">
                 <span>评估分数</span>
                 <Tooltip
                   placement="top"
                   title={
                     <div style={{ textAlign: 'left', lineHeight: 1.6 }}>
-                      <div style={{ fontWeight: 600, marginBottom: 6 }}>分数计算说明</div>
-                      <div style={{ marginBottom: 6 }}>综合得分根据知识库回答的覆盖度、准确度及相关性等指标计算得出：</div>
+                      <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                        分数计算说明
+                      </div>
+                      <div style={{ marginBottom: 6 }}>
+                        综合得分根据知识库回答的覆盖度、准确度及相关性等指标计算得出：
+                      </div>
                       <div>覆盖度：系统能回答的问题比例</div>
                       <div>准确度：系统回答中正确的比例</div>
                       <div>相关性：答案内容与问题的匹配程度</div>
                       <div>排序合理性：系统能否优先展示最相关答案</div>
-                      <div>系统通过多维度加权计算(权重自动优化)，反映知识库整体质量。</div>
+                      <div>
+                        系统通过多维度加权计算(权重自动优化)，反映知识库整体质量。
+                      </div>
                     </div>
                   }
                 >
@@ -479,99 +586,171 @@ const ReportDetail: React.FC = () => {
                     fill="none"
                     style={{ cursor: 'pointer', color: '#999' }}
                   >
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                     <circle cx="12" cy="17" r="1" fill="currentColor" />
                   </svg>
                 </Tooltip>
               </div>
 
-              <div style={{ width: '200px', height: '100px', margin: '0 auto', }}>
-                <ReactECharts option={gaugeOption} style={{ width: '100%', height: '100%' }} />
+              <div
+                style={{ width: '200px', height: '100px', margin: '0 auto' }}
+              >
+                <ReactECharts
+                  option={gaugeOption}
+                  style={{ width: '100%', height: '100%' }}
+                />
               </div>
-              <div style={{
-                textAlign: 'center',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                color: scoreLevel.color,
-                marginTop: '6px'
-              }}>
+              <div
+                style={{
+                  textAlign: 'center',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  color: scoreLevel.color,
+                  marginTop: '6px',
+                }}
+              >
                 {scoreLevel.level}
               </div>
             </div>
 
-
-            <div className=' p-4 ' style={{ width: "73%", boxShadow: ' 0px 4px 12px 0px rgba(0, 0, 0, 0.12)', borderRadius: '16px' }}>
-              <div className='w-full text-left' style={{ color: '#1D2129', marginBottom: '16px' }}>单项情况</div>
-              <div className='flex justify-center gap-4'>
-
-                <Tooltip
-                  title={getTooltipTitle()}
-                >
-
-
-                  <div className='p-4 ' style={{
-                    width: "40%",
-                    height: 110,
-                    backgroundImage: `url(${reportDetailTopBg})`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}>
-                    <div style={{ color: '#1D2129', fontWeight: 500, fontSize: 16 }}>问题可回答率</div>
-                    <div style={{ color: '#1D2129', fontWeight: 600, fontSize: 20 }}>
+            <div
+              className=" p-4 "
+              style={{
+                width: '73%',
+                boxShadow: ' 0px 4px 12px 0px rgba(0, 0, 0, 0.12)',
+                borderRadius: '16px',
+              }}
+            >
+              <div
+                className="w-full text-left"
+                style={{ color: '#1D2129', marginBottom: '16px' }}
+              >
+                单项情况
+              </div>
+              <div className="flex justify-center gap-4">
+                <Tooltip title={getTooltipTitle()}>
+                  <div
+                    className="p-4 "
+                    style={{
+                      width: '40%',
+                      height: 110,
+                      backgroundImage: `url(${reportDetailTopBg})`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: '#1D2129',
+                        fontWeight: 500,
+                        fontSize: 16,
+                      }}
+                    >
+                      问题可回答率
+                    </div>
+                    <div
+                      style={{
+                        color: '#1D2129',
+                        fontWeight: 600,
+                        fontSize: 20,
+                      }}
+                    >
                       {Math.round(reportData.answerable_rate * 100)}%
                     </div>
-
                   </div>
                 </Tooltip>
                 <Tooltip
                   title={
                     <div>
                       <div>
-                        回答准确率 {Math.round(reportData.accuracy_rate * 100)}%:
-                        在能回答的问题中，{Math.round(reportData.accuracy_rate * 100)}%的问题能在前3个结果里找到相关答案。
+                        回答准确率 {Math.round(reportData.accuracy_rate * 100)}
+                        %: 在能回答的问题中，
+                        {Math.round(reportData.accuracy_rate * 100)}
+                        %的问题能在前3个结果里找到相关答案。
                       </div>
                       <div> 回答准确率:Top3混合相似度分数高于80分。</div>
-
-
                     </div>
-
                   }
                 >
-
-                  <div className='p-4' style={{
-                    width: "40%", height: 110,
-                    backgroundImage: `url(${reportDetailTopBg})`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}>
-                    <div style={{ color: '#1D2129', fontWeight: 500, fontSize: 16 }}>回答准确率</div>
-                    <div style={{ color: '#1D2129', fontWeight: 600, fontSize: 20 }}>
+                  <div
+                    className="p-4"
+                    style={{
+                      width: '40%',
+                      height: 110,
+                      backgroundImage: `url(${reportDetailTopBg})`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: '#1D2129',
+                        fontWeight: 500,
+                        fontSize: 16,
+                      }}
+                    >
+                      回答准确率
+                    </div>
+                    <div
+                      style={{
+                        color: '#1D2129',
+                        fontWeight: 600,
+                        fontSize: 20,
+                      }}
+                    >
                       {Math.round(reportData.accuracy_rate * 100)}%
                     </div>
-
                   </div>
                 </Tooltip>
                 <Tooltip
                   title={`根据知识库文件个数、大小建议需 ${reportData?.recommend_count} 个问题进行测试。`}
                 >
-                  <div className='p-4' style={{
-                    width: "40%", height: 110,
-                    backgroundImage: `url(${reportDetailTopBg})`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}>
-                    <div style={{ color: '#1D2129', fontWeight: 500, fontSize: 16 }}>问题总数</div>
-                    <div style={{ color: '#1D2129', fontWeight: 600, fontSize: 20 }}>
+                  <div
+                    className="p-4"
+                    style={{
+                      width: '40%',
+                      height: 110,
+                      backgroundImage: `url(${reportDetailTopBg})`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: '#1D2129',
+                        fontWeight: 500,
+                        fontSize: 16,
+                      }}
+                    >
+                      问题总数
+                    </div>
+                    <div
+                      style={{
+                        color: '#1D2129',
+                        fontWeight: 600,
+                        fontSize: 20,
+                      }}
+                    >
                       {reportData.question_count}
                     </div>
-
                   </div>
                 </Tooltip>
-
               </div>
             </div>
           </div>
@@ -588,7 +767,7 @@ const ReportDetail: React.FC = () => {
                       border: '1px solid #ffccc7',
                       padding: '12px 16px',
                       borderRadius: '6px',
-                      marginBottom: '12px'
+                      marginBottom: '12px',
                     };
                   case 'warning':
                     return {
@@ -597,7 +776,7 @@ const ReportDetail: React.FC = () => {
                       border: '1px solid #ffd591',
                       padding: '12px 16px',
                       borderRadius: '6px',
-                      marginBottom: '12px'
+                      marginBottom: '12px',
                     };
                   case 'success':
                     return {
@@ -606,7 +785,7 @@ const ReportDetail: React.FC = () => {
                       border: '1px solid #b7eb8f',
                       padding: '12px 16px',
                       borderRadius: '6px',
-                      marginBottom: '12px'
+                      marginBottom: '12px',
                     };
                   case 'info':
                   default:
@@ -616,7 +795,7 @@ const ReportDetail: React.FC = () => {
                       border: '1px solid #91d5ff',
                       padding: '12px 16px',
                       borderRadius: '6px',
-                      marginBottom: '12px'
+                      marginBottom: '12px',
                     };
                 }
               };
@@ -626,22 +805,22 @@ const ReportDetail: React.FC = () => {
                   <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
                     {evaluation.type === 'error' ? (
                       <div>
-                        <span>
-                          可回答率低，建议继续补充知识库内容，
-                        </span>
-                        <Button type='link' style={{ padding: 0 }}
+                        <span>可回答率低，建议继续补充知识库内容，</span>
+                        <Button
+                          type="link"
+                          style={{ padding: 0 }}
                           onClick={() => handleResultChange(1)}
                         >
                           点击查看无检索结果的问题
                         </Button>
                       </div>
-
                     ) : evaluation.type === 'warning' ? (
                       <div>
                         <span>
                           问题可回答率高，但部分问题的答案准确率低,建议优化参数或者补充相关文档试试，
                         </span>
-                        <Button type='link'
+                        <Button
+                          type="link"
                           style={{ color: '#1677ff', cursor: 'pointer' }}
                           onClick={() => handleResultChange(2)}
                         >
@@ -649,20 +828,22 @@ const ReportDetail: React.FC = () => {
                         </Button>
                         <div>
                           <Button
-                            type='link'
-                            style={{ color: '#1677ff', cursor: 'pointer', padding: 0 }}
+                            type="link"
+                            style={{
+                              color: '#1677ff',
+                              cursor: 'pointer',
+                              padding: 0,
+                            }}
                             onClick={() => setOptimizationModalVisible(true)}
                           >
                             点击查看具体优化建议
                           </Button>
                         </div>
                       </div>
-
                     ) : (
                       evaluation.description
                     )}
                   </div>
-
                 </div>
               );
             })()}
@@ -695,14 +876,29 @@ const ReportDetail: React.FC = () => {
       </div>
 
       <div style={{ backgroundColor: '#fff', borderRadius: 4 }}>
-        <div style={{ padding: 16, display: 'flex', justifyContent: "space-between", borderBottom: '1px solid #eee' }}>
+        <div
+          style={{
+            padding: 16,
+            display: 'flex',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid #eee',
+          }}
+        >
           <div>
-            <i style={{ height: '100%', borderLeft: "4px solid #0C7CFF", borderRadius: '4px' }}></i>
-            <span className='pl-2 text-[16px] font-bold'>测试问题分类</span>
+            <i
+              style={{
+                height: '100%',
+                borderLeft: '4px solid #0C7CFF',
+                borderRadius: '4px',
+              }}
+            ></i>
+            <span className="pl-2 text-[16px] font-bold">测试问题分类</span>
           </div>
 
-          <div className='flex gap-2'>
-            <Button type='link' loading={downloading} onClick={handleDownload}>下载</Button>
+          <div className="flex gap-2">
+            <Button type="link" loading={downloading} onClick={handleDownload}>
+              下载
+            </Button>
             <Dropdown
               menu={resultMenu}
               trigger={['click']}
@@ -710,10 +906,15 @@ const ReportDetail: React.FC = () => {
               open={resultOpen}
               className={styles.customDropdown} // 新增：应用自定义样式，设置每项高度为20px
             >
-              <Button type='link' style={{ lineHeight: '20px !important' }}>
-                {resultOptions.find(option => option.value === selectedResult)?.label || '全部'}
+              <Button type="link" style={{ lineHeight: '20px !important' }}>
+                {resultOptions.find((option) => option.value === selectedResult)
+                  ?.label || '全部'}
                 {/* 根据下拉打开状态切换图标 */}
-                {resultOpen ? <UpOutlined style={{ marginLeft: 8 }} /> : <DownOutlined style={{ marginLeft: 8 }} />}
+                {resultOpen ? (
+                  <UpOutlined style={{ marginLeft: 8 }} />
+                ) : (
+                  <DownOutlined style={{ marginLeft: 8 }} />
+                )}
               </Button>
             </Dropdown>
           </div>
@@ -726,22 +927,24 @@ const ReportDetail: React.FC = () => {
           <div style={{ padding: 16 }}>
             <div>
               {/* 来源筛选 */}
-              <div style={{ marginBottom: '16px' }}>
-                {sourceOptions}
-              </div>
+              <div style={{ marginBottom: '16px' }}>{sourceOptions}</div>
               {/* 分类筛选 */}
-              <div style={{
-                marginBottom: '16px',
-                width: '100%',
-                overflowX: 'auto',
-                whiteSpace: 'nowrap',
-                paddingBottom: '8px'
-              }}>
-                <div style={{
-                  display: 'inline-flex',
-                  minWidth: 'max-content',
-                }}>
-                  {categoryOptions.map(option => (
+              <div
+                style={{
+                  marginBottom: '16px',
+                  width: '100%',
+                  overflowX: 'auto',
+                  whiteSpace: 'nowrap',
+                  paddingBottom: '8px',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    minWidth: 'max-content',
+                  }}
+                >
+                  {categoryOptions.map((option) => (
                     <span
                       key={option.value}
                       onClick={() => handleCategoryChange(option.value)}
@@ -749,8 +952,14 @@ const ReportDetail: React.FC = () => {
                         padding: '8px 12px',
                         marginRight: '12px',
                         cursor: 'pointer',
-                        borderBottom: selectedCategory === option.value ? '2px solid #1890ff' : '2px solid transparent',
-                        color: selectedCategory === option.value ? '#1890ff' : '#666',
+                        borderBottom:
+                          selectedCategory === option.value
+                            ? '2px solid #1890ff'
+                            : '2px solid transparent',
+                        color:
+                          selectedCategory === option.value
+                            ? '#1890ff'
+                            : '#666',
                         whiteSpace: 'nowrap',
                         display: 'inline-block',
                       }}
@@ -762,41 +971,85 @@ const ReportDetail: React.FC = () => {
               </div>
             </div>
 
-            {
-              questionData.length > 0 ?
-                (questionData.map((item: QuestionItem) => (
-                  <div key={item.id} style={{ padding: 16, borderBottom: '1px solid #f0f0f0' }}>
-                    <div className='flex justify-between items-center'>
-                      <div className='flex gap-2'>
-                        <div>
-                          <svg xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" fill="none" version="1.1" width="22" height="18.33260154724121" viewBox="0 0 22 18.33260154724121">
-                            <g>
-                              <path d="M0,2.2L0,16.132601C0,17.371202,0.96360004,18.332602,2.2,18.332602L22,18.332602L17.6,13.9326L17.6,2.2C17.6,0.96140015,16.6364,0,15.4,0L2.2,0C0.96360016,0,0,0.96359992,0,2.2ZM8.731801,14.671801L7.0994005,14.671801L7.0994005,13.195601L8.731801,13.195601L8.731801,14.671801ZM11.726,7.8253999C11.726,8.2279997,11.589602,8.4963999,11.3168,8.7648001C10.9076,9.0332012,10.500601,9.1673994,9.9550009,9.1673994L9.5480003,9.1673994C9.2752008,9.1673994,9.0046005,9.3015995,9.0046005,9.4358025C9.0046005,9.5700006,8.8682003,9.7042007,8.8682003,9.7042007L8.8682003,11.9856L7.2358007,11.9856L7.2358007,9.5700006C7.2358007,9.1673994,7.2358007,8.7648001,7.3722005,8.6306C7.5086002,8.3621998,7.7814002,8.0938005,8.052001,7.9596009C8.3248005,7.8254013,8.5954008,7.6912003,8.731801,7.6912003L9.4116011,7.6912003C9.8208008,7.6912003,10.091401,7.4228001,10.091401,6.8860006L10.091401,5.8124008C10.091401,5.4098005,9.8185997,5.1414003,9.2752008,5.1414003L5.8740005,5.1414003L5.8740005,3.6652005L9.4116011,3.6652005C9.9550009,3.6652005,10.364201,3.7994008,10.637,3.9336007C10.909801,4.0678005,11.180402,4.3362007,11.3168,4.6046004C11.4532,4.8730006,11.589602,5.1414003,11.589602,5.4098005L11.726,7.8253999Z" fill="#306EFD" fillOpacity="0.30000001192092896" />
-                            </g>
-                          </svg></div>
-                        <div>
-                          <div style={{ fontSize: '16px', fontWeight: '500', color: '#1D2129' }}>{item.question_text}</div>
-                          <div style={{ marginTop: 8, color: 'rgba(29, 33, 41, 0.55)' }}>
-                            <span style={{ marginRight: '16px' }}>检索结果数：{item.retrieval_count}</span>
-                            <span style={{ marginRight: '16px' }}>最高分数:{item.max_score * 100 || 0}</span>
-                            <span style={{ marginRight: '16px' }}>来源：{item.auto_generate ? 'AI生成' : '手动输入'}</span>
-                            {item.category_sub && <span style={{ marginRight: '16px' }}>分类：{item.category_sub}</span>}
-                            {item.auto_generate && <span >源文件：{item.doc_name}</span>}
-                          </div>
-                        </div>
-
+            {questionData.length > 0 ? (
+              questionData.map((item: QuestionItem) => (
+                <div
+                  key={item.id}
+                  style={{ padding: 16, borderBottom: '1px solid #f0f0f0' }}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-2">
+                      <div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          xlink="http://www.w3.org/1999/xlink"
+                          fill="none"
+                          version="1.1"
+                          width="22"
+                          height="18.33260154724121"
+                          viewBox="0 0 22 18.33260154724121"
+                        >
+                          <g>
+                            <path
+                              d="M0,2.2L0,16.132601C0,17.371202,0.96360004,18.332602,2.2,18.332602L22,18.332602L17.6,13.9326L17.6,2.2C17.6,0.96140015,16.6364,0,15.4,0L2.2,0C0.96360016,0,0,0.96359992,0,2.2ZM8.731801,14.671801L7.0994005,14.671801L7.0994005,13.195601L8.731801,13.195601L8.731801,14.671801ZM11.726,7.8253999C11.726,8.2279997,11.589602,8.4963999,11.3168,8.7648001C10.9076,9.0332012,10.500601,9.1673994,9.9550009,9.1673994L9.5480003,9.1673994C9.2752008,9.1673994,9.0046005,9.3015995,9.0046005,9.4358025C9.0046005,9.5700006,8.8682003,9.7042007,8.8682003,9.7042007L8.8682003,11.9856L7.2358007,11.9856L7.2358007,9.5700006C7.2358007,9.1673994,7.2358007,8.7648001,7.3722005,8.6306C7.5086002,8.3621998,7.7814002,8.0938005,8.052001,7.9596009C8.3248005,7.8254013,8.5954008,7.6912003,8.731801,7.6912003L9.4116011,7.6912003C9.8208008,7.6912003,10.091401,7.4228001,10.091401,6.8860006L10.091401,5.8124008C10.091401,5.4098005,9.8185997,5.1414003,9.2752008,5.1414003L5.8740005,5.1414003L5.8740005,3.6652005L9.4116011,3.6652005C9.9550009,3.6652005,10.364201,3.7994008,10.637,3.9336007C10.909801,4.0678005,11.180402,4.3362007,11.3168,4.6046004C11.4532,4.8730006,11.589602,5.1414003,11.589602,5.4098005L11.726,7.8253999Z"
+                              fill="#306EFD"
+                              fillOpacity="0.30000001192092896"
+                            />
+                          </g>
+                        </svg>
                       </div>
                       <div>
-                        <Button type='primary' onClick={() => handleViewRetrieval(item)}>查看检索结果</Button>
+                        <div
+                          style={{
+                            fontSize: '16px',
+                            fontWeight: '500',
+                            color: '#1D2129',
+                          }}
+                        >
+                          {item.question_text}
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 8,
+                            color: 'rgba(29, 33, 41, 0.55)',
+                          }}
+                        >
+                          <span style={{ marginRight: '16px' }}>
+                            检索结果数：{item.retrieval_count}
+                          </span>
+                          <span style={{ marginRight: '16px' }}>
+                            最高分数:{item.max_score * 100 || 0}
+                          </span>
+                          <span style={{ marginRight: '16px' }}>
+                            来源：{item.auto_generate ? 'AI生成' : '手动输入'}
+                          </span>
+                          {item.category_sub && (
+                            <span style={{ marginRight: '16px' }}>
+                              分类：{item.category_sub}
+                            </span>
+                          )}
+                          {item.auto_generate && (
+                            <span>源文件：{item.doc_name}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div>
+                      <Button
+                        type="primary"
+                        onClick={() => handleViewRetrieval(item)}
+                      >
+                        查看检索结果
+                      </Button>
+                    </div>
                   </div>
-                ))) : (
-                  <div style={{ padding: 40, textAlign: 'center' }}>
-                    <div>无数据</div>
-                  </div>
-                )
-            }
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: 40, textAlign: 'center' }}>
+                <div>无数据</div>
+              </div>
+            )}
 
             {/* 分页组件 */}
             <div style={{ padding: '16px 0', textAlign: 'right' }}>
@@ -831,23 +1084,41 @@ const ReportDetail: React.FC = () => {
               visible={optimizationModalVisible}
               onClose={() => setOptimizationModalVisible(false)}
               title="具体优化方向"
-
             >
               {/* 在这里添加您的优化建议内容 */}
               <div>
-                <p style={{ marginBottom: '16px' }}>1、调整混合检索的权重参数</p>
-                <Image src={require('@/assets/imgs/step1.png')} style={{ width: 500 }} alt="step1" />
+                <p style={{ marginBottom: '16px' }}>
+                  1、调整混合检索的权重参数
+                </p>
+                <Image
+                  src={require('@/assets/imgs/step1.png')}
+                  style={{ width: 500 }}
+                  alt="step1"
+                />
                 <p style={{ margin: '16px 0' }}>2、添加重排序模型</p>
-                <Image src={require('@/assets/imgs/step2.png')} style={{ width: 500 }} alt="step1" />
-                <p style={{ margin: '16px 0' }}>3、检查并调整文件分片方法、分段大小等，确保分片合适且正确</p>
-                <Image src={require('@/assets/imgs/step3.png')} style={{ width: 500 }} alt="step1" />
+                <Image
+                  src={require('@/assets/imgs/step2.png')}
+                  style={{ width: 500 }}
+                  alt="step1"
+                />
+                <p style={{ margin: '16px 0' }}>
+                  3、检查并调整文件分片方法、分段大小等，确保分片合适且正确
+                </p>
+                <Image
+                  src={require('@/assets/imgs/step3.png')}
+                  style={{ width: 500 }}
+                  alt="step1"
+                />
                 <p style={{ margin: '16px 0' }}>4、选择合适领域的嵌入模型</p>
-                <Image src={require('@/assets/imgs/step4.png')} style={{ width: 500 }} alt="step1" />
+                <Image
+                  src={require('@/assets/imgs/step4.png')}
+                  style={{ width: 500 }}
+                  alt="step1"
+                />
               </div>
             </OptimizationSuggestionModal>
           </div>
         )}
-
       </div>
     </div>
   );

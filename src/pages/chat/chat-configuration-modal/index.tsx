@@ -90,6 +90,11 @@ const ChatConfigurationModal = ({
       ...nextValues,
       vector_similarity_weight: 1 - nextValues.vector_similarity_weight,
       prompt_config: {
+        prologue: '你好！ 我是你的助理，有什么可以帮到你的吗？',
+        quote: true,
+        keyword: false,
+        tts: false,
+        toc_enhance: false,
         ...nextValues.prompt_config,
         parameters: promptEngineRef.current,
         empty_response: emptyResponse,
@@ -109,10 +114,25 @@ const ChatConfigurationModal = ({
   };
 
   const title = (
-      <div style={{ width: '100%',background: '#F7F9FF', borderBottom: "1px solid #E5E6EB", paddingBottom: '12px',paddingTop: '20px', paddingLeft: '20px' }}>
-        <i style={{ height: '100%', borderLeft: "4px solid #0C7CFF", borderRadius: '4px' }}></i>
-        <span className='pl-2 text-[16px] font-bold'>助理配置</span>
-      </div>
+    <div
+      style={{
+        width: '100%',
+        background: '#F7F9FF',
+        borderBottom: '1px solid #E5E6EB',
+        paddingBottom: '12px',
+        paddingTop: '20px',
+        paddingLeft: '20px',
+      }}
+    >
+      <i
+        style={{
+          height: '100%',
+          borderLeft: '4px solid #0C7CFF',
+          borderRadius: '4px',
+        }}
+      ></i>
+      <span className="pl-2 text-[16px] font-bold">助理配置</span>
+    </div>
   );
 
   useEffect(() => {
@@ -123,7 +143,10 @@ const ChatConfigurationModal = ({
       if (icon) {
         fileList = [{ uid: '1', name: 'file', thumbUrl: icon, status: 'done' }];
       }
-      console.log(`nitialDialog.vector_similarity_weight`,initialDialog.vector_similarity_weight);
+      console.log(
+        `nitialDialog.vector_similarity_weight`,
+        initialDialog.vector_similarity_weight,
+      );
       console.log(initialDialog);
       form.setFieldsValue({
         ...initialDialog,
@@ -133,9 +156,10 @@ const ChatConfigurationModal = ({
         icon: fileList,
         llm_id: initialDialog.llm_id ?? modelId,
         vector_similarity_weight:
-         (typeof initialDialog.vector_similarity_weight === 'number' && !isNaN(initialDialog.vector_similarity_weight))
-           ? initialDialog.vector_similarity_weight
-           : 0.3,
+          typeof initialDialog.vector_similarity_weight === 'number' &&
+          !isNaN(initialDialog.vector_similarity_weight)
+            ? initialDialog.vector_similarity_weight
+            : 0.3,
       });
     }
   }, [initialDialog, form, visible, modelId]);
@@ -180,7 +204,7 @@ const ChatConfigurationModal = ({
         {...layout}
         name="nest-messages"
         form={form}
-        style={{ maxWidth: 600 ,margin:'20px 0'}}
+        style={{ maxWidth: 600, margin: '20px 0' }}
         validateMessages={validateMessages}
         colon={false}
         onKeyDown={handleKeyDown}
