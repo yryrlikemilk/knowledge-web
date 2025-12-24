@@ -24,9 +24,14 @@ const {
   createSystemToken,
   getSystemConfig,
   setLangfuseConfig,
+  passwordless_login,
 } = api;
 
 const methods = {
+  passwordless_login: {
+    url: passwordless_login,
+    method: 'post',
+  },
   login: {
     url: login,
     method: 'post',

@@ -4,7 +4,7 @@ import { Outlet } from 'umi';
 
 export default () => {
   const { isLogin } = useAuth();
-  if (isLogin === true) {
+  if (isLogin === true || location.pathname === '/passwordless-login') {
     return <Outlet />;
   } else if (isLogin === false) {
     redirectToLogin();

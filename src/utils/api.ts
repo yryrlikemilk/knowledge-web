@@ -3,6 +3,7 @@ let api_host = `/v1`;
 export { api_host, api_rag_host };
 export default {
   // user
+  passwordless_login: `${api_rag_host}/user/token/secretKey`,
   login: `${api_rag_host}/user/login`,
   logout: `${api_host}/user/logout`,
   register: `${api_rag_host}/user/register`,

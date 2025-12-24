@@ -25,6 +25,11 @@ export enum Routes {
 
 const routes = [
   {
+    path: 'passwordless-login',
+    component: '@/pages/passwordless-login',
+    layout: false,
+  },
+  {
     path: '/login',
     component: '@/pages/login',
     layout: false,
@@ -78,11 +83,13 @@ const routes = [
           },
           {
             path: '/knowledge/testing/deep-search',
-            component: '@/pages/add-knowledge/components/knowledge-testing/depth-evaluation',
+            component:
+              '@/pages/add-knowledge/components/knowledge-testing/depth-evaluation',
           },
           {
             path: '/knowledge/testing/deep-search/report',
-            component: '@/pages/add-knowledge/components/knowledge-testing/depth-evaluation/report-detail',
+            component:
+              '@/pages/add-knowledge/components/knowledge-testing/depth-evaluation/report-detail',
           },
           {
             path: '/knowledge/knowledgeGraph',
