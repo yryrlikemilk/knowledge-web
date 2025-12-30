@@ -25,6 +25,11 @@ export enum Routes {
 
 const routes = [
   {
+    path: '/chat/layout-share',
+    component: '@/pages/chat/share/layout',
+    layout: false,
+  },
+  {
     path: 'passwordless-login',
     component: '@/pages/passwordless-login',
     layout: false,

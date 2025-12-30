@@ -32,10 +32,12 @@ const EmbedModal = ({
   form,
   beta = '',
   isAgent,
+  dialogId = '',
 }: IModalProps<any> & {
   token: string;
   form: SharedFrom;
   beta: string;
+  dialogId?: string;
   isAgent: boolean;
 }) => {
   const { t } = useTranslate('chat');
@@ -52,7 +54,7 @@ const EmbedModal = ({
   }, []);
 
   const generateIframeSrc = () => {
-    let src = `${location.origin}/chat/share?shared_id=${token}&from=${form}&auth=${beta}`;
+    let src = `${location.origin}/chat/layout-share?dialogId=${token}&from=${form}&secretKey=${beta}&isNew=true`;
     if (visibleAvatar) {
       src += '&visible_avatar=1';
     }
@@ -154,7 +156,7 @@ const EmbedModal = ({
         {token}
       </Paragraph>
       <Link
-      //ragflow
+        //ragflow
         href={
           isAgent
             ? 'https://baidu.io/docs/dev/http_api_reference#create-session-with-agent'
