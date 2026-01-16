@@ -179,6 +179,7 @@ export type FlowSelectOptionType = {
   label: React.ReactNode;
   value: string;
   disabled?: boolean;
+  icon?: React.ReactNode;
 };
 
 export type FlowSelectGroupOptionType = {

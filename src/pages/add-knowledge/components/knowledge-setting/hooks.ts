@@ -25,8 +25,32 @@ export const useSubmitKnowledgeConfiguration = (form: FormInstance) => {
   const submitKnowledgeConfiguration = useCallback(async () => {
     const values = await form.validateFields();
     const avatar = await getBase64FromUploadFileList(values.avatar);
-    saveKnowledgeConfiguration({
+    const obj = {
       ...values,
+      parser_config: {
+        children_delimiter: '',
+        enable_children: false,
+        enable_metadata: false,
+        image_context_size: 0,
+        image_table_context_window: 0,
+        metadata: [],
+        mineru_formula_enable: true,
+        mineru_lang: 'Chinese',
+        mineru_parse_method: 'auto',
+        mineru_table_enable: true,
+        overlapped_percent: 0,
+        table_context_size: 0,
+        toc_extraction: false,
+        topn_tags: 3,
+        ...values.parser_config,
+      },
+    };
+    saveKnowledgeConfiguration({
+      connectors: [],
+      language: 'chinese',
+      pipeline_id: '',
+      ...obj,
+
       avatar,
     });
     navigateToDataset();
@@ -57,12 +81,12 @@ export function useSelectEmbeddingModelOptions() {
 export function useHasParsedDocument() {
   const { data: knowledgeDetails } = useFetchKnowledgeBaseConfiguration();
   const { id } = useParams();
-  console.log(`id-----`,id)
+  console.log(`id-----`, id);
   // 如果是创建新知识库（没有 id），则不禁用选择
   if (!id) {
     return false;
   }
-  
+
   return knowledgeDetails.chunk_num > 0;
 }
 

@@ -2,13 +2,14 @@ import { DocumentParserType } from '@/constants/knowledge';
 import { useTranslate } from '@/hooks/common-hooks';
 import { normFile } from '@/utils/file-util';
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Radio, Space, Upload, Row, Col, } from 'antd';
+import { Button, Col, Form, Input, Radio, Row, Space, Upload } from 'antd';
 import { FormInstance } from 'antd/lib';
 import { useEffect, useMemo, useState } from 'react';
 import {
   useFetchKnowledgeConfigurationOnMount,
   useSubmitKnowledgeConfiguration,
 } from '../hooks';
+import styles from '../index.less';
 import { AudioConfiguration } from './audio';
 import { BookConfiguration } from './book';
 import { EmailConfiguration } from './email';
@@ -24,7 +25,6 @@ import { QAConfiguration } from './qa';
 import { ResumeConfiguration } from './resume';
 import { TableConfiguration } from './table';
 import { TagConfiguration } from './tag';
-import styles from '../index.less';
 
 const ConfigurationComponentMap = {
   [DocumentParserType.Naive]: NaiveConfiguration,
@@ -57,6 +57,8 @@ export const ConfigurationForm = ({ form }: { form: FormInstance }) => {
   const knowledgeDetails = useFetchKnowledgeConfigurationOnMount(form);
   const parserId: DocumentParserType = Form.useWatch('parser_id', form);
   const ConfigurationComponent = useMemo(() => {
+    console.log(finalParserId, '123');
+
     return finalParserId
       ? ConfigurationComponentMap[finalParserId]
       : EmptyComponent;
@@ -71,7 +73,13 @@ export const ConfigurationForm = ({ form }: { form: FormInstance }) => {
   }, [knowledgeDetails.parser_id]);
 
   return (
-    <Form form={form} className={styles.configurationForm} name="validateOnly" layout="vertical" autoComplete="off">
+    <Form
+      form={form}
+      className={styles.configurationForm}
+      name="validateOnly"
+      layout="vertical"
+      autoComplete="off"
+    >
       <Row gutter={[32, 0]}>
         <Col span={12}>
           <Form.Item name="name" label={t('name')} rules={[{ required: true }]}>
@@ -116,8 +124,8 @@ export const ConfigurationForm = ({ form }: { form: FormInstance }) => {
       </Row>
 
       <Form.Item className={styles.buttonWrapper}>
-        <div >
-          <Space  >
+        <div>
+          <Space>
             <Button size={'middle'} onClick={navigateToDataset}>
               {t('cancel')}
             </Button>

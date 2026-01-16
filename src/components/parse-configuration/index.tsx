@@ -54,6 +54,7 @@ const ParseConfiguration = () => {
       >
         <Switch />
       </Form.Item>
+
       <Form.Item
         shouldUpdate={(prevValues, curValues) =>
           prevValues.parser_config.raptor.use_raptor !==

@@ -80,6 +80,13 @@ const GraphRagItems = ({ marginBottom = false }: GraphRagItemsProps) => {
   return (
     <DatasetConfigurationContainer className={cn({ 'mb-4': marginBottom })}>
       <UseGraphRagItem></UseGraphRagItem>
+      {/* <Form.Item
+        name={['parser_config', 'llm_id']}
+        label="Index model"
+        required
+      >
+        <LLMSelect disabled={false}></LLMSelect>
+      </Form.Item> */}
       <Form.Item
         shouldUpdate={(prevValues, curValues) =>
           prevValues.parser_config.graphrag.use_graphrag !==
@@ -102,7 +109,6 @@ const GraphRagItems = ({ marginBottom = false }: GraphRagItemsProps) => {
                 <Form.Item
                   name={['parser_config', 'graphrag', 'method']}
                   label={t('graphRagMethod')}
-
                   tooltip={renderWideTooltip(
                     <div
                       dangerouslySetInnerHTML={{
