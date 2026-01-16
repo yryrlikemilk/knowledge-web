@@ -7,7 +7,7 @@ import { useSearchParams } from 'umi';
 const LayoutShare = function () {
   const [searchParams] = useSearchParams();
   const secretKey =
-    searchParams.get('searchParams') || 'K8mN2pQ9rT5vX7zA1bC3dE5fG7hI9j';
+    searchParams.get('secretKey') || 'K8mN2pQ9rT5vX7zA1bC3dE5fG7hI9j';
   const { login } = usePasswordLessLogin(secretKey);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
