@@ -95,7 +95,7 @@ export default {
   documentRm: (dataset_id: string) =>
     `${api_rag_host}/file/deleteDoc/${dataset_id}`,
   document_delete: `${api_host}/api/document`,
-  document_rename: `${api_host}/document/rename`,
+  document_rename: `${api_rag_host}/file/rename`,
   document_create: `${api_host}/document/create`,
   document_run: `${api_rag_host}/file/run`,
   document_change_parser: `${api_rag_host}/file/changeParser`,
