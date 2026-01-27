@@ -159,6 +159,7 @@ export const useHandleUploadDocument = () => {
     }): Promise<number | undefined> => {
       const processFileGroup = async (filesPart: UploadFile[]) => {
         // set status to uploading on files
+
         setFileList(
           fileList.map((file) => {
             if (!filesPart.includes(file)) {
@@ -175,7 +176,7 @@ export const useHandleUploadDocument = () => {
         const ret = await uploadDocument(filesPart);
 
         const files = ret?.data || [];
-        const succesfulFilenames = files.map((file: any) => file.name);
+        const succesfulFilenames = files.map((file: any) => file.documentName);
 
         // set status to done or error on files (based on response)
         setFileList(
@@ -196,7 +197,7 @@ export const useHandleUploadDocument = () => {
 
         return {
           code: ret?.code,
-          fileIds: files.map((file: any) => file.id),
+          fileIds: files.map((file: any) => file.documentId),
           totalSuccess: succesfulFilenames.length,
         };
       };

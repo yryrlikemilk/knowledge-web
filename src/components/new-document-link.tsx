@@ -1,11 +1,11 @@
+import Docx from '@/pages/document-viewer/docx';
+import MyImage from '@/pages/document-viewer/image';
 import {
   getExtension,
   isSupportedPreviewDocumentType,
 } from '@/utils/document-util';
-import React, { useState, useRef, useEffect } from 'react';
-import { Modal, Image, Alert } from 'antd';
-import Docx from '@/pages/document-viewer/docx';
-import MyImage from '@/pages/document-viewer/image';
+import { Modal } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 // import { getMinioDownloadUrl } from '@/services/knowledge-service';
@@ -47,16 +47,24 @@ const NewDocumentLink = ({
   const playerRef = useRef<any>(null);
   // 检查是否为图片格式
   const isImageFile = (filename: string) => {
-    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'];
+    const imageExtensions = [
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.gif',
+      '.bmp',
+      '.webp',
+      '.svg',
+    ];
     const lowerFilename = filename.toLowerCase();
-    return imageExtensions.some(ext => lowerFilename.endsWith(ext));
+    return imageExtensions.some((ext) => lowerFilename.endsWith(ext));
   };
 
   // 检查是否为视频格式
   const isVideoFile = (filename: string) => {
     const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm'];
     const lowerFilename = filename.toLowerCase();
-    return videoExtensions.some(ext => lowerFilename.endsWith(ext));
+    return videoExtensions.some((ext) => lowerFilename.endsWith(ext));
   };
 
   // 检查是否为PDF格式
@@ -71,7 +79,9 @@ const NewDocumentLink = ({
   };
   // 初始化 Video.js 播放器
   useEffect(() => {
-    console.log(`modalVisible: ${modalVisible}, videoUrl: ${videoUrl}, isVideoFile: ${isVideoFile(documentName)}`);
+    console.log(
+      `modalVisible: ${modalVisible}, videoUrl: ${videoUrl}, isVideoFile: ${isVideoFile(documentName)}`,
+    );
     if (!modalVisible || !videoUrl || !isVideoFile(documentName)) return;
 
     // 使用 requestAnimationFrame 确保 DOM 元素已经渲染
@@ -110,13 +120,15 @@ const NewDocumentLink = ({
             'progressControl',
             'remainingTimeDisplay',
             'playbackRateMenuButton',
-            'fullscreenToggle'
-          ]
+            'fullscreenToggle',
+          ],
         },
-        sources: [{
-          src: videoUrl,
-          type: 'video/mp4'
-        }]
+        sources: [
+          {
+            src: videoUrl,
+            type: 'video/mp4',
+          },
+        ],
       });
 
       console.log('NewDocumentLink Video.js 播放器创建成功:', player);
@@ -156,7 +168,9 @@ const NewDocumentLink = ({
             videoElement.style.height = '100%';
 
             const controlBar = videoElement.querySelector('.vjs-control-bar');
-            const progressBar = videoElement.querySelector('.vjs-progress-control');
+            const progressBar = videoElement.querySelector(
+              '.vjs-progress-control',
+            );
             const playButton = videoElement.querySelector('.vjs-play-control');
 
             if (controlBar) {
@@ -167,7 +181,8 @@ const NewDocumentLink = ({
               (controlBar as HTMLElement).style.bottom = '0';
               (controlBar as HTMLElement).style.left = '0';
               (controlBar as HTMLElement).style.right = '0';
-              (controlBar as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.7)';
+              (controlBar as HTMLElement).style.backgroundColor =
+                'rgba(0,0,0,0.7)';
             }
             if (progressBar) {
               (progressBar as HTMLElement).style.display = 'block';
@@ -195,7 +210,13 @@ const NewDocumentLink = ({
   }, [modalVisible, videoUrl, documentName]);
 
   const handleClick = async (e: React.MouseEvent) => {
-    if (documentId && (isVideoFile(documentName) || isImageFile(documentName) || isPdfFile(documentName) || isDocFile(documentName))) {
+    if (
+      documentId &&
+      (isVideoFile(documentName) ||
+        isImageFile(documentName) ||
+        isPdfFile(documentName) ||
+        isDocFile(documentName))
+    ) {
       e.preventDefault();
 
       // PDF文件使用clickDocumentButton
@@ -210,7 +231,7 @@ const NewDocumentLink = ({
         try {
           const lower = documentName.toLowerCase();
           if (lower.endsWith('.docx')) {
-            setDocxPath(`/v1/file/get/${documentId}`);
+            setDocxPath(`/api/file/download/${documentId}`);
           } else {
             setDocxPath(undefined);
             setDocUrl(undefined);
@@ -240,7 +261,8 @@ const NewDocumentLink = ({
       } else {
         // 图片文件直接使用documentId构建URL
 
-        const imageUrl = `v1/${prefix || 'file'}/get/${documentId}`;
+        // const imageUrl = `v1/${prefix || 'file'}/get/${documentId}`;
+        const imageUrl = `/api/file/download/${documentId}`;
         setVideoUrl(imageUrl);
         setLoading(false);
       }
@@ -252,11 +274,14 @@ const NewDocumentLink = ({
       <a
         target="_blank"
         onClick={
-          documentName && (isVideoFile(documentName) || isImageFile(documentName) || isDocFile(documentName))
+          documentName &&
+          (isVideoFile(documentName) ||
+            isImageFile(documentName) ||
+            isDocFile(documentName))
             ? handleClick
-            : (!preventDefault || isSupportedPreviewDocumentType(extension)
+            : !preventDefault || isSupportedPreviewDocumentType(extension)
               ? undefined
-              : (e) => e.preventDefault())
+              : (e) => e.preventDefault()
         }
         href={nextLink}
         rel="noreferrer"
@@ -281,49 +306,45 @@ const NewDocumentLink = ({
         destroyOnHidden
         styles={{
           header: {
-            textAlign: 'center'
-          }
+            textAlign: 'center',
+          },
         }}
       >
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px' }}>加载中...</div>
-        ) :
-          isDocFile(documentName) ?
-            (
-              <Docx filePath={docxPath || ''} />
-            )
-            : videoUrl ? (
-              isImageFile(documentName) ? (
-                <div className='flex justify-center py-4'>
-                  <MyImage
-                    src={videoUrl}
-                  />
-                </div>
-
-              ) : (
-                <div style={{
-                  borderRadius: 8,
-                  overflow: 'hidden',
-                  backgroundColor: '#000',
-                  height: '400px',
+        ) : isDocFile(documentName) ? (
+          <Docx filePath={docxPath || ''} />
+        ) : videoUrl ? (
+          isImageFile(documentName) ? (
+            <div className="flex justify-center py-4">
+              <MyImage src={videoUrl} />
+            </div>
+          ) : (
+            <div
+              style={{
+                borderRadius: 8,
+                overflow: 'hidden',
+                backgroundColor: '#000',
+                height: '400px',
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              <video
+                ref={videoRef}
+                className="video-js vjs-default-skin vjs-big-play-centered"
+                data-setup="{}"
+                style={{
                   width: '100%',
-                  position: 'relative'
-                }}>
-                  <video
-                    ref={videoRef}
-                    className="video-js vjs-default-skin vjs-big-play-centered"
-                    data-setup="{}"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain'
-                    }}
-                  />
-                </div>
-              )
-            ) : (
-              <div style={{ textAlign: 'center', padding: '40px' }}>加载失败</div>
-            )}
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+          )
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px' }}>加载失败</div>
+        )}
       </Modal>
     </>
   );

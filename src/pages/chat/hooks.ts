@@ -1,3 +1,4 @@
+import { useToast } from '@/components/hooks/use-toast';
 import { ChatSearchParams, MessageType } from '@/constants/chat';
 import { fileIconMap } from '@/constants/common';
 import {
@@ -164,7 +165,7 @@ export const useEditDialog = () => {
 
   const onDialogEditOk = useCallback(
     async (dialog: IDialog) => {
-      console.log(`dialog1111`,dialog);
+      console.log(`dialog1111`, dialog);
       const ret = await submitDialog(dialog);
 
       if (ret === 0) {
@@ -367,6 +368,7 @@ export const useSendNextMessage = (controller: AbortController) => {
   const { setConversation } = useSetConversation();
   const { conversationId, isNew } = useGetChatSearchParams();
   const { handleInputChange, value, setValue } = useHandleMessageInputChange();
+  const { toast } = useToast();
 
   const { send, answer, done } = useSendMessageWithSse(
     api.completeConversation,
@@ -411,6 +413,8 @@ export const useSendNextMessage = (controller: AbortController) => {
         setValue(message.content);
         console.info('removeLatestMessage111');
         removeLatestMessage();
+
+        toast({ title: '发送失败', variant: 'destructive' });
       }
     },
     [

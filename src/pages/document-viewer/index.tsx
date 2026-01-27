@@ -1,5 +1,5 @@
 import { Images } from '@/constants/common';
-import { api_host, api_rag_host } from '@/utils/api';
+import { api_rag_host } from '@/utils/api';
 import { Flex } from 'antd';
 import { useParams, useSearchParams } from 'umi';
 import Docx from './docx';
@@ -16,9 +16,10 @@ const DocumentViewer = () => {
   const { id: documentId } = useParams();
   const [currentQueryParameters] = useSearchParams();
   const ext = currentQueryParameters.get('ext');
-  const prefix = currentQueryParameters.get('prefix');
+  // const prefix = currentQueryParameters.get('prefix');
+  const api = `${api_rag_host}/file/download/${documentId}`;
   // const api = `${api_rag_host}/${prefix || 'file'}/download/${documentId}`;
-  const api = `${api_host}/${prefix || 'file'}/get/${documentId}`;
+  // const api = `${api_host}/${prefix || 'file'}/get/${documentId}`;
 
   if (ext === 'html' && documentId) {
     previewHtmlFile(documentId);

@@ -10,12 +10,18 @@ import {
 import { Modal } from 'antd';
 import CategoryPanel from '../category-panel';
 import styles from '../index.less';
+import { SelectWithSearch, SelectWithSearchFlagOptionType } from '@/components/originui/select-with-search';
+import { useComposeLlmOptionsByModelTypes } from '@/hooks/llm-hooks';
+import { LlmModelType } from '@/constants/knowledge';
 export const EmbeddingModelItem = memo(function EmbeddingModelItem() {
   const { t } = useTranslate('knowledgeConfiguration');
   const embeddingModelOptions = useSelectEmbeddingModelOptions();
   const disabled = useHasParsedDocument();
 
-  console.log('EmbeddingModelItem - embeddingModelOptions:', embeddingModelOptions);
+  console.log(
+    'EmbeddingModelItem - embeddingModelOptions:',
+    embeddingModelOptions,
+  );
   console.log('EmbeddingModelItem - disabled:', disabled);
 
   return (
@@ -52,8 +58,7 @@ export const ChunkMethodItem = memo(function ChunkMethodItem() {
 
   return (
     <>
-      <div className='flex'>
-
+      <div className="flex">
         <Form.Item
           name="parser_id"
           label={t('chunkMethod')}
@@ -69,7 +74,7 @@ export const ChunkMethodItem = memo(function ChunkMethodItem() {
             style={{ width: '100%' }}
           />
         </Form.Item>
-        <Form.Item label=" " colon={false}  layout="horizontal">
+        <Form.Item label=" " colon={false} layout="horizontal">
           <Button type="link" onClick={showModal}>
             {t('viewDetails')}
           </Button>
@@ -88,3 +93,31 @@ export const ChunkMethodItem = memo(function ChunkMethodItem() {
     </>
   );
 });
+
+export const LLMSelect = ({
+  isEdit,
+  field,
+  disabled = false,
+}: {
+  isEdit: boolean;
+  field: any;
+  name?: string;
+  disabled?: boolean;
+}) => {
+  const { t } = useTranslate('knowledgeConfiguration');
+  const modelOptions = useComposeLlmOptionsByModelTypes([
+    LlmModelType.Chat,
+    LlmModelType.Image2text,
+  ]);
+  return (
+    <SelectWithSearch
+      onChange={async (value) => {
+        field.onChange(value);
+      }}
+      disabled={disabled && !isEdit}
+      value={field.value}
+      options={modelOptions as SelectWithSearchFlagOptionType[]}
+      placeholder={t('embeddingModelPlaceholder')}
+    />
+  );
+};
