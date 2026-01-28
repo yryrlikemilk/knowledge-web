@@ -1,10 +1,9 @@
+import GlobalProgressIndicator from '@/components/global-progress-indicator';
 import { Divider, Layout, theme } from 'antd';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'umi';
 import '../locales/config';
 import Header from './components/header';
-import { useEffect } from 'react';
-import GlobalProgressIndicator from '@/components/global-progress-indicator';
 
 import styles from './index.less';
 
@@ -18,7 +17,7 @@ const mainMenuMap: Record<string, string> = {
   '/tools': '工具集',
 };
 
-const DEFAULT_TITLE = '赛迪知源';
+const DEFAULT_TITLE = '康复医院问答助手';
 
 const App: React.FC = () => {
   const {
@@ -28,7 +27,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const matched = Object.entries(mainMenuMap).find(([path]) =>
-      location.pathname.startsWith(path)
+      location.pathname.startsWith(path),
     );
     if (matched) {
       document.title = `${DEFAULT_TITLE}-${matched[1]}`;

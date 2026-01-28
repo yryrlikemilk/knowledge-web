@@ -90,14 +90,19 @@ const Login = () => {
   return (
     <div className={styles.loginPage}>
       <div className={styles.loginLeft}>
-        <div className='pt-12 pl-10'>
-          <img style={{ width: '338px', height: 42 }}
-            src={require('@/assets/imgs/loginTop.png')} alt="loginTop" />
+        <div className="pt-12 pl-10">
+          <img
+            style={{ width: '338px', height: 62 }}
+            src={require('@/assets/imgs/loginTop.png')}
+            alt="loginTop"
+          />
         </div>
         <div className={styles.leftContainerMain}>
           <div className={styles.leftContainer}>
             <div className={styles.loginTitle}>
-              <div className={styles.loginLeftTitle}>{title === 'login' ? '登录' : '注册'}</div>
+              <div className={styles.loginLeftTitle}>
+                {title === 'login' ? '登录' : '注册'}
+              </div>
               <span className={styles.loginLeftDesc}>
                 {title === 'login' ? '很高兴再次见到您！' : '很高兴您加入！'}
               </span>
@@ -116,7 +121,11 @@ const Login = () => {
                 label="邮箱"
                 rules={[{ required: true, message: '请输入邮箱地址' }]}
               >
-                <Input autoComplete="new-email" size="large" placeholder="请输入邮箱地址" />
+                <Input
+                  autoComplete="new-email"
+                  size="large"
+                  placeholder="请输入邮箱地址"
+                />
               </Form.Item>
               {title === 'register' && (
                 <Form.Item
@@ -125,14 +134,18 @@ const Login = () => {
                   label="名称"
                   rules={[{ required: true, message: '请输入名称' }]}
                 >
-                  <Input autoComplete="off" size="large" placeholder="请输入名称" />
+                  <Input
+                    autoComplete="off"
+                    size="large"
+                    placeholder="请输入名称"
+                  />
                 </Form.Item>
               )}
               <Form.Item
                 {...formItemLayout}
                 name="password"
                 label="密码"
-                style={{marginBottom:10}}
+                style={{ marginBottom: 10 }}
                 rules={[{ required: true, message: '请输入密码' }]}
               >
                 <Input.Password
@@ -143,7 +156,11 @@ const Login = () => {
                 />
               </Form.Item>
               {title === 'login' && (
-                <Form.Item name="remember"  style={{marginBottom:0}}   valuePropName="checked">
+                <Form.Item
+                  name="remember"
+                  style={{ marginBottom: 0 }}
+                  valuePropName="checked"
+                >
                   <Checkbox> 记住我</Checkbox>
                 </Form.Item>
               )}
@@ -154,13 +171,13 @@ const Login = () => {
                 size="large"
                 onClick={onCheck}
                 loading={loading}
-                style={{marginTop:40}}
+                style={{ marginTop: 40 }}
               >
                 {title === 'login' ? '登录' : '继续'}
               </Button>
-              <div className='text-center'>
+              <div className="text-center">
                 {title === 'login' && registerEnabled && (
-                  <div style={{color:' #666B70'}}>
+                  <div style={{ color: ' #666B70' }}>
                     没有帐户？
                     <Button type="link" onClick={changeTitle}>
                       注册
@@ -202,7 +219,6 @@ const Login = () => {
             </Form>
           </div>
         </div>
-
       </div>
       <div className={styles.loginRight}>
         <RightPanel></RightPanel>

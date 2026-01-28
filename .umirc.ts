@@ -15,7 +15,7 @@ export default defineConfig({
   esbuildMinifyIIFE: true,
   icons: {},
   hash: true,
-  favicons: ['/logo.svg'],
+  favicons: ['/logo.png'],
   clickToComponent: {},
   history: {
     type: 'browser',
@@ -44,15 +44,15 @@ export default defineConfig({
     //   logger: console,
     // },
     {
-      context: [ '/v1'],
+      context: ['/v1'],
       target: 'http://119.84.128.68:6580/',
       changeOrigin: true,
       ws: true,
       logger: console,
       // pathRewrite: { '^/v1': '/v1' },
     },
-     {
-      context: ['/api/tools','/api'],
+    {
+      context: ['/api/tools', '/api'],
       target: 'http://119.84.128.68:6581/rag-api/',
       changeOrigin: true,
       ws: true,
@@ -67,7 +67,6 @@ export default defineConfig({
       logger: console,
       // pathRewrite: { '^/v1': '/v1' },
     },
-    
   ],
 
   chainWebpack(memo, args) {

@@ -1,12 +1,11 @@
-import { ReactComponent as TrialIcon } from '@/assets/svg/trial.svg';
 import { ReactComponent as FileIcon } from '@/assets/svg/file-management.svg';
-import { ReactComponent as GraphIcon } from '@/assets/svg/graph.svg';
-import { ReactComponent as ToolsIcon } from '@/assets/svg/tools.svg';
 import { ReactComponent as KnowledgeBaseIcon } from '@/assets/svg/knowledge-base.svg';
+import { ReactComponent as ToolsIcon } from '@/assets/svg/tools.svg';
+import { ReactComponent as TrialIcon } from '@/assets/svg/trial.svg';
 import { useTranslate } from '@/hooks/common-hooks';
 import { useFetchAppConf } from '@/hooks/logic-hooks';
 import { useNavigateWithFromState } from '@/hooks/route-hook';
-import { MessageOutlined, SearchOutlined } from '@ant-design/icons';
+import { MessageOutlined } from '@ant-design/icons';
 import { Flex, Layout, Radio, Space, theme } from 'antd';
 import { MouseEventHandler, useCallback, useMemo } from 'react';
 import { useLocation } from 'umi';
@@ -30,9 +29,9 @@ const RagHeader = () => {
     () => [
       { path: '/chat', name: '智能聊天', icon: MessageOutlined },
       { path: '/knowledge', name: t('knowledgeBase'), icon: KnowledgeBaseIcon },
-      
+
       // { path: '/search', name: t('search'), icon: SearchOutlined },
-    //  { path: '/flow', name: t('flow'), icon: GraphIcon },
+      //  { path: '/flow', name: t('flow'), icon: GraphIcon },
       { path: '/file', name: t('fileManager'), icon: FileIcon },
       { path: '/trial', name: t('trial'), icon: TrialIcon },
       { path: '/tools', name: t('tools'), icon: ToolsIcon },
@@ -64,22 +63,23 @@ const RagHeader = () => {
       style={{
         paddingLeft: 16,
         paddingRight: 40,
-        background: "#EAF0FE",
+        background: '#EAF0FE',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         height: '64px',
       }}
     >
-      <Space
-        size={12}
-        onClick={handleLogoClick}
-        className={styles.logoWrapper}
-      >
-        <img src="/logo.svg" alt="logo" className={styles.appIcon} />
-        <img src="/RAG_SYSTEM.png" alt="logo" className={styles.appIconLogo} />
+      <Space size={12} onClick={handleLogoClick} className={styles.logoWrapper}>
+        {/* <img src="/logo.svg" alt="logo" className={styles.appIcon} /> */}
+        <img src="/RAG_SYSTEM2.png" alt="logo" className={styles.appIconLogo} />
       </Space>
-      <Space size={[0, 8]} wrap className='flex-1 'style={{paddingLeft:72,height:'100%',position:"relative"}}>
+      <Space
+        size={[0, 8]}
+        wrap
+        className="flex-1 "
+        style={{ paddingLeft: 72, height: '100%', position: 'relative' }}
+      >
         <Radio.Group
           defaultValue="a"
           buttonStyle="solid"
