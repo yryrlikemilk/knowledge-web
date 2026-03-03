@@ -91,11 +91,11 @@ const Login = () => {
     <div className={styles.loginPage}>
       <div className={styles.loginLeft}>
         <div className="pt-12 pl-10">
-          <img
+          {/* <img
             style={{ width: '338px', height: 62 }}
             src={require('@/assets/imgs/loginTop.png')}
             alt="loginTop"
-          />
+          /> */}
         </div>
         <div className={styles.leftContainerMain}>
           <div className={styles.leftContainer}>

@@ -26,7 +26,7 @@ const { Text } = Typography;
 
 interface IProps extends Partial<IRemoveMessageById>, IRegenerateMessage {
   item: IMessage;
-  hasMessages?:boolean;
+  hasMessages?: boolean;
   reference: IReference;
   loading?: boolean;
   sendLoading?: boolean;
@@ -67,11 +67,13 @@ const MessageItem = ({
   // PDF Drawer状态
   const [pdfVisible, setPdfVisible] = useState(false);
   const [pdfDocumentId, setPdfDocumentId] = useState('');
-  const [pdfChunk, setPdfChunk] = useState<IReferenceChunk>({} as IReferenceChunk);
+  const [pdfChunk, setPdfChunk] = useState<IReferenceChunk>(
+    {} as IReferenceChunk,
+  );
   const [pdfDocumentName, setPdfDocumentName] = useState('');
 
   const referenceDocumentList = useMemo(() => {
-    console.log(`reference?.doc_aggsreference?.doc_aggs`,reference?.doc_aggs)
+    console.log(`reference?.doc_aggsreference?.doc_aggs`, reference?.doc_aggs);
     return reference?.doc_aggs ?? [];
   }, [reference?.doc_aggs]);
   const handleUserDocumentClick = useCallback(
@@ -83,25 +85,30 @@ const MessageItem = ({
   );
 
   // 处理PDF文档点击
-  const handlePdfClick = useCallback((documentId: string, chunk: IReferenceChunk, documentName?: string) => {
-    setPdfDocumentId(documentId);
-    setPdfChunk(chunk);
-    setPdfVisible(true);
-    // 保存文档名称用于显示
-    setPdfDocumentName(documentName || '');
-  }, []);
+  const handlePdfClick = useCallback(
+    (documentId: string, chunk: IReferenceChunk, documentName?: string) => {
+      setPdfDocumentId(documentId);
+      setPdfChunk(chunk);
+      setPdfVisible(true);
+      // 保存文档名称用于显示
+      setPdfDocumentName(documentName || '');
+    },
+    [],
+  );
 
   const handleRegenerateMessage = useCallback(() => {
     regenerateMessage?.(item);
   }, [regenerateMessage, item]);
 
   useEffect(() => {
-   
     const ids = item?.doc_ids ?? [];
     if (ids.length) {
       setDocumentIds(ids);
-      const isObject = documentThumbnails && typeof documentThumbnails === 'object';
-      const documentIds = ids.filter((x) => !isObject || !documentThumbnails.hasOwnProperty(x));
+      const isObject =
+        documentThumbnails && typeof documentThumbnails === 'object';
+      const documentIds = ids.filter(
+        (x) => !isObject || !documentThumbnails.hasOwnProperty(x),
+      );
       if (documentIds.length) {
         setIds(documentIds);
       }
@@ -128,7 +135,7 @@ const MessageItem = ({
         >
           {visibleAvatar &&
             (item.role === MessageType.User ? (
-              <Avatar size={40} src={ '/logo.svg'} />
+              <Avatar size={40} src={'/logo.png'} />
             ) : avatarDialog ? (
               <Avatar size={40} src={avatarDialog} />
             ) : (
@@ -180,11 +187,11 @@ const MessageItem = ({
             </div>
             {isAssistant && referenceDocumentList.length > 0 && (
               <List
-              style={{border:'none',backgroundColor: '#fff'}}
+                style={{ border: 'none', backgroundColor: '#fff' }}
                 bordered
                 dataSource={referenceDocumentList}
                 renderItem={(item) => {
-                  console.log(`itemitemitemitem`,item)
+                  console.log(`itemitemitemitem`, item);
                   return (
                     <List.Item>
                       <Flex gap={'small'} align="center">
@@ -195,12 +202,20 @@ const MessageItem = ({
 
                         <NewDocumentLink
                           documentId={item.doc_id}
-                          documentName={item.doc_name ? item.doc_name.replace('_modified', '') : ''}
+                          documentName={
+                            item.doc_name
+                              ? item.doc_name.replace('_modified', '')
+                              : ''
+                          }
                           prefix="document"
                           link={item.url}
-                          clickDocumentButton={(documentId, chunk) => handlePdfClick(documentId, chunk, item.doc_name)}
+                          clickDocumentButton={(documentId, chunk) =>
+                            handlePdfClick(documentId, chunk, item.doc_name)
+                          }
                         >
-                          {item.doc_name ? item.doc_name.replace('_modified', '') : ''}
+                          {item.doc_name
+                            ? item.doc_name.replace('_modified', '')
+                            : ''}
                         </NewDocumentLink>
                       </Flex>
                     </List.Item>
@@ -210,8 +225,7 @@ const MessageItem = ({
             )}
             {isUser && documentList.length > 0 && (
               <List
-               
-                  style={{border:'none',backgroundColor: '#fff'}}
+                style={{ border: 'none', backgroundColor: '#fff' }}
                 bordered
                 dataSource={documentList}
                 renderItem={(item) => {
@@ -220,19 +234,26 @@ const MessageItem = ({
                   //   documentThumbnails[item.id] || documentThumbnails[item.id];
                   const fileExtension = getExtension(item.name);
                   return (
-                    <List.Item >
+                    <List.Item>
                       <Flex gap={'small'} align="center">
                         <FileIcon id={item.id} name={item.name}></FileIcon>
 
                         {isImage(fileExtension) ? (
                           <NewDocumentLink
                             documentId={item.id}
-                            documentName= {item.name ? item.name.replace('_modified', '') : ''}
+                            documentName={
+                              item.name
+                                ? item.name.replace('_modified', '')
+                                : ''
+                            }
                             prefix="document"
-                            clickDocumentButton={(documentId, chunk) => handlePdfClick(documentId, chunk, item.name)}
+                            clickDocumentButton={(documentId, chunk) =>
+                              handlePdfClick(documentId, chunk, item.name)
+                            }
                           >
-                            {item.name ? item.name.replace('_modified', '') : ''}
-                           
+                            {item.name
+                              ? item.name.replace('_modified', '')
+                              : ''}
                           </NewDocumentLink>
                         ) : (
                           <Button
@@ -243,7 +264,9 @@ const MessageItem = ({
                               style={{ maxWidth: '40vw' }}
                               ellipsis={{ tooltip: item.name }}
                             >
-                               {item.name ? item.name.replace('_modified', '') : ''}
+                              {item.name
+                                ? item.name.replace('_modified', '')
+                                : ''}
                             </Text>
                           </Button>
                         )}
@@ -269,8 +292,9 @@ const MessageItem = ({
         hideModal={() => setPdfVisible(false)}
         documentId={pdfDocumentId}
         chunk={pdfChunk}
-        documentName={pdfDocumentName ? pdfDocumentName.replace('_modified', '') : ''}
-        
+        documentName={
+          pdfDocumentName ? pdfDocumentName.replace('_modified', '') : ''
+        }
       />
     </div>
   );

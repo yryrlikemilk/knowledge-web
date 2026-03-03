@@ -11,7 +11,7 @@ const LoginRightPanel = () => {
       {/* <SvgIcon name="login-star" width={80}></SvgIcon> */}
       <Flex vertical>
         <Title level={1} className={classNames(styles.loginTitle)}>
-          康复医院问答助手
+          医院问答助手
         </Title>
         <Text className={classNames(styles.loginDescription)}>
           创建企业级多模态知识助手--重新定义知识获取方式

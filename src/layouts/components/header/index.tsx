@@ -11,6 +11,7 @@ import { MouseEventHandler, useCallback, useMemo } from 'react';
 import { useLocation } from 'umi';
 import Toolbar from '../right-toolbar';
 
+import logo from '@/assets/newImages/logo2.png';
 import { useTheme } from '@/components/theme-provider';
 import styles from './index.less';
 
@@ -71,8 +72,10 @@ const RagHeader = () => {
       }}
     >
       <Space size={12} onClick={handleLogoClick} className={styles.logoWrapper}>
-        {/* <img src="/logo.svg" alt="logo" className={styles.appIcon} /> */}
-        <img src="/RAG_SYSTEM2.png" alt="logo" className={styles.appIconLogo} />
+        {/* <img src="/logo.png" alt="logo" className={styles.appIcon} /> */}
+        {/* <img src="/RAG_SYSTEM2.png" alt="logo" className={styles.appIconLogo} /> */}
+        <img src={logo} alt="logo" className={styles.appIconLogo} />
+        <h3>智能系统</h3>
       </Space>
       <Space
         size={[0, 8]}

@@ -121,7 +121,7 @@ export function Header() {
     <section className="p-5 pr-14 flex justify-between items-center ">
       <div className="flex items-center gap-4">
         <img
-          src={'/logo.svg'}
+          src={'/logo.png'}
           alt="logo"
           className="size-10 mr-[12]"
           onClick={handleLogoClick}
